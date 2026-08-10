@@ -22,6 +22,17 @@ const defaultGallery = [
   }
 ];
 
+const initialRoster = [
+  { id: "POCB-1001", name: "Richelle Lucas", email: "president@progressiveoptimist.org", role: "President & Admin", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-01", amountPaid: "$100 BBD" },
+  { id: "POCB-1002", name: "Charmaine London", email: "secretary@progressiveoptimist.org", role: "Secretary", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-02", amountPaid: "$100 BBD" },
+  { id: "POCB-1003", name: "Sharon Mohammed", email: "treasurer@progressiveoptimist.org", role: "Treasurer & Admin", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-09-28", amountPaid: "$100 BBD" },
+  { id: "POCB-1004", name: "Edwin Workman", email: "oirep@progressiveoptimist.org", role: "OI Representative", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-05", amountPaid: "$100 BBD" },
+  { id: "POCB-1005", name: "Omolara DeRiggs-Morris", email: "omolara@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-01", amountPaid: "$100 BBD" },
+  { id: "POCB-1006", name: "Dawn-Marie Watson", email: "dawnmarie@progressiveoptimist.org", role: "Board Director", duesStatus: "Pending Dues Payment", lastPaymentDate: "2024-10-15", amountPaid: "$0.00 Outstanding" },
+  { id: "POCB-1007", name: "Deborah Bayne", email: "deborah@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-08", amountPaid: "$100 BBD" },
+  { id: "POCB-1008", name: "Cameron Sobers", email: "cameron@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-04", amountPaid: "$100 BBD" }
+];
+
 export const AuthProvider = ({ children }) => {
   // Current user state (with try-catch safety)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -42,6 +53,16 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("Failed to parse optimist_projects from localStorage", e);
       return initialProjects;
+    }
+  });
+
+  // Member Roster (Treasurer Ledger)
+  const [memberRoster, setMemberRoster] = useState(() => {
+    try {
+      const savedRoster = localStorage.getItem('optimist_roster');
+      return savedRoster ? JSON.parse(savedRoster) : initialRoster;
+    } catch (e) {
+      return initialRoster;
     }
   });
 
@@ -90,6 +111,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, [projects]);
 
+  // Save roster to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('optimist_roster', JSON.stringify(memberRoster));
+    } catch (e) {}
+  }, [memberRoster]);
+
   // Save gallery to localStorage
   useEffect(() => {
     try {
@@ -107,15 +135,17 @@ export const AuthProvider = ({ children }) => {
 
     const nameFromEmail = email.split('@')[0].replace('.', ' ');
     const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+    const isTreasurerOrAdmin = email.includes('treasurer') || email.includes('admin') || email.includes('president');
 
     const userObj = {
       email,
       name: formattedName || 'Optimist Member',
-      role: email.includes('admin') || email.includes('president') ? 'Admin' : 'Member',
+      role: isTreasurerOrAdmin ? 'Treasurer / Admin' : 'Member',
+      isTreasurer: isTreasurerOrAdmin,
       memberId: 'POCB-' + Math.floor(1000 + Math.random() * 9000),
       duesStatus: 'Active Member in Good Standing (2025/2026)',
       joinedDate: '2022',
-      avatar: `/avatars/president_placeholder.jpg`
+      avatar: isTreasurerOrAdmin ? `/avatars/treasurer_placeholder.jpg` : `/avatars/president_placeholder.jpg`
     };
 
     setCurrentUser(userObj);
@@ -139,13 +169,18 @@ export const AuthProvider = ({ children }) => {
     };
 
     setCurrentUser(userObj);
+    setMemberRoster(prev => [
+      { id: userObj.memberId, name: userObj.name, email: userObj.email, role: 'Member', duesStatus: 'Pending Dues Payment', lastPaymentDate: 'None', amountPaid: '$0.00 Outstanding' },
+      ...prev
+    ]);
+
     try {
       localStorage.setItem('optimist_user', JSON.stringify(userObj));
     } catch (e) {}
     return { success: true, user: userObj };
   };
 
-  // Update member dues record
+  // Update member dues record for current user
   const updateDuesStatus = (newStatus = 'Active Member in Good Standing (2025/2026)') => {
     if (!currentUser) return;
     const updated = { ...currentUser, duesStatus: newStatus };
@@ -153,6 +188,17 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.setItem('optimist_user', JSON.stringify(updated));
     } catch (e) {}
+  };
+
+  // Treasurer updates member dues status in central roster
+  const updateMemberDuesByTreasurer = (memberId, newStatus, paymentAmount = "$100 BBD") => {
+    const today = new Date().toISOString().split('T')[0];
+    setMemberRoster(prev => prev.map(m => {
+      if (m.id === memberId) {
+        return { ...m, duesStatus: newStatus, lastPaymentDate: today, amountPaid: paymentAmount };
+      }
+      return m;
+    }));
   };
 
   const logout = () => {
@@ -211,6 +257,8 @@ export const AuthProvider = ({ children }) => {
         login,
         registerMember,
         updateDuesStatus,
+        memberRoster,
+        updateMemberDuesByTreasurer,
         logout,
         projects,
         addProject,

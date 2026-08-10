@@ -18,17 +18,32 @@ import {
   Award,
   Download,
   ShieldCheck,
-  Check
+  Check,
+  Search,
+  UserCheck,
+  DollarSign,
+  Edit3
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
-  const { currentUser, login, registerMember, updateDuesStatus, logout, projects, memberGallery, addGalleryPhoto } = useAuth();
+  const {
+    currentUser,
+    login,
+    registerMember,
+    updateDuesStatus,
+    memberRoster,
+    updateMemberDuesByTreasurer,
+    logout,
+    projects,
+    memberGallery,
+    addGalleryPhoto
+  } = useAuth();
   
   // Auth state tabs (when logged out)
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'apply'
   
   // Dashboard tabs (when logged in)
-  const [dashboardTab, setDashboardTab] = useState('projects'); // 'projects' | 'gallery' | 'resources' | 'dues'
+  const [dashboardTab, setDashboardTab] = useState('projects'); // 'projects' | 'gallery' | 'resources' | 'dues' | 'treasurer'
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -57,9 +72,18 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   // Dues payment status message state
   const [duesPaymentMsg, setDuesPaymentMsg] = useState(false);
 
-  // Handle Demo Login
+  // Treasurer Search Filter
+  const [rosterSearch, setRosterSearch] = useState('');
+  const [treasurerMsg, setTreasurerMsg] = useState('');
+
+  // Handle Demo Member Login
   const handleDemoLogin = () => {
     login('member@progressiveoptimist.org', 'optimist2025');
+  };
+
+  // Handle Demo Treasurer Login
+  const handleTreasurerLogin = () => {
+    login('treasurer@progressiveoptimist.org', 'treasurer2025');
   };
 
   const handleLoginSubmit = (e) => {
@@ -82,6 +106,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const handlePayDues = () => {
     updateDuesStatus('Active Member in Good Standing (2025/2026)');
     setDuesPaymentMsg(true);
+  };
+
+  const handleTreasurerUpdateStatus = (memberId, memberName, newStatus) => {
+    updateMemberDuesByTreasurer(memberId, newStatus, "$100 BBD");
+    setTreasurerMsg(`Updated ${memberName}'s record to: ${newStatus}`);
+    setTimeout(() => setTreasurerMsg(''), 4000);
   };
 
   const handlePhotoUpload = (e) => {
@@ -112,6 +142,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     setPhotoUrl('');
     setPhotoPreview(null);
   };
+
+  const filteredRoster = memberRoster.filter(m =>
+    m.name.toLowerCase().includes(rosterSearch.toLowerCase()) ||
+    m.email.toLowerCase().includes(rosterSearch.toLowerCase()) ||
+    m.id.toLowerCase().includes(rosterSearch.toLowerCase())
+  );
 
   // If user is LOGGED IN: Render Member Portal Dashboard
   if (currentUser) {
@@ -215,7 +251,20 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            Annual Dues Record
+            My Dues Record
+          </button>
+
+          {/* Dedicated Treasurer Management Tab */}
+          <button
+            onClick={() => setDashboardTab('treasurer')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              dashboardTab === 'treasurer'
+                ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
+                : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Treasurer Dues Console</span>
           </button>
         </div>
 
@@ -326,7 +375,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           </div>
         )}
 
-        {/* Tab 4: Dues Record */}
+        {/* Tab 4: Member Dues Record */}
         {dashboardTab === 'dues' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 space-y-6">
@@ -430,6 +479,127 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           </div>
         )}
 
+        {/* Tab 5: Dedicated TREASURER DUES MANAGEMENT CONSOLE */}
+        {dashboardTab === 'treasurer' && (
+          <div className="space-y-6">
+            
+            {/* Header Banner */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
+                  </span>
+                  <h2 className="font-heading text-2xl font-black text-white">
+                    Member Dues Management Ledger
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    As Club Treasurer (<strong>Sharon Mohammed</strong>), you can update member dues statuses, log offline cash/bank transfer payments, and maintain official records.
+                  </p>
+                </div>
+
+                <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 text-right shrink-0">
+                  <span className="text-xs text-slate-400 block">Total Active Members</span>
+                  <strong className="font-heading text-2xl font-black text-emerald-400">
+                    {memberRoster.filter(m => m.duesStatus.includes('Active')).length} / {memberRoster.length}
+                  </strong>
+                </div>
+              </div>
+
+              {treasurerMsg && (
+                <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{treasurerMsg}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Controls Bar: Search & Export */}
+            <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={rosterSearch}
+                  onChange={e => setRosterSearch(e.target.value)}
+                  placeholder="Search member name or ID..."
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500">
+                <span>Showing {filteredRoster.length} Member Records</span>
+                <button
+                  onClick={() => alert("Member Dues Ledger exported to CSV/PDF.")}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" /> Export Ledger
+                </button>
+              </div>
+            </div>
+
+            {/* Member Ledger Table */}
+            <div className="rounded-3xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-4">Member Details</th>
+                      <th className="p-4">Club Role</th>
+                      <th className="p-4">Current Dues Status</th>
+                      <th className="p-4">Last Payment Date</th>
+                      <th className="p-4 text-right">Treasurer Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {filteredRoster.map((member) => (
+                      <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="p-4">
+                          <div className="font-bold text-slate-900 dark:text-white text-sm">{member.name}</div>
+                          <span className="text-slate-400 font-mono text-[10px]">{member.id} • {member.email}</span>
+                        </td>
+                        <td className="p-4 font-semibold text-slate-700 dark:text-slate-300">
+                          {member.role}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                            member.duesStatus.includes('Active')
+                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
+                          }`}>
+                            {member.duesStatus.includes('Active') ? <Check className="w-3 h-3 text-emerald-500" /> : <AlertCircle className="w-3 h-3 text-amber-500" />}
+                            {member.duesStatus}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-500">
+                          <strong>{member.lastPaymentDate}</strong> ({member.amountPaid})
+                        </td>
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors"
+                            title="Mark Dues Paid"
+                          >
+                            ✓ Mark Paid
+                          </button>
+                          <button
+                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Pending Dues Payment')}
+                            className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-bold text-[10px] transition-colors"
+                            title="Set Pending"
+                          >
+                            Set Pending
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {/* PHOTO UPLOAD MODAL */}
         {photoUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
@@ -495,7 +665,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           Progressive Optimist Member Portal
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          Log in to publish new project posts and upload activity photos to the website, or apply for new membership with the Barbados club.
+          Log in to publish new project posts, manage annual dues, and upload activity photos to the website, or apply for new membership with the Barbados club.
         </p>
       </div>
 
@@ -529,16 +699,27 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       {authTab === 'login' && (
         <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 shadow-xl max-w-lg mx-auto space-y-6">
           
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2">
             <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
               Log In To Your Account
             </h2>
-            <button
-              onClick={handleDemoLogin}
-              className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-700 hover:underline"
-            >
-              ★ One-Click Demo Member Login
-            </button>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                onClick={handleTreasurerLogin}
+                className="text-[11px] font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 transition-all"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>★ Log In as Treasurer (Sharon Mohammed)</span>
+              </button>
+
+              <button
+                onClick={handleDemoLogin}
+                className="text-[11px] font-bold text-optimist-blue dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 hover:underline"
+              >
+                Member Demo Login
+              </button>
+            </div>
           </div>
 
           {loginError && (
@@ -559,7 +740,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   type="email"
                   value={loginEmail}
                   onChange={e => setLoginEmail(e.target.value)}
-                  placeholder="member@progressiveoptimist.org"
+                  placeholder="treasurer@progressiveoptimist.org"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                   required
                 />
