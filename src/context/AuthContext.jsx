@@ -23,17 +23,134 @@ const defaultGallery = [
 ];
 
 const initialRoster = [
-  { id: "POCB-1001", name: "Richelle Lucas", email: "president@progressiveoptimist.org", role: "President & Admin", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-01", amountPaid: "$100 BBD" },
-  { id: "POCB-1002", name: "Charmaine London", email: "secretary@progressiveoptimist.org", role: "Secretary", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-02", amountPaid: "$100 BBD" },
-  { id: "POCB-1003", name: "Sharon Mohammed", email: "treasurer@progressiveoptimist.org", role: "Treasurer & Admin", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-09-28", amountPaid: "$100 BBD" },
-  { id: "POCB-1004", name: "Edwin Workman", email: "oirep@progressiveoptimist.org", role: "OI Representative", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-05", amountPaid: "$100 BBD" },
-  { id: "POCB-1005", name: "Omolara DeRiggs-Morris", email: "omolara@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-01", amountPaid: "$100 BBD" },
-  { id: "POCB-1006", name: "Dawn-Marie Watson", email: "dawnmarie@progressiveoptimist.org", role: "Board Director", duesStatus: "Pending Dues Payment", lastPaymentDate: "2024-10-15", amountPaid: "$0.00 Outstanding" },
-  { id: "POCB-1007", name: "Deborah Bayne", email: "deborah@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-08", amountPaid: "$100 BBD" },
-  { id: "POCB-1008", name: "Cameron Sobers", email: "cameron@progressiveoptimist.org", role: "Board Director", duesStatus: "Active Member (2025/2026)", lastPaymentDate: "2025-10-04", amountPaid: "$100 BBD" }
+  {
+    id: "78008-0150",
+    name: "Richelle Lucas",
+    email: "richelle.lucas16@gmail.com",
+    role: "Club President & Admin",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Bank Transfer (FCIB)",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-01",
+    notes: "Full annual dues paid. FCIB Transfer ref #98421.",
+    emailLastSent: "2025-10-01"
+  },
+  {
+    id: "78008-0010",
+    name: "Charmaine London",
+    email: "londoncharms@hotmail.com",
+    role: "Club Secretary",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Cheque",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-02",
+    notes: "Paid in full via Cheque #00412.",
+    emailLastSent: "2025-10-02"
+  },
+  {
+    id: "78008-0152",
+    name: "Sharon Mohammed",
+    email: "sharon@topaz-bb.com",
+    role: "Club Treasurer & Admin",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Online Bank Transfer",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-09-28",
+    notes: "Treasurer annual dues settled in full.",
+    emailLastSent: "2025-09-28"
+  },
+  {
+    id: "78008-0021",
+    name: "Edwin Workman",
+    email: "edwin@jillandee.com",
+    role: "OI Representative",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Bank Transfer",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-05",
+    notes: "OI Representative dues processed.",
+    emailLastSent: "2025-10-05"
+  },
+  {
+    id: "78008-0121",
+    name: "Omolara De Riggs-Morris",
+    email: "onderiggs@hotmail.com",
+    role: "Board Director",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Cash",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-01",
+    notes: "Paid cash at October monthly meeting.",
+    emailLastSent: "2025-10-01"
+  },
+  {
+    id: "78008-0148",
+    name: "Lisa Brome",
+    email: "lisabrome@yahoo.com",
+    role: "Active Member",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$0.00 BBD",
+    balanceDue: "$250.00 BBD",
+    paymentMethod: "Pending",
+    duesStatus: "Pending Dues Payment",
+    lastPaymentDate: "2024-10-15",
+    notes: "Awaiting 2025/2026 annual renewal statement.",
+    emailLastSent: "2025-10-10"
+  },
+  {
+    id: "78008-0153",
+    name: "Deborah Bayne",
+    email: "deborahbayne46@gmail.com",
+    role: "Board Director",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Bank Transfer",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-08",
+    notes: "Annual dues settled.",
+    emailLastSent: "2025-10-08"
+  },
+  {
+    id: "78008-0038",
+    name: "Cameron P Sobers",
+    email: "Cposobers@gmail.com",
+    role: "Board Director & President-Elect",
+    fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
+    duesRate: "$250.00 BBD",
+    amountPaid: "$250.00 BBD",
+    balanceDue: "$0.00 BBD",
+    paymentMethod: "Online Payment",
+    duesStatus: "Active Member (2025/2026)",
+    lastPaymentDate: "2025-10-04",
+    notes: "President-Elect annual dues paid.",
+    emailLastSent: "2025-10-04"
+  }
 ];
 
 export const AuthProvider = ({ children }) => {
+  // Sandbox & Email Rerouting Configuration
+  const isSandboxMode = true;
+  const testEmailTarget = "dev@bajanthings.biz";
+  const testWhatsAppTarget = "12468366185";
+
   // Current user state (with try-catch safety)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -133,19 +250,36 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Please provide both email and password.' };
     }
 
-    const nameFromEmail = email.split('@')[0].replace('.', ' ');
-    const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-    const isTreasurerOrAdmin = email.includes('treasurer') || email.includes('admin') || email.includes('president');
+    const cleanEmail = email.toLowerCase().trim();
+    let name = 'Optimist Member';
+    let role = 'Member';
+    let avatar = '/avatars/president_placeholder.jpg';
+    let isTreasurer = false;
+
+    if (cleanEmail === 'treasurer@progressiveoptimist.org') {
+      name = 'Sharon Mohammed';
+      role = 'Club Treasurer & Admin';
+      avatar = '/avatars/treasurer_placeholder.jpg';
+      isTreasurer = true;
+    } else if (cleanEmail === 'president@progressiveoptimist.org') {
+      name = 'Richelle Lucas';
+      role = 'Club President & Admin';
+      avatar = '/avatars/president_placeholder.jpg';
+      isTreasurer = true;
+    } else {
+      const nameFromEmail = cleanEmail.split('@')[0].replace('.', ' ');
+      name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+    }
 
     const userObj = {
-      email,
-      name: formattedName || 'Optimist Member',
-      role: isTreasurerOrAdmin ? 'Treasurer / Admin' : 'Member',
-      isTreasurer: isTreasurerOrAdmin,
-      memberId: 'POCB-' + Math.floor(1000 + Math.random() * 9000),
+      email: cleanEmail,
+      name,
+      role,
+      isTreasurer,
+      memberId: cleanEmail === 'treasurer@progressiveoptimist.org' ? '78008-0152' : '78008-' + Math.floor(1000 + Math.random() * 9000),
       duesStatus: 'Active Member in Good Standing (2025/2026)',
       joinedDate: '2022',
-      avatar: isTreasurerOrAdmin ? `/avatars/treasurer_placeholder.jpg` : `/avatars/president_placeholder.jpg`
+      avatar
     };
 
     setCurrentUser(userObj);
@@ -162,7 +296,7 @@ export const AuthProvider = ({ children }) => {
       name: `${formData.firstName} ${formData.lastName}`,
       phone: formData.phone,
       role: 'Member',
-      memberId: 'POCB-' + Math.floor(1000 + Math.random() * 9000),
+      memberId: '78008-' + Math.floor(1000 + Math.random() * 9000),
       duesStatus: 'Pending Dues Payment',
       joinedDate: new Date().getFullYear().toString(),
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.email)}`
@@ -170,7 +304,21 @@ export const AuthProvider = ({ children }) => {
 
     setCurrentUser(userObj);
     setMemberRoster(prev => [
-      { id: userObj.memberId, name: userObj.name, email: userObj.email, role: 'Member', duesStatus: 'Pending Dues Payment', lastPaymentDate: 'None', amountPaid: '$0.00 Outstanding' },
+      {
+        id: userObj.memberId,
+        name: userObj.name,
+        email: userObj.email,
+        role: 'Member',
+        fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
+        duesRate: '$250.00 BBD',
+        amountPaid: '$0.00 BBD',
+        balanceDue: '$250.00 BBD',
+        paymentMethod: 'Pending',
+        duesStatus: 'Pending Dues Payment',
+        lastPaymentDate: 'None',
+        notes: 'New member application submitted.',
+        emailLastSent: 'None'
+      },
       ...prev
     ]);
 
@@ -191,14 +339,50 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Treasurer updates member dues status in central roster
-  const updateMemberDuesByTreasurer = (memberId, newStatus, paymentAmount = "$100 BBD") => {
+  const updateMemberDuesByTreasurer = (memberId, newStatus, amountPaid = "$250.00 BBD", paymentMethod = "Bank Transfer") => {
     const today = new Date().toISOString().split('T')[0];
+    const isPaid = newStatus.includes('Active');
     setMemberRoster(prev => prev.map(m => {
       if (m.id === memberId) {
-        return { ...m, duesStatus: newStatus, lastPaymentDate: today, amountPaid: paymentAmount };
+        return {
+          ...m,
+          duesStatus: newStatus,
+          lastPaymentDate: today,
+          amountPaid: isPaid ? "$250.00 BBD" : "$0.00 BBD",
+          balanceDue: isPaid ? "$0.00 BBD" : "$250.00 BBD",
+          paymentMethod
+        };
       }
       return m;
     }));
+  };
+
+  // Treasurer updates member notes
+  const updateMemberNotesByTreasurer = (memberId, newNotes) => {
+    setMemberRoster(prev => prev.map(m => {
+      if (m.id === memberId) {
+        return { ...m, notes: newNotes };
+      }
+      return m;
+    }));
+  };
+
+  // Treasurer sends Email Statement (Rerouted strictly to dev@bajanthings.biz)
+  const sendDuesStatementEmail = (memberIds) => {
+    const today = new Date().toISOString().split('T')[0];
+    const ids = Array.isArray(memberIds) ? memberIds : [memberIds];
+    
+    setMemberRoster(prev => prev.map(m => {
+      if (ids.includes(m.id)) {
+        return { ...m, emailLastSent: today };
+      }
+      return m;
+    }));
+
+    return {
+      success: true,
+      message: `[SANDBOX ACTIVE] Dues statement email(s) for ${ids.length} member(s) generated and rerouted strictly to ${testEmailTarget}.`
+    };
   };
 
   const logout = () => {
@@ -253,12 +437,17 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
+        isSandboxMode,
+        testEmailTarget,
+        testWhatsAppTarget,
         currentUser,
         login,
         registerMember,
         updateDuesStatus,
         memberRoster,
         updateMemberDuesByTreasurer,
+        updateMemberNotesByTreasurer,
+        sendDuesStatementEmail,
         logout,
         projects,
         addProject,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award } from 'lucide-react';
+import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award, BookOpen } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -43,7 +43,7 @@ export const Footer = () => {
                 Progressive Optimist
               </h4>
               <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
-                Club of Barbados
+                Club of Barbados (# 78008)
               </p>
             </div>
           </div>
@@ -65,6 +65,12 @@ export const Footer = () => {
             <li>
               <Link to="/about" className="hover:text-amber-300 transition-colors">
                 Who We Are & Mission
+              </Link>
+            </li>
+            <li>
+              <Link to="/directory" className="hover:text-amber-300 transition-colors text-amber-300 font-bold flex items-center gap-1">
+                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                <span>Club Roster Directory (21 Members)</span>
               </Link>
             </li>
             <li>
@@ -103,7 +109,7 @@ export const Footer = () => {
           <ul className="space-y-2.5 text-xs text-slate-300">
             <li className="p-2 rounded-xl bg-slate-800/80 border border-slate-700">
               <strong className="block text-white">Local Barbados Clubs</strong>
-              <span className="text-[10px] text-slate-400">Progressive, Bridgetown, St. Michael, South</span>
+              <span className="text-[10px] text-slate-400">Progressive (# 78008), Bridgetown, St. Michael, South</span>
             </li>
             <li>
               <a
@@ -112,7 +118,7 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 className="hover:text-amber-300 transition-colors flex items-center justify-between group"
               >
-                <span>Caribbean District 43</span>
+                <span>Caribbean District 78</span>
                 <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-amber-300" />
               </a>
             </li>

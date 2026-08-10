@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock, Building2, Copy } from 'lucide-react';
 
 export const ContactPage = () => {
   const [form, setForm] = useState({
@@ -9,6 +9,22 @@ export const ContactPage = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+
+  const bankDetails = {
+    bank: "Scotiabank",
+    accountName: "Progressive Optimist",
+    accountNum: "000451801",
+    branch: "Haggatt Hall",
+    routing: "66555"
+  };
+
+  const copyBankInfo = () => {
+    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nTransit/Routing #: ${bankDetails.routing}`;
+    navigator.clipboard.writeText(text);
+    setCopiedBankInfo(true);
+    setTimeout(() => setCopiedBankInfo(false), 3000);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -62,6 +78,27 @@ export const ContactPage = () => {
                 <Mail className="w-4 h-4 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
                 <span><strong>Postal:</strong> The CEO, LESC, Two Mile Hill, St. Michael, Barbados</span>
               </div>
+            </div>
+          </div>
+
+          {/* Official Bank Deposit Card */}
+          <div className="p-6 rounded-3xl bg-slate-900 text-white border border-amber-400/40 space-y-3 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-bold text-white flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-amber-400" />
+                Bank Transfer & Dues Info
+              </h3>
+              <button onClick={copyBankInfo} className="text-[10px] text-amber-300 font-bold hover:underline">
+                {copiedBankInfo ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+
+            <div className="text-xs space-y-1.5 font-mono text-slate-300 bg-slate-800/90 p-4 rounded-2xl border border-slate-700">
+              <p><strong>Bank:</strong> {bankDetails.bank}</p>
+              <p><strong>Account Name:</strong> {bankDetails.accountName}</p>
+              <p><strong>Account #:</strong> <span className="text-emerald-400 font-bold">{bankDetails.accountNum}</span></p>
+              <p><strong>Branch:</strong> {bankDetails.branch}</p>
+              <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{bankDetails.routing}</span></p>
             </div>
           </div>
 

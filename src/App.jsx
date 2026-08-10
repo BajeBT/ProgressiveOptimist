@@ -11,6 +11,7 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { BarbadosClubsPage } from './pages/BarbadosClubsPage';
 import { HierarchyPage } from './pages/HierarchyPage';
 import { MembershipPage } from './pages/MembershipPage';
+import { MembershipDirectoryPage } from './pages/MembershipDirectoryPage';
 import { DonatePage } from './pages/DonatePage';
 import { ContactPage } from './pages/ContactPage';
 
@@ -73,6 +74,7 @@ export function App() {
                 <Route path="/barbados-clubs" element={<BarbadosClubsPage />} />
                 <Route path="/hierarchy" element={<HierarchyPage />} />
                 <Route path="/membership" element={<MembershipPage onOpenPostModal={() => setIsPostModalOpen(true)} />} />
+                <Route path="/directory" element={<MembershipDirectoryPage />} />
                 <Route path="/donate" element={<DonatePage />} />
                 <Route path="/contact" element={<ContactPage />} />
               </Routes>

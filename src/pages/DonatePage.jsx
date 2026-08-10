@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check } from 'lucide-react';
+import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check, Building2, Copy } from 'lucide-react';
 
 export const DonatePage = () => {
   const [selectedTier, setSelectedTier] = useState(50);
@@ -7,6 +7,22 @@ export const DonatePage = () => {
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [donationSuccess, setDonationSuccess] = useState(false);
+  const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+
+  const bankDetails = {
+    bank: "Scotiabank",
+    accountName: "Progressive Optimist",
+    accountNum: "000451801",
+    branch: "Haggatt Hall",
+    routing: "66555"
+  };
+
+  const copyBankInfo = () => {
+    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nTransit/Routing #: ${bankDetails.routing}`;
+    navigator.clipboard.writeText(text);
+    setCopiedBankInfo(true);
+    setTimeout(() => setCopiedBankInfo(false), 3000);
+  };
 
   const tiers = [
     { amount: 25, label: "Supporter", desc: "Provides educational books and school supplies for students" },
@@ -35,6 +51,58 @@ export const DonatePage = () => {
           <p className="text-slate-300 text-xs sm:text-base leading-relaxed">
             Your generous contributions support the Family Support Fund, RISE Summer Program, Easter Cheer Kite giveaways, school supply kits, and community youth initiatives across Barbados.
           </p>
+        </div>
+      </div>
+
+      {/* OFFICIAL SCOTIABANK BANK TRANSFER INFORMATION BOX */}
+      <div className="p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-optimist-navy to-slate-900 text-white border border-amber-400/40 shadow-2xl space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+              <Building2 className="w-3.5 h-3.5" /> Official Bank Transfer & Deposit Details
+            </span>
+            <h2 className="font-heading text-2xl font-black text-white">
+              Pay Dues or Donate via Bank Transfer / Deposit
+            </h2>
+            <p className="text-xs text-slate-300">
+              Direct bank transfers can be sent to our official Scotiabank Barbados account details below:
+            </p>
+          </div>
+
+          <button
+            onClick={copyBankInfo}
+            className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
+          >
+            <Copy className="w-4 h-4" />
+            <span>{copiedBankInfo ? 'Copied Bank Details!' : 'Copy Bank Details'}</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Bank Name</span>
+            <strong className="text-sm font-heading font-black text-white">{bankDetails.bank}</strong>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Account Name</span>
+            <strong className="text-sm font-heading font-black text-amber-300">{bankDetails.accountName}</strong>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Account Number</span>
+            <strong className="text-sm font-mono font-black text-emerald-400">{bankDetails.accountNum}</strong>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Branch Name</span>
+            <strong className="text-sm font-heading font-black text-white">{bankDetails.branch}</strong>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Transit / Routing #</span>
+            <strong className="text-sm font-mono font-black text-amber-300">{bankDetails.routing}</strong>
+          </div>
         </div>
       </div>
 
