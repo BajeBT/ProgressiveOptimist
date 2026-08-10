@@ -16,11 +16,13 @@ import {
   Upload,
   Calendar,
   Award,
-  Download
+  Download,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
-  const { currentUser, login, registerMember, logout, projects, memberGallery, addGalleryPhoto } = useAuth();
+  const { currentUser, login, registerMember, updateDuesStatus, logout, projects, memberGallery, addGalleryPhoto } = useAuth();
   
   // Auth state tabs (when logged out)
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'apply'
@@ -51,6 +53,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [photoCaption, setPhotoCaption] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState(null);
+  
+  // Dues payment status message state
+  const [duesPaymentMsg, setDuesPaymentMsg] = useState(false);
 
   // Handle Demo Login
   const handleDemoLogin = () => {
@@ -72,6 +77,11 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     if (res.success) {
       setAppSuccess(true);
     }
+  };
+
+  const handlePayDues = () => {
+    updateDuesStatus('Active Member in Good Standing (2025/2026)');
+    setDuesPaymentMsg(true);
   };
 
   const handlePhotoUpload = (e) => {
@@ -116,7 +126,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-20 h-20 rounded-2xl bg-slate-800 border-2 border-optimist-gold p-1 shadow-lg"
+              className="w-20 h-20 rounded-2xl bg-slate-800 border-2 border-optimist-gold p-1 shadow-lg object-cover"
             />
             <div>
               <div className="flex items-center gap-2">
@@ -318,21 +328,105 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
         {/* Tab 4: Dues Record */}
         {dashboardTab === 'dues' && (
-          <div className="p-6 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-4 max-w-xl">
-            <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-amber-400" />
-              Annual Membership Dues Status
-            </h2>
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                Active Member in Good Standing (2025/2026)
-              </span>
-              <span>$0.00 Outstanding</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="p-6 sm:p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-5 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-amber-400" />
+                    Annual Membership Dues Record
+                  </h2>
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                    2025 / 2026 Fiscal Year
+                  </span>
+                </div>
+
+                {duesPaymentMsg ? (
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-xs font-bold text-emerald-900 dark:text-emerald-200 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      <span>Dues Record Updated Successfully!</span>
+                    </div>
+                    <p className="font-normal text-slate-600 dark:text-slate-300">
+                      Your status is now <strong>Active Member in Good Standing (2025/2026)</strong>. A formal receipt has been emailed to <strong>{currentUser.email}</strong>.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      {currentUser.duesStatus}
+                    </span>
+                    <span>$0.00 Outstanding</span>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-2">
+                  <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                    Update / Pay Annual Membership Dues ($100 BBD)
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Annual dues support club operations, Caribbean District registration, and student mentorship projects across Barbados.
+                  </p>
+
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handlePayDues}
+                      className="px-5 py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow hover:brightness-110 transition-all flex items-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Pay Dues & Update Record ($100 BBD)</span>
+                    </button>
+
+                    <button
+                      onClick={() => updateDuesStatus('Pending Dues Payment')}
+                      className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors"
+                    >
+                      Set Dues Pending (Testing)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dues History Log */}
+              <div className="p-6 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-4">
+                <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                  Recent Dues Payment History
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div>
+                      <strong className="block text-slate-900 dark:text-white">2025/2026 Annual Dues</strong>
+                      <span className="text-slate-400">Processed via Member Portal</span>
+                    </div>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$100.00 BBD Paid</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div>
+                      <strong className="block text-slate-900 dark:text-white">2024/2025 Annual Dues</strong>
+                      <span className="text-slate-400">Processed October 2024</span>
+                    </div>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$100.00 BBD Paid</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Annual dues support club operational expenses, Caribbean District registration, and school outreach materials in Barbados.
-            </p>
+
+            {/* Right Side: Treasurer Contact & Payment Info */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 space-y-4 shadow-xl">
+                <div className="flex items-center space-x-3">
+                  <img src="/avatars/treasurer_placeholder.jpg" alt="Treasurer" className="w-12 h-12 rounded-full border border-amber-400 object-cover" />
+                  <div>
+                    <h4 className="font-heading font-bold text-sm text-white">Sharon Mohammed</h4>
+                    <span className="text-[10px] text-amber-400 uppercase font-bold">Club Treasurer</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  For bank transfer details, check payments, or treasurer receipts, contact <strong>treasurer@progressiveoptimist.org</strong>.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

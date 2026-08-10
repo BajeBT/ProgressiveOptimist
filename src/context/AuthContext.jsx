@@ -113,9 +113,9 @@ export const AuthProvider = ({ children }) => {
       name: formattedName || 'Optimist Member',
       role: email.includes('admin') || email.includes('president') ? 'Admin' : 'Member',
       memberId: 'POCB-' + Math.floor(1000 + Math.random() * 9000),
-      duesStatus: 'Active (2025/2026)',
+      duesStatus: 'Active Member in Good Standing (2025/2026)',
       joinedDate: '2022',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`
+      avatar: `/avatars/president_placeholder.jpg`
     };
 
     setCurrentUser(userObj);
@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }) => {
       role: 'Member',
       memberId: 'POCB-' + Math.floor(1000 + Math.random() * 9000),
       duesStatus: 'Pending Dues Payment',
-      joinedDate: '2025',
+      joinedDate: new Date().getFullYear().toString(),
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.email)}`
     };
 
@@ -143,6 +143,16 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('optimist_user', JSON.stringify(userObj));
     } catch (e) {}
     return { success: true, user: userObj };
+  };
+
+  // Update member dues record
+  const updateDuesStatus = (newStatus = 'Active Member in Good Standing (2025/2026)') => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, duesStatus: newStatus };
+    setCurrentUser(updated);
+    try {
+      localStorage.setItem('optimist_user', JSON.stringify(updated));
+    } catch (e) {}
   };
 
   const logout = () => {
@@ -200,6 +210,7 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         login,
         registerMember,
+        updateDuesStatus,
         logout,
         projects,
         addProject,
