@@ -1,0 +1,440 @@
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import {
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  PlusCircle,
+  Menu,
+  X,
+  ChevronDown,
+  Globe,
+  Award,
+  Heart,
+  Laptop,
+  Users,
+  Shield,
+  FileText,
+  Calendar,
+  Layers,
+  Sparkles
+} from 'lucide-react';
+
+export const Navbar = ({ onOpenPostModal }) => {
+  const { currentUser, logout, isDarkMode, toggleDarkMode } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md shadow-sm border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      
+      {/* 1. TOP ANNOUNCEMENT & UTILITY BAR */}
+      <div className="bg-gradient-to-r from-optimist-blue via-optimist-royal to-slate-900 text-white text-xs py-2 px-4 border-b border-amber-400/20">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          
+          {/* Left: District Theme */}
+          <div className="flex items-center space-x-3 shrink-0">
+            <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              District 43
+            </span>
+            <span className="hidden md:inline text-blue-100 font-medium">
+              Theme: <strong className="text-amber-300 font-bold">C.A.R.E – Championing Authentic & Reinvigorating Engagement</strong>
+            </span>
+          </div>
+
+          {/* Right: Global Network Links */}
+          <div className="flex items-center space-x-4 font-semibold text-[11px] shrink-0">
+            <a
+              href="https://oicaribbean.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-amber-300 transition-colors flex items-center gap-1"
+            >
+              <Globe className="w-3.5 h-3.5 text-blue-300" />
+              <span className="hidden sm:inline">Caribbean District</span>
+            </a>
+            <span className="text-blue-300/40">•</span>
+            <a
+              href="https://optimist.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-amber-300 transition-colors flex items-center gap-1"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">Optimist International</span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 2. MAIN HEADER NAVIGATION BAR */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          
+          {/* Brand Logo & Name */}
+          <Link to="/" className="flex items-center space-x-3 group shrink-0">
+            <img
+              src="/logo.png"
+              alt="Progressive Optimist Club of Barbados"
+              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="hidden sm:block">
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-lg font-extrabold tracking-tight text-slate-900 dark:text-white group-hover:text-optimist-blue transition-colors">
+                  Progressive Optimist
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-optimist-blue dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  Barbados
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Bringing Out The Best In Children
+              </p>
+            </div>
+          </Link>
+
+          {/* Uniform Center Navigation Bar */}
+          <nav className="hidden lg:flex items-center space-x-1">
+            
+            {/* Nav 1: Home */}
+            <Link
+              to="/"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                isActive('/')
+                  ? 'bg-optimist-blue text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Home
+            </Link>
+
+            {/* Nav 2: About Us Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setActiveDropdown('about')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <Link
+                to="/about"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
+                  isActive('/about')
+                    ? 'bg-optimist-blue text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>About Us</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </Link>
+
+              {activeDropdown === 'about' && (
+                <div className="absolute top-full left-0 w-64 pt-2 z-50">
+                  <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-1">
+                    <Link
+                      to="/about"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Users className="w-4 h-4 text-optimist-blue group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">Who We Are & Mission</strong>
+                        <span className="text-[10px] text-slate-500">History & Optimist Creed</span>
+                      </div>
+                    </Link>
+                    <Link
+                      to="/about"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Award className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">Board & Leadership</strong>
+                        <span className="text-[10px] text-slate-500">Officers & Past Presidents</span>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nav 3: Projects & Activities Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setActiveDropdown('projects')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <Link
+                to="/projects"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
+                  isActive('/projects')
+                    ? 'bg-optimist-blue text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>Projects & Work</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </Link>
+
+              {activeDropdown === 'projects' && (
+                <div className="absolute top-full left-0 w-64 pt-2 z-50">
+                  <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-1">
+                    <Link
+                      to="/projects"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Sparkles className="w-4 h-4 text-optimist-blue group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">RISE Summer Experience</strong>
+                        <span className="text-[10px] text-slate-500">Youth Mentorship & Life Skills</span>
+                      </div>
+                    </Link>
+                    <Link
+                      to="/projects"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Heart className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">Easter Cheer Giveaway</strong>
+                        <span className="text-[10px] text-slate-500">Primary School Kites & Cheer</span>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nav 4: Barbados & Global Network */}
+            <div
+              className="relative"
+              onMouseEnter={() => setActiveDropdown('network')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <Link
+                to="/barbados-clubs"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
+                  isActive('/barbados-clubs') || isActive('/hierarchy')
+                    ? 'bg-optimist-blue text-white shadow-md'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span>Optimist Network</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </Link>
+
+              {activeDropdown === 'network' && (
+                <div className="absolute top-full left-0 w-72 pt-2 z-50">
+                  <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-1">
+                    <Link
+                      to="/barbados-clubs"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Shield className="w-4 h-4 text-optimist-blue group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">Barbados Clubs Directory</strong>
+                        <span className="text-[10px] text-slate-500">Bridgetown, St. Michael, South</span>
+                      </div>
+                    </Link>
+                    <Link
+                      to="/hierarchy"
+                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
+                    >
+                      <Layers className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                      <div>
+                        <strong className="block text-xs text-slate-900 dark:text-white">District & Global Hierarchy</strong>
+                        <span className="text-[10px] text-slate-500">Local • Caribbean • International</span>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nav 5: Donations & Fundraiser */}
+            <Link
+              to="/donate"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isActive('/donate')
+                  ? 'bg-optimist-blue text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Heart className="w-3.5 h-3.5 text-optimist-gold fill-optimist-gold" />
+              <span>Donate</span>
+            </Link>
+
+            {/* Nav 6: Membership */}
+            <Link
+              to="/membership"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                isActive('/membership')
+                  ? 'bg-optimist-blue text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Membership
+            </Link>
+
+            {/* Nav 7: Contact */}
+            <Link
+              to="/contact"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                isActive('/contact')
+                  ? 'bg-optimist-blue text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Contact
+            </Link>
+
+          </nav>
+
+          {/* Right Controls & Member Actions */}
+          <div className="flex items-center space-x-3">
+            
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            </button>
+
+            {/* Logged In Member vs Logged Out Member Action */}
+            {currentUser ? (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={onOpenPostModal}
+                  className="hidden sm:flex items-center space-x-1.5 gold-gradient text-slate-950 px-3.5 py-2 rounded-xl font-bold text-xs shadow hover:brightness-110 transition-all"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>+ Post Project</span>
+                </button>
+
+                <Link
+                  to="/membership"
+                  className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-xl transition-colors"
+                >
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-7 h-7 rounded-full bg-optimist-blue"
+                  />
+                  <span className="text-xs font-bold max-w-[80px] truncate hidden xl:inline">
+                    {currentUser.name}
+                  </span>
+                </Link>
+
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/membership"
+                className="flex items-center space-x-1.5 bg-optimist-blue hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all border border-blue-400/30"
+              >
+                <User className="w-4 h-4 text-amber-300" />
+                <span>Member Portal</span>
+              </Link>
+            )}
+
+            {/* Mobile Drawer Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* MOBILE DRAWER */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pt-3 pb-6 space-y-2">
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Home
+          </Link>
+          <Link
+            to="/about"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            About Us
+          </Link>
+          <Link
+            to="/projects"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Projects & Work
+          </Link>
+          <Link
+            to="/barbados-clubs"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Barbados Clubs Directory
+          </Link>
+          <Link
+            to="/hierarchy"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            District & Global Hierarchy
+          </Link>
+          <Link
+            to="/donate"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Donate & Sponsorships
+          </Link>
+          <Link
+            to="/membership"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Member Portal
+          </Link>
+          <Link
+            to="/contact"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Contact Us
+          </Link>
+
+          {currentUser && (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenPostModal();
+              }}
+              className="w-full mt-2 flex items-center justify-center space-x-2 royal-gradient text-white py-3 rounded-xl font-bold text-sm shadow"
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span>Post New Project / Activity</span>
+            </button>
+          )}
+        </div>
+      )}
+
+    </header>
+  );
+};
