@@ -83,6 +83,7 @@ const initialRoster = [
     name: "Edwin Workman",
     email: "edwin@jillandee.com",
     role: "OI Representative",
+    password: "Eww!POCB2010",
     fiscalYear: "2025/2026 (Oct 1 - Sep 30)",
     duesRate: "$250.00 BBD",
     amountPaid: "$250.00 BBD",

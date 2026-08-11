@@ -286,13 +286,14 @@ async function initializeDatabase() {
       }
 
       await sql`
-        INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar, access)
+        INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar, access, password)
         VALUES (
           ${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, 
           ${m.joinDate}, ${m.sponsor}, ${m.role}, 
           ${m.id === '78008-0152'}, ${m.id === '78008-0150'},
           ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`},
-          ${access}
+          ${access},
+          ${emailLower === 'edwin@jillandee.com' ? 'Eww!POCB2010' : null}
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
@@ -300,7 +301,8 @@ async function initializeDatabase() {
           phone = EXCLUDED.phone,
           address = EXCLUDED.address,
           role = EXCLUDED.role,
-          access = EXCLUDED.access;
+          access = EXCLUDED.access,
+          password = EXCLUDED.password;
       `;
 
       // Seed dues ledgers separately
