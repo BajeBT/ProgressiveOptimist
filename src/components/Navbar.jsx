@@ -58,7 +58,7 @@ export const Navbar = ({ onOpenPostModal }) => {
               District 78 (CAR) • Club # 78008
             </span>
 
-            {dbConnected && (
+            {isSandboxMode && dbConnected && (
               <span className="hidden sm:inline-flex items-center gap-1 font-extrabold text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <Database className="w-3 h-3 text-emerald-400" />
                 Neon DB Live
@@ -105,27 +105,13 @@ export const Navbar = ({ onOpenPostModal }) => {
       {/* 2. MAIN HEADER NAVIGATION BAR */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          
-          {/* Brand Logo & Name */}
-          <Link to="/" className="flex items-center space-x-3 group shrink-0">
+           {/* Brand Logo & Name */}
+          <Link to="/" className="flex items-center space-x-3 group shrink-0 mr-12 md:mr-16 lg:mr-20">
             <img
               src="/logo.png"
               alt="Progressive Optimist Club of Barbados"
               className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
             />
-            <div className="hidden sm:block">
-              <div className="flex items-center gap-1.5">
-                <span className="font-heading text-lg font-extrabold tracking-tight text-slate-900 dark:text-white group-hover:text-optimist-blue transition-colors">
-                  Progressive Optimist
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-optimist-blue dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  Barbados
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Bringing Out The Best In Children
-              </p>
-            </div>
           </Link>
 
           {/* Uniform Center Navigation Bar */}
@@ -265,7 +251,7 @@ export const Navbar = ({ onOpenPostModal }) => {
                       <BookOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
                       <div>
                         <strong className="block text-xs text-slate-900 dark:text-white flex items-center gap-1">
-                          Progressive Optimist Directory <Lock className="w-3 h-3 text-amber-500" />
+                          Progressive Optimist Directory <Lock className="w-3.5 h-3.5 text-amber-500" />
                         </strong>
                         <span className="text-[10px] text-slate-500">Members Only Roster</span>
                       </div>
@@ -346,50 +332,15 @@ export const Navbar = ({ onOpenPostModal }) => {
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
 
-            {/* Logged In Member vs Logged Out Member Action */}
+            {/* Main Nav Session actions */}
             {currentUser ? (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={onOpenPostModal}
-                  className="hidden sm:flex items-center space-x-1.5 gold-gradient text-slate-950 px-3.5 py-2 rounded-xl font-bold text-xs shadow hover:brightness-110 transition-all"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>+ Post Project</span>
-                </button>
-
-                { (currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
-                  <Link
-                    to="/admin"
-                    className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 px-3 py-2 rounded-xl font-bold text-xs shadow transition-all"
-                    title="Admin & Site Settings Console"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-amber-400" />
-                    <span className="hidden md:inline">Admin Settings</span>
-                  </Link>
-                )}
-
-                <Link
-                  to="/membership"
-                  className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 text-slate-950 px-3.5 py-2 rounded-xl font-extrabold text-xs shadow transition-all"
-                >
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-6 h-6 rounded-full bg-slate-900 object-cover"
-                  />
-                  <span className="text-xs font-black max-w-[90px] truncate hidden xl:inline">
-                    {currentUser.name}
-                  </span>
-                </Link>
-
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={logout}
+                className="hidden sm:inline-flex pl-2.5 pr-0 py-2.5 text-red-500 hover:text-red-400 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             ) : (
               <Link
                 to="/membership"
@@ -412,6 +363,55 @@ export const Navbar = ({ onOpenPostModal }) => {
 
         </div>
       </div>
+
+      {/* 3. LOGGED-IN UTILITY SUB-NAVBAR ROW */}
+      {currentUser && (
+        <div className="bg-slate-100/80 dark:bg-slate-900 border-t border-b border-slate-200 dark:border-slate-800 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            
+            {/* Left: Friendly greeting */}
+            <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium hidden sm:block">
+              Logged in as <strong className="text-slate-800 dark:text-slate-200">{currentUser.name}</strong> ({currentUser.role})
+            </div>
+
+            {/* Right: Relocated buttons (+Post Project, Admin Settings, Member Profile link) */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+              
+              <button
+                onClick={onOpenPostModal}
+                className="flex items-center space-x-1.5 gold-gradient text-slate-950 px-3.5 py-1.5 rounded-xl font-extrabold text-xs shadow hover:brightness-110 transition-all shrink-0"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Post Project</span>
+              </button>
+
+              { (currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
+                <Link
+                  to="/admin"
+                  className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 px-3 py-1.5 rounded-xl font-bold text-xs shadow transition-all shrink-0"
+                  title="Admin & Site Settings Console"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  <span>Admin Settings</span>
+                </Link>
+              )}
+
+              <Link
+                to="/membership"
+                className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-xl font-extrabold text-xs shadow transition-all shrink-0"
+              >
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-5 h-5 rounded-full bg-slate-900 object-cover"
+                />
+                <span>{currentUser.name}</span>
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* MOBILE DRAWER */}
       {mobileMenuOpen && (
