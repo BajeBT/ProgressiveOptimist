@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export const Navbar = ({ onOpenPostModal }) => {
-  const { currentUser, logout, isDarkMode, toggleDarkMode, isSandboxMode, testEmailTarget, dbConnected } = useAuth();
+  const { currentUser, logout, isDarkMode, toggleDarkMode, isSandboxMode, testEmailTarget, dbConnected, siteSettings } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
@@ -66,7 +66,7 @@ export const Navbar = ({ onOpenPostModal }) => {
             )}
 
             <span className="hidden md:inline text-blue-100 font-medium">
-              Theme: <strong className="text-amber-300 font-bold">C.A.R.E – Championing Authentic & Reinvigorating Engagement</strong>
+              2025-26 Theme: <strong className="text-amber-300 font-bold">{siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement"}</strong>
             </span>
           </div>
 
@@ -351,7 +351,7 @@ export const Navbar = ({ onOpenPostModal }) => {
                 <span>+ Post Project</span>
               </button>
 
-              { (currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
+              { (currentUser.access === 'super admin' || currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
                 <Link
                   to="/admin"
                   className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 px-3 py-1.5 rounded-xl font-bold text-xs shadow transition-all shrink-0"

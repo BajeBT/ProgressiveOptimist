@@ -51,6 +51,7 @@ export const AdminSettingsPage = () => {
   const [supportEmail, setSupportEmail] = useState(siteSettings?.supportEmail || "info@progressiveoptimist.org");
   const [contactPhone, setContactPhone] = useState(siteSettings?.contactPhone || "+1 (246) 836-6185");
   const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$250.00");
+  const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
   
   // Primary Initiatives State
   const [initiativesList, setInitiativesList] = useState(primaryInitiatives || [
@@ -165,10 +166,10 @@ export const AdminSettingsPage = () => {
       meetingVenue,
       supportEmail,
       contactPhone,
-      annualDuesRate
+      annualDuesRate,
+      themeTitle
     });
-    updatePrimaryInitiatives(initiativesList);
-    setStatusMsg("Site variables and primary initiatives updated successfully!");
+    setStatusMsg("Site variables updated successfully!");
     setTimeout(() => setStatusMsg(''), 4000);
   };
 
@@ -256,7 +257,7 @@ export const AdminSettingsPage = () => {
               }`}
             >
               <Users className="w-4 h-4" />
-              <span>Member Access & Permissions Matrix ({memberRoster.length})</span>
+              <span>Member Records ({memberRoster.length})</span>
             </button>
           </>
         )}
@@ -327,6 +328,19 @@ export const AdminSettingsPage = () => {
                 />
               </div>
 
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Club Theme Title (2025-26) *
+                </label>
+                <input
+                  type="text"
+                  value={themeTitle}
+                  onChange={e => setThemeTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
                   Official Support Email *
@@ -355,14 +369,24 @@ export const AdminSettingsPage = () => {
             </div>
 
             {/* Sandbox Status Box */}
-            <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/40 text-xs flex items-center justify-between text-amber-900 dark:text-amber-200">
+            <div className={`p-4 rounded-2xl border text-xs flex items-center justify-between transition-colors ${
+              isSandboxMode 
+                ? 'bg-amber-400/10 border-amber-400/40 text-amber-900 dark:text-amber-200'
+                : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+            }`}>
               <div className="flex items-center space-x-3">
-                <TestTube className="w-5 h-5 text-amber-500 shrink-0" />
+                {isSandboxMode ? <TestTube className="w-5 h-5 text-amber-500 shrink-0" /> : <ShieldCheck className="w-5 h-5 text-slate-400 shrink-0" />}
                 <div>
-                  <strong>Sandbox Mode Active</strong>: All test emails are automatically rerouted to <u>{testEmailTarget}</u>.
+                  <strong>Sandbox Mode</strong>: {isSandboxMode ? `Active (All test emails are automatically rerouted to ${testEmailTarget}).` : `Inactive (Standard delivery routing engaged).`}
                 </div>
               </div>
-              <span className="font-extrabold text-[10px] uppercase px-2.5 py-0.5 rounded bg-amber-400 text-slate-950">Active</span>
+              <span className={`font-extrabold text-[10px] uppercase px-2.5 py-0.5 rounded ${
+                isSandboxMode 
+                  ? 'bg-amber-400 text-slate-950' 
+                  : 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {isSandboxMode ? 'Active' : 'Inactive'}
+              </span>
             </div>
 
             <div className="pt-2 flex justify-end">
@@ -388,7 +412,7 @@ export const AdminSettingsPage = () => {
               <div>
                 <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Users className="w-5 h-5 text-optimist-blue" />
-                  Member Permissions & Access Control Matrix
+                  Member Records & Access Control
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Grant or restrict specific access rights for all 21 active club members (e.g. Treasurer Console access, initiative editing, project posting).
@@ -425,10 +449,11 @@ export const AdminSettingsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {filteredRoster.map((m) => {
+                    const isSuperAdminUser = m.access === 'super admin' || m.email === 'edwin@jillandee.com' || m.email === 'richelle.lucas16@gmail.com';
                     const isTreasurerUser = m.email === 'sharon@topaz-bb.com' || m.id === '78008-0152';
-                    const isPresidentUser = m.email === 'richelle.lucas16@gmail.com' || m.id === '78008-0150';
-                    const hasTreasurerAccess = isTreasurerUser || isPresidentUser || Boolean(m.hasTreasurerConsoleAccess);
-                    const hasInitiativeAccess = isTreasurerUser || isPresidentUser || Boolean(m.hasInitiativeAccess);
+                    const isPresidentUser = m.email === 'richelle.lucas16@gmail.com' || m.id === '78008-0150' || isSuperAdminUser;
+                    const hasTreasurerAccess = isSuperAdminUser || isTreasurerUser || isPresidentUser || Boolean(m.hasTreasurerConsoleAccess);
+                    const hasInitiativeAccess = isSuperAdminUser || isTreasurerUser || isPresidentUser || Boolean(m.hasInitiativeAccess);
                     const canPublishProjects = true; // All active members can post projects
 
                     return (
@@ -440,7 +465,7 @@ export const AdminSettingsPage = () => {
 
                         <td className="p-4 text-left">
                           <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase text-left block w-fit leading-relaxed ${
-                            isPresidentUser || isTreasurerUser
+                            isPresidentUser || isTreasurerUser || isSuperAdminUser
                               ? 'gold-gradient text-slate-950'
                               : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                           }`}>
@@ -451,12 +476,13 @@ export const AdminSettingsPage = () => {
                         {/* Treasurer Console Access Toggle */}
                         <td className="p-4 text-left">
                           <button
-                            onClick={() => handleTogglePermission(m.id, 'hasTreasurerConsoleAccess', hasTreasurerAccess)}
+                            onClick={() => !isSuperAdminUser && handleTogglePermission(m.id, 'hasTreasurerConsoleAccess', hasTreasurerAccess)}
+                            disabled={isSuperAdminUser || !['super admin', 'finance'].includes(userAccess)}
                             className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
                               hasTreasurerAccess
                                 ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
                                 : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300'
-                            }`}
+                            } ${isSuperAdminUser || !['super admin', 'finance'].includes(userAccess) ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             {hasTreasurerAccess ? <Check className="w-3 h-3 text-emerald-500" /> : <X className="w-3 h-3 text-slate-400" />}
                             {hasTreasurerAccess ? 'Authorized' : 'Restricted'}
@@ -495,19 +521,21 @@ export const AdminSettingsPage = () => {
                             </button>
                           ) : (
                             <select
-                              value={m.access || 'member'}
-                              onChange={e => updateMemberPermissions(m.id, 'access', e.target.value)}
-                              disabled={!['super admin', 'finance'].includes(userAccess)}
-                              className={`px-2.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] outline-none font-semibold text-slate-800 dark:text-slate-200 ${
-                                !['super admin', 'finance'].includes(userAccess) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-                              }`}
-                            >
-                              <option value="super admin">super admin</option>
-                              <option value="finance">finance</option>
-                              <option value="admin">admin</option>
-                              <option value="moderator">moderator</option>
-                              <option value="member">member</option>
-                            </select>
+                               value={m.access || 'member'}
+                               onChange={e => updateMemberPermissions(m.id, 'access', e.target.value)}
+                               disabled={m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)}
+                               className={`px-2.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] outline-none font-semibold text-slate-800 dark:text-slate-200 ${
+                                 (m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                               }`}
+                             >
+                               {(userAccess === 'super admin' || m.access === 'super admin') && (
+                                 <option value="super admin">super admin</option>
+                               )}
+                               <option value="finance">finance</option>
+                               <option value="admin">admin</option>
+                               <option value="moderator">moderator</option>
+                               <option value="member">member</option>
+                             </select>
                           )}
                         </td>
 
@@ -714,12 +742,14 @@ export const AdminSettingsPage = () => {
                   <select
                     value={editForm.access}
                     onChange={e => setEditForm({ ...editForm, access: e.target.value })}
-                    disabled={!['super admin', 'finance'].includes(userAccess)}
+                    disabled={selectedMemberToEdit?.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)}
                     className={`w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none font-semibold ${
-                      !['super admin', 'finance'].includes(userAccess) ? 'opacity-65 cursor-not-allowed' : 'cursor-pointer'
+                      (selectedMemberToEdit?.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-65 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
-                    <option value="super admin">super admin</option>
+                    {(userAccess === 'super admin' || selectedMemberToEdit?.access === 'super admin') && (
+                      <option value="super admin">super admin</option>
+                    )}
                     <option value="finance">finance</option>
                     <option value="admin">admin</option>
                     <option value="moderator">moderator</option>

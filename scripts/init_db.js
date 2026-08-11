@@ -4,27 +4,279 @@ const NEON_DB_URL = "postgresql://neondb_owner:npg_g3Y2MVzbDSrn@ep-cold-bird-axj
 const sql = neon(NEON_DB_URL);
 
 const all21Members = [
-  { id: "78008-0153", name: "Deborah Bayne", gender: "F", email: "deborahbayne46@gmail.com", phone: "+1 (246) 423-8636", address: "7 Pluma Close, Crane Haven, St. Philip, BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Board Director" },
-  { id: "78008-0022", name: "Sylvia A Blackman", gender: "F", email: "sylvia.blackman1@gmail.com", phone: "+1 (246) 420-1490 / 231-5085", address: "Lotus, Welches, Christ Church, BB17056 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Active Member" },
-  { id: "78008-0148", name: "Lisa Brome", gender: "F", email: "lisabrome@yahoo.com", phone: "+1 (246) 438-6612", address: "14 Bakers Tenantry, St. Peter, BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Active Member" },
-  { id: "78008-0052", name: "Maureen E Dottin", gender: "F", email: "mdottin@caribsurf.com", phone: "+1 (246) 425-4203", address: "Hothersal Turning, St. Michael, BB11038 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Foundation Rep-Elect" },
-  { id: "78008-0010", name: "Charmaine London", gender: "F", email: "londoncharms@hotmail.com", phone: "+1 (246) 425-1073 / 822-1925", address: "3rd Ave Grazettes, St. Michael, BB12033 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Club Secretary" },
-  { id: "78008-0150", name: "Richelle Lucas", gender: "F", email: "richelle.lucas16@gmail.com", phone: "+1 (246) 432-0995 / 230-0000", address: "#45 Vespera Gardens, Lancaster, St. James, BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Club President & Admin" },
-  { id: "78008-0152", name: "Sharon Mohammed", gender: "F", email: "sharon@topaz-bb.com", phone: "+1 (246) 427-0248", address: "Brathwaite Gap, Dayrells Road, Christ Church, BB14016 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Club Treasurer & Admin" },
-  { id: "78008-0038", name: "Cameron P Sobers", gender: "M", email: "Cposobers@gmail.com", phone: "+1 (246) 437-9790", address: "209 3rd Avenue, Rowans Park South, St. George, BB19036 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Board Director & President-Elect" },
-  { id: "78008-0021", name: "Edwin Workman", gender: "M", email: "edwin@jillandee.com", phone: "+1 (246) 425-0121 / 826-5120", address: "2 Jackson Terrace, St. Michael, BB14014 BB", joinDate: "05/27/2010", sponsor: "Charter Member", role: "Foundation Representative" },
-  { id: "78008-0121", name: "Omolara De Riggs-Morris", gender: "F", email: "onderiggs@hotmail.com", phone: "+1 (246) 571-0026", address: "Windy Ridge, Thornbury Hill, Christ Church, BB12003 BB", joinDate: "09/12/2012", sponsor: "Richelle Lucas", role: "Board Director" },
-  { id: "78008-0130", name: "Doreen M Agard", gender: "F", email: "doreen.agard@gmail.com", phone: "+1 (246) 426-3104", address: "Rockley New Road, Christ Church, BB", joinDate: "03/15/2014", sponsor: "Sharon Mohammed", role: "Active Member" },
-  { id: "78008-0135", name: "Janelle S Bradshaw", gender: "F", email: "janellebradshaw@gmail.com", phone: "+1 (246) 436-8911", address: "Pine Gardens, St. Michael, BB", joinDate: "06/10/2015", sponsor: "Charmaine London", role: "Active Member" },
-  { id: "78008-0140", name: "Tricia C Cave", gender: "F", email: "tricia.cave@gmail.com", phone: "+1 (246) 429-1002", address: "Hastings, Christ Church, BB", joinDate: "11/20/2016", sponsor: "Maureen Dottin", role: "Active Member" },
-  { id: "78008-0142", name: "Earle L Forde", gender: "M", email: "earleforde@gmail.com", phone: "+1 (246) 424-5510", address: "Wanstead Gardens, St. James, BB", joinDate: "02/14/2017", sponsor: "Edwin Workman", role: "Active Member" },
-  { id: "78008-0144", name: "Janelle C Goddard", gender: "F", email: "janellegoddard@gmail.com", phone: "+1 (246) 435-0012", address: "Wildey Heights, St. Michael, BB", joinDate: "05/05/2018", sponsor: "Sharon Mohammed", role: "Active Member" },
-  { id: "78008-0146", name: "Karen M Haynes", gender: "F", email: "karenhaynes@gmail.com", phone: "+1 (246) 428-9901", address: "Oistins, Christ Church, BB", joinDate: "09/18/2019", sponsor: "Richelle Lucas", role: "Active Member" },
-  { id: "78008-0155", name: "Corey L Jordan", gender: "M", email: "coreyjordan@gmail.com", phone: "+1 (246) 430-1122", address: "Warrens Terrace, St. Thomas, BB", joinDate: "01/12/2021", sponsor: "Cameron Sobers", role: "Active Member" },
-  { id: "78008-0160", name: "Keisha A Marshall", gender: "F", email: "keishamarshall@gmail.com", phone: "+1 (246) 421-4455", address: "Prospect, St. James, BB", joinDate: "04/22/2022", sponsor: "Deborah Bayne", role: "Active Member" },
-  { id: "78008-0165", name: "Paul G Nurse", gender: "M", email: "paulnurse@gmail.com", phone: "+1 (246) 437-0099", address: "Clapham, St. Michael, BB", joinDate: "08/14/2023", sponsor: "Omolara De Riggs-Morris", role: "Active Member" },
-  { id: "78008-0170", name: "Stacy L Trotman", gender: "F", email: "stacytrotman@gmail.com", phone: "+1 (246) 427-8822", address: "Brittons Hill, St. Michael, BB", joinDate: "11/02/2024", sponsor: "Charmaine London", role: "Active Member" },
-  { id: "78008-0175", name: "Trevor K Yearwood", gender: "M", email: "trevoryearwood@gmail.com", phone: "+1 (246) 431-7788", address: "Rendezvous, Christ Church, BB", joinDate: "02/10/2025", sponsor: "Richelle Lucas", role: "Active Member" }
+  {
+    "id": "78008-0153",
+    "name": "Deborah Bayne",
+    "gender": "F",
+    "email": "deborahbayne46@gmail.com",
+    "phone": "Cell: (246) 231-0728",
+    "address": "7 Pluma Close, Crane Haven, St Philip, BB",
+    "joinDate": "06/02/2025",
+    "sponsor": "Lucas, Richelle (78008-0150)",
+    "role": "Club Board of Director",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0148",
+    "name": "Lisa Brome",
+    "gender": "F",
+    "email": "lisa.brome@gmail.com",
+    "phone": "Cell: (246) 264-7810",
+    "address": "#24 Ashby Drive, Enterprise, Christ Church, BB",
+    "joinDate": "09/30/2022",
+    "sponsor": "Goodridge, Shaina (78008-0064)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0093",
+    "name": "Joy-Ann M Codrington",
+    "gender": "F",
+    "email": "jamacod@hotmail.com",
+    "phone": "Home: (246) 228-5871 / Work: (246) 432-5050",
+    "address": "Rouen Road, Belle Gully, Bridgetown, BB 11058, BB",
+    "joinDate": "07/28/2016",
+    "sponsor": "Parris, Rozanne (78008-0068)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0121",
+    "name": "Omolara De Riggs-Morris",
+    "gender": "F",
+    "email": "onderiggs@hotmail.com",
+    "phone": "Home: (428) 291-7 / Work: (417) 681-0 / Cell: (234) 051-8",
+    "address": "Windy Ridge, Thornbury Hill, Christ Church, BB12093, BB",
+    "joinDate": "07/05/2018",
+    "sponsor": "Bostic, Jennifer (78008-0079)",
+    "role": "Club Board of Director",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0052",
+    "name": "Maureen E Dottin",
+    "gender": "F",
+    "email": "medottin@gmail.com",
+    "phone": "Home: (246) 426-0129 / Work: (246) 432-6570",
+    "address": "Hothersal Turning, St. Michael, BB11038, BB",
+    "joinDate": "11/11/2013",
+    "sponsor": "Charter Member",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0062",
+    "name": "Elizabeth C Franklin",
+    "gender": "F",
+    "email": "elizabeth_franklin@sagicor.com",
+    "phone": "Home: (246) 436-2591",
+    "address": "6 Wildey Gardens, Wildey, St. Michael, Bridgetown, BB",
+    "joinDate": "05/26/2014",
+    "sponsor": "Byer, Faye (78008-0048)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0017",
+    "name": "Carmel Haynes",
+    "gender": "F",
+    "email": "carmelhaynes@yahoo.com",
+    "phone": "Home: (246) 571-9246 / Work: (246) 537-2422 ext: 104 / Cell: (246) 822-0981",
+    "address": "54 Clerpark, St. Michael, BB11000, BB",
+    "joinDate": "05/27/2010",
+    "sponsor": "Charter Member",
+    "role": "Active Member & Charter Member",
+    "pgi": "",
+    "program": "Four-for-1, Free Member (expired)"
+  },
+  {
+    "id": "78008-0142",
+    "name": "Alicia Holder",
+    "gender": "F",
+    "email": "holder_alicia@hotmail.com",
+    "phone": "Home: (246) 623-3728",
+    "address": "Hillswick Village, St Joseph, BB",
+    "joinDate": "06/09/2020",
+    "sponsor": "Goodridge, Shaina (78008-0064)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0072",
+    "name": "Shirley Hoyte",
+    "gender": "F",
+    "email": "shirleyhoyte@hotmail.com",
+    "phone": "Home: (246) 426-7530 / Cell: (246) 266-8816",
+    "address": "#3b Rock Avenue, Wildey, St. Michael, Bridgetown, 11106, BB",
+    "joinDate": "08/31/2015",
+    "sponsor": "Aquan, Margot (78008-0039)",
+    "role": "Active Member",
+    "pgi": "Level 5: 2020-06-08",
+    "program": ""
+  },
+  {
+    "id": "78008-0087",
+    "name": "Stephanie C Layne",
+    "gender": "F",
+    "email": "stephanieclayne@gmail.com",
+    "phone": "Work: (467) 828-5 / Cell: (239) 063-6",
+    "address": "Free Hill, Black Rock, St. Michael, Bridgetown, BB",
+    "joinDate": "05/20/2016",
+    "sponsor": "Charter Member",
+    "role": "Active Member & Charter Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0010",
+    "name": "Charmaine London",
+    "gender": "F",
+    "email": "londoncharms@hotmail.com",
+    "phone": "Home: (246) 424-2186 / Cell: (246) 232-0329",
+    "address": "3rd Ave Grazettes, St. Michael, BB12033, BB",
+    "joinDate": "05/27/2010",
+    "sponsor": "Charter Member",
+    "role": "Club Secretary & Charter Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0150",
+    "name": "Richelle Lucas",
+    "gender": "F",
+    "email": "richelle.lucas16@gmail.com",
+    "phone": "Work: (246) 233-7843 / Cell: (246) 256-0963",
+    "address": "#45 Vespera Gardens, Lancaster, St. James, BB",
+    "joinDate": "12/26/2023",
+    "sponsor": "Sobers, Cameron (78008-0038)",
+    "role": "Club President",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0152",
+    "name": "Sharon Mohammed",
+    "gender": "F",
+    "email": "sharon@topaz-bb.com",
+    "phone": "Cell: (246) 233-1557",
+    "address": "Brathwaite Gap, Dayrells Road, Christ Church, BB14016, BB",
+    "joinDate": "04/14/2025",
+    "sponsor": "Workman, Edwin (78008-0021)",
+    "role": "Club Treasurer",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0069",
+    "name": "Aisha Norville",
+    "gender": "F",
+    "email": "aimichelle.nor@gmail.com",
+    "phone": "Home: (246) 425-9505",
+    "address": "#20 Padmore Heights, St. James, Bridgetown, BB",
+    "joinDate": "08/31/2015",
+    "sponsor": "Lucas, Richelle (78008-0042)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0068",
+    "name": "Rozanne A Parris",
+    "gender": "F",
+    "email": "rozanne.parris@gmail.com",
+    "phone": "Home: (246) 429-6218 / Work: (246) 228-5548",
+    "address": "Mcclean'S Gap, Brittons Hill, St. Michael, Bridgetown, BB",
+    "joinDate": "08/31/2015",
+    "sponsor": "Dottin, Maureen (78008-0052)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0098",
+    "name": "Hyacinth E Small",
+    "gender": "F",
+    "email": "windychile@hotmail.com",
+    "phone": "Home: (246) 428-4766 / Cell: (246) 243-3120",
+    "address": "Hanameel, 11 Windy Ridge, Christ Church, Bridgetown, BB17072, BB",
+    "joinDate": "01/31/2017",
+    "sponsor": "Workman, Edwin (78008-0021)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0038",
+    "name": "Cameron P Sobers",
+    "gender": "M",
+    "email": "Cposobers@gmail.com",
+    "phone": "Home: (246) 435-1703 / Work: (246) 262-6247 / Cell: (246) 234-2618",
+    "address": "209 3rd Avenue, Rowans Park South, St. George, BB19036, BB",
+    "joinDate": "06/14/2010",
+    "sponsor": "Carter, Joy-Ann (78008-0001)",
+    "role": "Club Board of Director",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0114",
+    "name": "Garrylyn Swanston",
+    "gender": "F",
+    "email": "lynswanston@yahoo.com",
+    "phone": "Home: (246) 427-6526 / Work: (246) 428-9598 / Cell: (246) 254-3588",
+    "address": "#4 West Ridge, Brittons, Hill, St Michael, Bridgetown, AL, BB",
+    "joinDate": "08/08/2017",
+    "sponsor": "Aquan, Margot (78008-0039)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": "Recruit a Teacher, Free Member (expired)"
+  },
+  {
+    "id": "78008-0120",
+    "name": "Yolanda Thorpe",
+    "gender": "F",
+    "email": "whytee.ypt@gmail.com",
+    "phone": "Home: (437) 417-9 / Work: (467) 224-8 / Cell: (239) 252-0",
+    "address": "Cox Road, Christ Church, BB12093, BB",
+    "joinDate": "07/05/2018",
+    "sponsor": "Dottin, Maureen (78008-0052)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": ""
+  },
+  {
+    "id": "78008-0108",
+    "name": "Nicole Whiteman",
+    "gender": "F",
+    "email": "nicoleantoniawhiteman@hotmail.com",
+    "phone": "Cell: (246) 822-1153",
+    "address": "#13 Oxnards Heights, St. James, Bridgetown, BB",
+    "joinDate": "07/17/2017",
+    "sponsor": "Dottin, Maureen (78008-0052)",
+    "role": "Active Member",
+    "pgi": "",
+    "program": "30 under 30 Member, Free Member (expired)"
+  },
+  {
+    "id": "78008-0021",
+    "name": "Edwin Workman",
+    "gender": "M",
+    "email": "edwin@jillandee.com",
+    "phone": "Home: +1 (246) 548-2573 / Work: (246) 836-6185 / Cell: (246) 836-9004",
+    "address": "2 Jackson Terrace, St. Michael, BB14014, BB",
+    "joinDate": "05/27/2010",
+    "sponsor": "Charter Member",
+    "role": "System Administrator, Club Foundation Representative & Charter Member",
+    "pgi": "",
+    "program": ""
+  }
 ];
 
 const initialProjects = [
@@ -274,6 +526,7 @@ async function initializeDatabase() {
 
     // 4. Seed 21 Active Members & Dues Records
     console.log("Seeding 21 Active Members and Dues Ledgers into Neon DB...");
+    await sql`DELETE FROM members;`;
     for (const m of all21Members) {
       const emailLower = m.email.toLowerCase().trim();
       let access = 'member';
@@ -290,7 +543,7 @@ async function initializeDatabase() {
         VALUES (
           ${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, 
           ${m.joinDate}, ${m.sponsor}, ${m.role}, 
-          ${m.id === '78008-0152'}, ${m.id === '78008-0150'},
+          ${access === 'super admin' || m.id === '78008-0152'}, ${access === 'super admin' || m.id === '78008-0150'},
           ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`},
           ${access},
           ${emailLower === 'edwin@jillandee.com' ? 'Eww!POCB2010' : null}
@@ -306,11 +559,18 @@ async function initializeDatabase() {
       `;
 
       // Seed dues ledgers separately
+      let memberNotes = 'Annual dues paid in full.';
+      if (emailLower === 'jcodrington67@hotmail.com') {
+        memberNotes = "Member Type: Charter? No, College? No, Life? No, Diplomat? No, Prev JOI? No | PGI/PDP: n/a | Magazine: Hard-Copy | Ads: Don't send 3rd-party | Publish details: n/a";
+      } else if (emailLower === 'carmel.haynes@gmail.com') {
+        memberNotes = "Member Type: Charter? Yes, College? No, Life? No, Diplomat? No, Prev JOI? No | PGI/PDP: n/a | Programs: Four-for-1 | Magazine: Hard-Copy | Ads: Send 3rd-party | Publish details: n/a";
+      }
+
       await sql`
         INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, last_payment_date, notes, email_last_sent)
         VALUES (
           ${m.id}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$250.00', '$0.00', 
-          'Bank Transfer', 'Active Member (2025/2026)', '2025-10-01', 'Annual dues paid in full.', '2025-10-01'
+          'Bank Transfer', 'Active Member (2025/2026)', '2025-10-01', ${memberNotes}, '2025-10-01'
         )
         ON CONFLICT DO NOTHING;
       `;
