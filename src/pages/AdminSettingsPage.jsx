@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheck,
@@ -110,6 +110,33 @@ export const AdminSettingsPage = () => {
 
   // Feedback Message
   const [statusMsg, setStatusMsg] = useState('');
+
+  // Handle auto-approval/deletion from moderation email links
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const action = params.get('action');
+    const id = params.get('id');
+
+    if (tab) {
+      setActiveTab(tab);
+    }
+
+    if (action && id && projects.length > 0) {
+      if (action === 'approve') {
+        approveProject(id);
+        setStatusMsg(`Approved project initiative via moderation email action link.`);
+        setTimeout(() => setStatusMsg(''), 5000);
+      } else if (action === 'delete') {
+        deleteProject(id);
+        setStatusMsg(`Rejected and deleted project initiative via moderation email action link.`);
+        setTimeout(() => setStatusMsg(''), 5000);
+      }
+      
+      // Clean up URL query parameters so it does not keep triggering on navigation
+      window.history.replaceState({}, document.title, window.location.pathname + (tab ? `?tab=${tab}` : ''));
+    }
+  }, [projects]);
 
   // Access check based on the new access level roles
   const isAuthorized = ['super admin', 'finance', 'admin', 'moderator'].includes(userAccess);

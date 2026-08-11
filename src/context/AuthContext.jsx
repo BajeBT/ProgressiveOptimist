@@ -778,6 +778,48 @@ export const AuthProvider = ({ children }) => {
 
     setProjects(prev => [newProject, ...prev]);
 
+    // Send email to moderators (Simulated and rerouted strictly to dev@bajanthings.biz per user rules)
+    const moderators = memberRoster.filter(m => ['super admin', 'finance', 'admin', 'moderator'].includes(m.access));
+    const moderatorEmails = moderators.map(m => m.email).join(', ');
+
+    const emailSubject = `[PROJECT SUBMISSION] "${newProject.title}" by ${newProject.author}`;
+    const emailBody = `
+======================================================================
+TO: dev@bajanthings.biz (Simulated Rerouting from: ${moderatorEmails})
+FROM: notifications@progressiveoptimist.org
+SUBJECT: ${emailSubject}
+======================================================================
+
+Dear Club Moderator,
+
+A new project update has been submitted by ${newProject.author}.
+
+--- PROJECT DETAILS ---
+Title: ${newProject.title}
+Category: ${newProject.category}
+Date: ${newProject.date}
+Children Served: ${newProject.childrenServed}
+Impact: ${newProject.impact}
+Image/Photo URL: ${newProject.image}
+
+Excerpt: 
+${newProject.excerpt}
+
+Content:
+${newProject.content}
+
+-----------------------
+
+You can review and manage this submission at the moderation console using these links:
+- Approve & Publish: http://localhost:3000/admin?tab=moderation&action=approve&id=${newProject.id}
+- Decline & Delete: http://localhost:3000/admin?tab=moderation&action=delete&id=${newProject.id}
+
+Regards,
+Progressive Optimist Club of Barbados
+======================================================================
+`;
+    console.log("%c[SIMULATED MODERATOR EMAIL SENT]", "color: #10b981; font-weight: bold;", emailBody);
+
     // Async sync to Neon DB
     (async () => {
       try {
@@ -793,7 +835,9 @@ export const AuthProvider = ({ children }) => {
     return {
       success: true,
       project: newProject,
-      message: isApproved ? "Project published immediately." : "Project submitted successfully and is pending moderator approval."
+      message: isApproved 
+        ? "Project published immediately. Notification email logged." 
+        : "Project submitted successfully. A moderation email containing details and photo has been simulated and sent to dev@bajanthings.biz."
     };
   };
 
