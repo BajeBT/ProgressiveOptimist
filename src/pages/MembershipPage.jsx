@@ -217,26 +217,26 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Profile Banner */}
-        <div className="p-8 rounded-3xl bg-gradient-to-r from-optimist-navy via-optimist-blue to-slate-900 text-white shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="p-8 rounded-3xl bg-gradient-to-r from-emerald-100 via-green-100 to-emerald-200 dark:from-emerald-950 dark:via-emerald-900 dark:to-slate-900 text-slate-900 dark:text-white shadow-xl border border-emerald-300 dark:border-emerald-800 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-4">
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-20 h-20 rounded-2xl bg-slate-800 border-2 border-optimist-gold p-1 shadow-lg object-cover"
+              className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border-2 border-emerald-500 p-1 shadow-lg object-cover"
             />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
+                <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
                   Welcome, {currentUser.name}!
                 </h1>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded gold-gradient text-slate-950">
                   {currentUser.role}
                 </span>
               </div>
-              <p className="text-xs text-blue-200 mt-1">
-                Member ID: <strong className="text-amber-300">{currentUser.memberId}</strong> • Status: <strong className="text-emerald-400">{currentUser.duesStatus}</strong>
+              <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-1">
+                Member ID: <strong className="text-emerald-950 dark:text-amber-300">{currentUser.memberId}</strong> • Status: <strong className="text-emerald-700 dark:text-emerald-400">{currentUser.duesStatus}</strong>
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">Progressive Optimist Club of Barbados Member Portal</p>
+              <p className="text-xs text-emerald-700 dark:text-slate-400 mt-0.5">Progressive Optimist Club of Barbados Member Portal</p>
             </div>
           </div>
 

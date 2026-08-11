@@ -23,11 +23,12 @@ import {
   BookOpen,
   Lock,
   TestTube,
-  ShieldAlert
+  ShieldAlert,
+  Database
 } from 'lucide-react';
 
 export const Navbar = ({ onOpenPostModal }) => {
-  const { currentUser, logout, isDarkMode, toggleDarkMode, isSandboxMode, testEmailTarget } = useAuth();
+  const { currentUser, logout, isDarkMode, toggleDarkMode, isSandboxMode, testEmailTarget, dbConnected } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
@@ -49,12 +50,20 @@ export const Navbar = ({ onOpenPostModal }) => {
       <div className="bg-gradient-to-r from-optimist-blue via-optimist-royal to-slate-900 text-white text-xs py-2 px-4 border-b border-amber-400/20">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           
-          {/* Left: District Theme */}
+          {/* Left: District Theme & DB Status */}
           <div className="flex items-center space-x-3 shrink-0">
             <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               District 78 (CAR) • Club # 78008
             </span>
+
+            {dbConnected && (
+              <span className="hidden sm:inline-flex items-center gap-1 font-extrabold text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <Database className="w-3 h-3 text-emerald-400" />
+                Neon DB Live
+              </span>
+            )}
+
             <span className="hidden md:inline text-blue-100 font-medium">
               Theme: <strong className="text-amber-300 font-bold">C.A.R.E – Championing Authentic & Reinvigorating Engagement</strong>
             </span>

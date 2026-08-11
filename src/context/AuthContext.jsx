@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialProjects } from '../data/projectsData';
+import { sql } from '../db/neon';
 
 const AuthContext = createContext();
 
@@ -150,6 +151,7 @@ export const AuthProvider = ({ children }) => {
   const isSandboxMode = true;
   const testEmailTarget = "dev@bajanthings.biz";
   const testWhatsAppTarget = "12468366185";
+  const [dbConnected, setDbConnected] = useState(false);
 
   // Current user state (with try-catch safety)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -203,6 +205,71 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  // Load live data from Neon Serverless PostgreSQL on mount
+  useEffect(() => {
+    async function loadNeonData() {
+      try {
+        // Fetch Members & Dues Ledgers from Neon PostgreSQL
+        const rows = await sql`
+          SELECT 
+            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar,
+            d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due, 
+            d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
+          FROM members m
+          LEFT JOIN dues_ledger d ON m.id = d.member_id
+          ORDER BY m.name ASC;
+        `;
+
+        if (rows && rows.length > 0) {
+          const mappedRoster = rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            role: r.role,
+            phone: r.phone,
+            address: r.address,
+            avatar: r.avatar,
+            fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
+            duesRate: r.dues_rate || '$250.00 BBD',
+            amountPaid: r.amount_paid || '$250.00 BBD',
+            balanceDue: r.balance_due || '$0.00 BBD',
+            paymentMethod: r.payment_method || 'Bank Transfer',
+            duesStatus: r.dues_status || 'Active Member (2025/2026)',
+            lastPaymentDate: r.last_payment_date || '2025-10-01',
+            notes: r.notes || '',
+            emailLastSent: r.email_last_sent || ''
+          }));
+          setMemberRoster(mappedRoster);
+          setDbConnected(true);
+        }
+
+        // Fetch Projects from Neon
+        const projRows = await sql`SELECT * FROM projects ORDER BY posted_at DESC;`;
+        if (projRows && projRows.length > 0) {
+          const mappedProjects = projRows.map(p => ({
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            date: p.date_str,
+            image: p.image,
+            excerpt: p.excerpt,
+            content: p.content,
+            impact: p.impact,
+            isFeatured: p.is_featured,
+            author: p.author,
+            authorId: p.author_id,
+            postedAt: p.posted_at
+          }));
+          setProjects(mappedProjects);
+        }
+      } catch (err) {
+        console.warn("Neon Database query fallback to local cache:", err);
+      }
+    }
+
+    loadNeonData();
+  }, []);
+
   useEffect(() => {
     try {
       if (isDarkMode) {
@@ -219,13 +286,11 @@ export const AuthProvider = ({ children }) => {
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
-  // Save projects to localStorage whenever changed
+  // Save projects to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('optimist_projects', JSON.stringify(projects));
-    } catch (e) {
-      console.warn("Unable to save projects to localStorage", e);
-    }
+    } catch (e) {}
   }, [projects]);
 
   // Save roster to localStorage
@@ -239,9 +304,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     try {
       localStorage.setItem('optimist_gallery', JSON.stringify(memberGallery));
-    } catch (e) {
-      console.warn("Unable to save gallery to localStorage", e);
-    }
+    } catch (e) {}
   }, [memberGallery]);
 
   // Login handler
@@ -289,7 +352,7 @@ export const AuthProvider = ({ children }) => {
     return { success: true, user: userObj };
   };
 
-  // Signup / Application handler
+  // Signup / Application handler with Neon sync
   const registerMember = (formData) => {
     const userObj = {
       email: formData.email,
@@ -303,24 +366,40 @@ export const AuthProvider = ({ children }) => {
     };
 
     setCurrentUser(userObj);
-    setMemberRoster(prev => [
-      {
-        id: userObj.memberId,
-        name: userObj.name,
-        email: userObj.email,
-        role: 'Member',
-        fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
-        duesRate: '$250.00 BBD',
-        amountPaid: '$0.00 BBD',
-        balanceDue: '$250.00 BBD',
-        paymentMethod: 'Pending',
-        duesStatus: 'Pending Dues Payment',
-        lastPaymentDate: 'None',
-        notes: 'New member application submitted.',
-        emailLastSent: 'None'
-      },
-      ...prev
-    ]);
+    const newMemberRecord = {
+      id: userObj.memberId,
+      name: userObj.name,
+      email: userObj.email,
+      role: 'Member',
+      fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
+      duesRate: '$250.00 BBD',
+      amountPaid: '$0.00 BBD',
+      balanceDue: '$250.00 BBD',
+      paymentMethod: 'Pending',
+      duesStatus: 'Pending Dues Payment',
+      lastPaymentDate: 'None',
+      notes: 'New member application submitted.',
+      emailLastSent: 'None'
+    };
+
+    setMemberRoster(prev => [newMemberRecord, ...prev]);
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        await sql`
+          INSERT INTO members (id, name, email, phone, role, avatar)
+          VALUES (${userObj.memberId}, ${userObj.name}, ${userObj.email}, ${formData.phone || ''}, 'Member', ${userObj.avatar})
+          ON CONFLICT (id) DO NOTHING;
+        `;
+        await sql`
+          INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
+          VALUES (${userObj.memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00 BBD', '$0.00 BBD', '$250.00 BBD', 'Pending', 'Pending Dues Payment', 'New member application submitted.');
+        `;
+      } catch (err) {
+        console.warn("Neon DB member insert sync error:", err);
+      }
+    })();
 
     try {
       localStorage.setItem('optimist_user', JSON.stringify(userObj));
@@ -338,10 +417,11 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   };
 
-  // Treasurer updates member dues status in central roster
+  // Treasurer updates member dues status in central roster and Neon DB
   const updateMemberDuesByTreasurer = (memberId, newStatus, amountPaid = "$250.00 BBD", paymentMethod = "Bank Transfer") => {
     const today = new Date().toISOString().split('T')[0];
     const isPaid = newStatus.includes('Active');
+
     setMemberRoster(prev => prev.map(m => {
       if (m.id === memberId) {
         return {
@@ -355,9 +435,28 @@ export const AuthProvider = ({ children }) => {
       }
       return m;
     }));
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        await sql`
+          UPDATE dues_ledger
+          SET 
+            dues_status = ${newStatus},
+            last_payment_date = ${today},
+            amount_paid = ${isPaid ? '$250.00 BBD' : '$0.00 BBD'},
+            balance_due = ${isPaid ? '$0.00 BBD' : '$250.00 BBD'},
+            payment_method = ${paymentMethod},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE member_id = ${memberId};
+        `;
+      } catch (err) {
+        console.warn("Neon DB dues update error:", err);
+      }
+    })();
   };
 
-  // Treasurer updates member notes
+  // Treasurer updates member notes in central roster and Neon DB
   const updateMemberNotesByTreasurer = (memberId, newNotes) => {
     setMemberRoster(prev => prev.map(m => {
       if (m.id === memberId) {
@@ -365,9 +464,22 @@ export const AuthProvider = ({ children }) => {
       }
       return m;
     }));
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        await sql`
+          UPDATE dues_ledger
+          SET notes = ${newNotes}, updated_at = CURRENT_TIMESTAMP
+          WHERE member_id = ${memberId};
+        `;
+      } catch (err) {
+        console.warn("Neon DB notes update error:", err);
+      }
+    })();
   };
 
-  // Treasurer sends Email Statement (Rerouted strictly to dev@bajanthings.biz)
+  // Treasurer sends Email Statement
   const sendDuesStatementEmail = (memberIds) => {
     const today = new Date().toISOString().split('T')[0];
     const ids = Array.isArray(memberIds) ? memberIds : [memberIds];
@@ -378,6 +490,21 @@ export const AuthProvider = ({ children }) => {
       }
       return m;
     }));
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        for (const mid of ids) {
+          await sql`
+            UPDATE dues_ledger
+            SET email_last_sent = ${today}, updated_at = CURRENT_TIMESTAMP
+            WHERE member_id = ${mid};
+          `;
+        }
+      } catch (err) {
+        console.warn("Neon DB email_last_sent update error:", err);
+      }
+    })();
 
     return {
       success: true,
@@ -392,7 +519,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   };
 
-  // Add new project post (by logged in member)
+  // Add new project post (by logged in member) with Neon DB sync
   const addProject = (projectData) => {
     if (!currentUser) {
       return { success: false, message: 'You must be logged in as a member to post a project.' };
@@ -414,6 +541,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     setProjects(prev => [newProject, ...prev]);
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        await sql`
+          INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at)
+          VALUES (${newProject.id}, ${newProject.title}, ${newProject.category}, ${newProject.date}, ${newProject.image}, ${newProject.excerpt}, ${newProject.content}, ${newProject.impact}, ${newProject.isFeatured}, ${newProject.author}, ${newProject.authorId}, ${newProject.postedAt});
+        `;
+      } catch (err) {
+        console.warn("Neon DB project insert error:", err);
+      }
+    })();
+
     return { success: true, project: newProject };
   };
 
@@ -440,6 +580,7 @@ export const AuthProvider = ({ children }) => {
         isSandboxMode,
         testEmailTarget,
         testWhatsAppTarget,
+        dbConnected,
         currentUser,
         login,
         registerMember,
