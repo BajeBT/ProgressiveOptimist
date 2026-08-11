@@ -401,6 +401,7 @@ const initialRoster = [
     "emailLastSent": "2025-10-01",
     "hasTreasurerConsoleAccess": true,
     "hasInitiativeAccess": true,
+    "avatar": "/avatars/oirep_placeholder.jpg",
     "access": "super admin"
   }
 ];
@@ -541,8 +542,15 @@ export const AuthProvider = ({ children }) => {
 
             const resolvedAccess = r.access || defaultAccess;
             const isSuperAdmin = resolvedAccess === 'super admin';
-            const isTreasurerUser = r.email === 'sharon@topaz-bb.com' || r.id === '78008-0152';
-            const isPresidentUser = r.email === 'richelle.lucas16@gmail.com' || r.id === '78008-0150' || isSuperAdmin;
+            let resolvedAvatar = r.avatar;
+            if (!resolvedAvatar || resolvedAvatar.includes('dicebear')) {
+              if (emailLower === 'edwin@jillandee.com') resolvedAvatar = '/avatars/oirep_placeholder.jpg';
+              else if (emailLower === 'richelle.lucas16@gmail.com') resolvedAvatar = '/avatars/president_placeholder.jpg';
+              else if (emailLower === 'londoncharms@hotmail.com') resolvedAvatar = '/avatars/secretary_placeholder.jpg';
+              else if (emailLower === 'sharon@topaz-bb.com') resolvedAvatar = '/avatars/treasurer_placeholder.jpg';
+              else if (r.role && r.role.includes('Director')) resolvedAvatar = '/avatars/director_placeholder.jpg';
+              else resolvedAvatar = '/avatars/active_member_icon.jpg';
+            }
 
             return {
               id: r.id,
@@ -551,7 +559,7 @@ export const AuthProvider = ({ children }) => {
               role: r.role,
               phone: r.phone,
               address: r.address,
-              avatar: r.avatar,
+              avatar: resolvedAvatar,
               access: resolvedAccess,
               password: r.password || '',
               fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
@@ -759,7 +767,7 @@ export const AuthProvider = ({ children }) => {
     const cleanEmail = email.toLowerCase().trim();
     let name = 'Optimist Member';
     let role = 'Member';
-    let avatar = '/avatars/president_placeholder.jpg';
+    let avatar = '/avatars/active_member_icon.jpg';
     let isTreasurer = false;
     let memberId = '78008-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -790,6 +798,12 @@ export const AuthProvider = ({ children }) => {
       avatar = '/avatars/president_placeholder.jpg';
       isTreasurer = true;
       memberId = '78008-0150';
+    } else if (cleanEmail === 'edwin@jillandee.com') {
+      name = 'Edwin Workman';
+      role = 'System Administrator, Club Foundation Representative & Charter Member';
+      avatar = '/avatars/oirep_placeholder.jpg';
+      isTreasurer = true;
+      memberId = '78008-0021';
     } else if (matchedRosterItem) {
       name = matchedRosterItem.name;
       role = matchedRosterItem.role;

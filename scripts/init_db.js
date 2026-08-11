@@ -538,13 +538,20 @@ async function initializeDatabase() {
         access = 'admin';
       }
 
+      let avatar = '/avatars/active_member_icon.jpg';
+      if (emailLower === 'richelle.lucas16@gmail.com') avatar = '/avatars/president_placeholder.jpg';
+      else if (emailLower === 'londoncharms@hotmail.com') avatar = '/avatars/secretary_placeholder.jpg';
+      else if (emailLower === 'sharon@topaz-bb.com') avatar = '/avatars/treasurer_placeholder.jpg';
+      else if (emailLower === 'edwin@jillandee.com') avatar = '/avatars/oirep_placeholder.jpg';
+      else if (m.role && m.role.includes('Director')) avatar = '/avatars/director_placeholder.jpg';
+
       await sql`
         INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar, access, password)
         VALUES (
           ${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, 
           ${m.joinDate}, ${m.sponsor}, ${m.role}, 
           ${access === 'super admin' || m.id === '78008-0152'}, ${access === 'super admin' || m.id === '78008-0150'},
-          ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`},
+          ${avatar},
           ${access},
           ${emailLower === 'edwin@jillandee.com' ? 'Eww!POCB2010' : null}
         )
@@ -554,6 +561,7 @@ async function initializeDatabase() {
           phone = EXCLUDED.phone,
           address = EXCLUDED.address,
           role = EXCLUDED.role,
+          avatar = EXCLUDED.avatar,
           access = EXCLUDED.access,
           password = EXCLUDED.password;
       `;
