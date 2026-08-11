@@ -31,7 +31,8 @@ import {
   Copy,
   Printer,
   X,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -133,6 +134,247 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [photoCaption, setPhotoCaption] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState(null);
+  
+  // Document upload state & viewer modal
+  const [internalDocs, setInternalDocs] = useState([
+    {
+      id: "doc-1",
+      name: "Monthly Meeting Minutes - July 2025",
+      date: "July 7, 2025",
+      size: "320 KB",
+      category: "Meeting Minutes",
+      author: "Charmaine London (Club Secretary)",
+      summary: "Official proceedings of the July 2025 General Meeting of the Progressive Optimist Club of Barbados. Includes full attendance roll-call of all 21 active members, Q3 financial audit, RISE 2025 youth program allocations, and committee reports.",
+      content: [
+        "PROGRESSIVE OPTIMIST CLUB OF BARBADOS",
+        "OPTIMIST INTERNATIONAL CLUB # 78008 - CARIBBEAN DISTRICT",
+        "OFFICIAL GENERAL MEETING MINUTES - JULY 7, 2025",
+        "",
+        "DATE & TIME: July 7, 2025 at 6:00 PM AST",
+        "LOCATION: Hybrid (St. Michael Headquarters & Zoom Conference Room 78008)",
+        "",
+        "1. CALL TO ORDER & OPENING CEREMONIES",
+        "   - The meeting was officially called to order at 6:02 PM AST by President Richelle Lucas.",
+        "   - The invocation was delivered by Board Director Deborah Bayne.",
+        "   - The Optimist Creed was recited in unison by all attending members.",
+        "",
+        "2. ROLL CALL & ATTENDANCE RECORD (ACTIVE MEMBERS - 21 TOTAL)",
+        "   Present:",
+        "   1. Richelle Lucas (Club President)",
+        "   2. Charmaine London (Club Secretary)",
+        "   3. Sharon Mohammed (Club Treasurer)",
+        "   4. Edwin Workman (System Administrator & Foundation Rep)",
+        "   5. Cameron P. Sobers (Board Director & President-Elect)",
+        "   6. Omolara De Riggs-Morris (Board Director & Past President)",
+        "   7. Deborah Bayne (Board Director)",
+        "   8. Ms Carmel Haynes (Past President 2011 & Charter Member)",
+        "   9. Maureen E. Dottin (Foundation Rep-Elect & Past President)",
+        "   10. Shirley Hoyte (Past President)",
+        "   11. Elizabeth C. Franklin",
+        "   12. Stephanie C. Layne",
+        "   13. Hyacinth E. Small",
+        "   14. Garrylyn Swanston",
+        "   15. Aisha Norville",
+        "   16. Rozanne A. Parris",
+        "   17. Nicole Whiteman",
+        "   18. Joy-Ann M. Codrington",
+        "   19. Yolanda Thorpe",
+        "   20. Alicia Holder",
+        "   21. Lisa Brome",
+        "",
+        "   Quorum Confirmed: Yes (21 of 21 Active Members present).",
+        "",
+        "3. APPROVAL OF PREVIOUS MINUTES",
+        "   - The minutes of the June 2, 2025 General Meeting were reviewed.",
+        "   - Motion to approve: Moved by Charmaine London, seconded by Ms Carmel Haynes.",
+        "   - Result: Motion carried unanimously without amendments.",
+        "",
+        "4. EXECUTIVE OFFICER REPORTS",
+        "   A. PRESIDENT'S ADDRESS (Richelle Lucas):",
+        "      - Welcomed all 21 active members to the Q3 strategy session.",
+        "      - Highlighted the upcoming 2025-2026 Fiscal Year theme launch: \"2025-26 Theme: Optimism in Action\".",
+        "      - Expressed gratitude to the System Administrator (Edwin Workman) for completing the digital database and member portal synchronization.",
+        "",
+        "   B. TREASURER'S FINANCIAL REPORT (Sharon Mohammed):",
+        "      - Operating Account Balance (as of June 30, 2025): BDS$ 14,850.00",
+        "      - Dues Ledger Update: 100% of the 21 active members have settled their annual dues of BDS$ 250.00. Total Dues Collected: BDS$ 5,250.00.",
+        "      - Approved Disbursements:",
+        "        * RISE 2025 Youth Experience Facility & Materials: BDS$ 3,500.00",
+        "        * District Convention Registration Deposit: BDS$ 850.00",
+        "      - Motion to accept Treasurer's Report: Moved by Sharon Mohammed, seconded by Cameron P. Sobers. Carried.",
+        "",
+        "   C. SECRETARY'S CORRESPONDENCE (Charmaine London):",
+        "      - Received official correspondence from Optimist International Headquarters confirming club compliance in good standing.",
+        "      - Dispatched annual directory updates and membership roster verifications.",
+        "",
+        "5. STANDING COMMITTEE REPORTS",
+        "   A. Youth & Community Service (Lead: Cameron P. Sobers):",
+        "      - RISE 2025 Summer Leadership Experience: Finalized venue at St. Michael Community Center for July 14-18, 2025. 50 student participants enrolled.",
+        "      - Annual Youth Oratorical & Essay Contest: Preliminary registration opens September 1, 2025.",
+        "",
+        "   B. Membership & Attendance Committee (Lead: Maureen E. Dottin):",
+        "      - Active Roster maintained strictly at 21 active members.",
+        "      - Induction preparation for upcoming candidate applications in Q1 of the 2025-2026 fiscal year.",
+        "",
+        "   C. Public Relations & Digital Media (Lead: Edwin Workman):",
+        "      - System Administrator reported clean deployment of the web application and dynamic Member Records console.",
+        "      - Sandbox routing tested and disengaged for live site operations.",
+        "",
+        "6. UNFINISHED BUSINESS",
+        "   - Caribbean District Annual Convention: Delegate selection finalized. Voting delegates: Richelle Lucas (President) and Sharon Mohammed (Treasurer). Alternate: Cameron P. Sobers.",
+        "",
+        "7. NEW BUSINESS",
+        "   - Proposed Bylaw Amendment regarding Super Admin access governance: Confirmed that Super Admin privileges are reserved for System Administrator and Club President.",
+        "",
+        "8. ANNOUNCEMENTS & ADJOURNMENT",
+        "   - Next Executive Committee Meeting: Monday, August 4, 2025 at 6:00 PM.",
+        "   - Next General Membership Meeting: Monday, September 1, 2025.",
+        "   - Meeting adjourned at 7:48 PM AST on motion by Omolara De Riggs-Morris.",
+        "",
+        "Minutes Recorded & Prepared By:",
+        "Charmaine London, Club Secretary"
+      ].join("\n")
+    },
+    {
+      id: "doc-2",
+      name: "Progressive Optimist Constitution & Bylaws",
+      date: "Annual Revision",
+      size: "1.4 MB",
+      category: "Governance & Bylaws",
+      author: "Executive Committee",
+      summary: "Governing Constitution and Articles of Incorporation for the Progressive Optimist Club of Barbados (Optimist International Club #78008). Outlines officer roles, voting thresholds, committee structures, and parliamentary guidelines.",
+      content: [
+        "CONSTITUTION & ARTICLES OF GOVERNANCE",
+        "PROGRESSIVE OPTIMIST CLUB OF BARBADOS",
+        "OPTIMIST INTERNATIONAL CLUB # 78008",
+        "",
+        "PREAMBLE",
+        "We, the members of the Progressive Optimist Club of Barbados, bound by a shared devotion to youth development, community service, and the tenets of Optimist International, do hereby establish this Constitution & Bylaws.",
+        "",
+        "ARTICLE I - NAME, BOUNDARIES & AFFILIATION",
+        "Section 1: Name",
+        "The official name of this organization shall be the \"Progressive Optimist Club of Barbados\" (hereinafter referred to as the \"Club\").",
+        "",
+        "Section 2: Affiliation",
+        "This Club is chartered by and affiliated with Optimist International and shall operate in accordance with the International Constitution and Caribbean District Regulations.",
+        "",
+        "ARTICLE II - PURPOSES & CREED",
+        "Section 1: Purposes",
+        "The purposes of this Club are:",
+        "(a) To develop Optimism as a philosophy of life utilizing the tenets of the Optimist Creed;",
+        "(b) To promote an active interest in good government and civic affairs;",
+        "(c) To inspire youth to achieve their highest potential through structured mentorship and educational programs;",
+        "(d) To provide community assistance to those in need.",
+        "",
+        "ARTICLE III - MEMBERSHIP CLASSIFICATION",
+        "Section 1: Active Members",
+        "Active membership shall consist of individuals of good character who subscribe to the principles of Optimist International. Active members in good standing possess full voting rights and access to internal digital consoles.",
+        "",
+        "Section 2: Charter Members",
+        "Members who were inducted on or before the charter charter date of May 27, 2010 shall be designated as Charter Members.",
+        "",
+        "Section 3: Dues & Fiscal Year",
+        "The fiscal year of the Club shall extend from October 1st of each calendar year through September 30th of the following calendar year. Annual membership dues shall be fixed at BDS$ 250.00, payable on or before October 1st.",
+        "",
+        "ARTICLE IV - EXECUTIVE OFFICERS & BOARD OF DIRECTORS",
+        "Section 1: Executive Officers",
+        "The Executive Officers of the Club shall consist of:",
+        "1. Club President",
+        "2. Club Treasurer",
+        "3. Club Secretary",
+        "4. Public Relations Officer (PRO)",
+        "",
+        "Section 2: Board of Directors",
+        "The Board of Directors shall consist of the Executive Officers, the Immediate Past President, the President-Elect, and elected Board Directors.",
+        "",
+        "Section 3: System Administrator Authority",
+        "The System Administrator position is designated by position as a Super Administrator with full, unrestricted access to the digital platform, user security matrices, and server configurations.",
+        "",
+        "ARTICLE V - MEETINGS & QUORUM",
+        "Section 1: Regular Meetings",
+        "Regular business meetings of the Club shall be held bi-monthly on designated Mondays at 6:00 PM AST.",
+        "",
+        "Section 2: Quorum",
+        "A simple majority of active members in good standing shall constitute a quorum for the transaction of official club business at any regular or special meeting.",
+        "",
+        "ARTICLE VI - AMENDMENTS",
+        "These Bylaws may be amended at any regular meeting of the Club by a two-thirds (2/3) vote of the active members present, provided notice of the proposed amendment has been submitted in writing at least fourteen (14) days prior.",
+        "",
+        "Certified as Official Governance Document by:",
+        "Richelle Lucas, Club President",
+        "Charmaine London, Club Secretary"
+      ].join("\n")
+    },
+    {
+      id: "doc-3",
+      name: "RISE 2025 Volunteer Schedule & Roster",
+      date: "June 2025",
+      size: "450 KB",
+      category: "Event Schedules & Rosters",
+      author: "Cameron P. Sobers (President-Elect)",
+      summary: "Complete volunteer roster, session timelines, safety protocols, and venue assignments for the RISE 2025 Youth Leadership & Empowerment Workshop.",
+      content: [
+        "RISE 2025 YOUTH LEADERSHIP EXPERIENCE",
+        "VOLUNTEER ROSTER & OPERATIONAL SCHEDULE",
+        "",
+        "EVENT DETAILS:",
+        "- Event: RISE 2025 Youth Empowerment Workshop",
+        "- Location: St. Michael Community Center, Bridgetown, Barbados",
+        "- Dates: July 14, 2025 - July 18, 2025 (Monday - Friday)",
+        "- Target Audience: 50 High School & Secondary Students",
+        "",
+        "EXECUTIVE & COMMITTEE LEADERSHIP:",
+        "- Event Director: Cameron P. Sobers (President-Elect)",
+        "- Logistics Coordinator: Omolara De Riggs-Morris",
+        "- Youth Facilitation Lead: Deborah Bayne",
+        "- Registration & Welfare Lead: Sharon Mohammed",
+        "- Technical & Media Lead: Edwin Workman",
+        "",
+        "DAILY TIME SCHEDULE (MONDAY - FRIDAY):",
+        "08:00 AM - 08:30 AM: Volunteer & Facilitator Morning Briefing & Setup",
+        "08:30 AM - 09:00 AM: Student Registration & Name Badge Distribution",
+        "09:00 AM - 10:15 AM: Keynote Empowerment Session & Group Icebreakers",
+        "10:15 AM - 10:30 AM: Morning Refreshment Break",
+        "10:30 AM - 12:15 PM: Workshop Module (Leadership, Public Speaking, Civic Duty)",
+        "12:15 PM - 01:15 PM: Catered Lunch & Mentorship Discussions",
+        "01:15 PM - 03:30 PM: Group Project Work (Community Impact Pitch Creation)",
+        "03:30 PM - 04:00 PM: Daily Reflection, Feedback & Dismissal",
+        "04:00 PM - 04:30 PM: Staff Debriefing & Facility Cleanup",
+        "",
+        "VOLUNTEER FACILITATOR SHIFT ASSIGNMENTS (21 ACTIVE MEMBERS):",
+        "- Monday (Registration & Orientation): Charmaine London, Maureen Dottin, Shirley Hoyte, Elizabeth Franklin.",
+        "- Tuesday (Public Speaking & Oratory): Cameron Sobers, Ms Carmel Haynes, Stephanie Layne, Hyacinth Small.",
+        "- Wednesday (Community Innovation): Richelle Lucas, Omolara De Riggs-Morris, Garrylyn Swanston, Aisha Norville.",
+        "- Thursday (Team Building & Financial Literacy): Sharon Mohammed, Rozanne Parris, Nicole Whiteman, Joy-Ann Codrington.",
+        "- Friday (Final Presentations & Graduation): Edwin Workman, Yolanda Thorpe, Alicia Holder, Lisa Brome, Deborah Bayne.",
+        "",
+        "SAFETY & EMERGENCY PROTOCOLS:",
+        "- On-site First Aid Officer: Sharon Mohammed",
+        "- Emergency Phone Contact: (246) 836-6185 / (246) 425-0121",
+        "- Official Email: dev@bajanthings.biz"
+      ].join("\n")
+    }
+  ]);
+  const [docUploadModal, setDocUploadModal] = useState(false);
+  const [selectedDocModal, setSelectedDocModal] = useState(null);
+  const [expandedDocId, setExpandedDocId] = useState(null);
+  const [docName, setDocName] = useState('');
+  const [docCategory, setDocCategory] = useState('Meeting Minutes');
+
+  const downloadDocumentFile = (doc) => {
+    if (!doc) return;
+    const cleanFilename = `${doc.name.replace(/[^a-z0-9]/gi, '_')}.txt`;
+    const fileHeader = `${doc.name.toUpperCase()}\n${'='.repeat(doc.name.length)}\n\nCategory: ${doc.category || 'Official Document'}\nDate: ${doc.date}\nAuthor: ${doc.author || 'Club Executive Committee'}\n\nSUMMARY:\n${doc.summary || 'Official internal document.'}\n\n${'='.repeat(60)}\nDOCUMENT CONTENT:\n${'='.repeat(60)}\n\n${doc.content || 'Document content.'}\n`;
+    
+    const blob = new Blob([fileHeader], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = cleanFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
   
   // Member Statement Modal state
   const [statementModalMember, setStatementModalMember] = useState(null);
@@ -484,28 +726,107 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         {/* Tab 3: Internal Documents */}
         {dashboardTab === 'resources' && (
           <div className="space-y-4">
-            <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
-              Member Resources & Meeting Minutes
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+                Member Resources & Meeting Minutes
+              </h2>
+              {['super admin', 'admin', 'finance'].includes(currentUser?.access) && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDocUploadModal(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Document / Minutes</span>
+                </button>
+              )}
+            </div>
+
             <div className="space-y-3">
-              {[
-                { name: "Monthly Meeting Minutes - July 2025", date: "July 7, 2025", size: "320 KB" },
-                { name: "Progressive Optimist Constitution & Bylaws", date: "Annual Revision", size: "1.4 MB" },
-                { name: "RISE 2025 Volunteer Schedule & Roster", date: "June 2025", size: "450 KB" }
-              ].map((doc, idx) => (
-                <div key={idx} className="p-4 rounded-xl glass-card border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="w-5 h-5 text-optimist-blue" />
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">{doc.name}</strong>
-                      <span className="text-slate-400">{doc.date} • {doc.size}</span>
+              {internalDocs.map((doc) => {
+                const isExpanded = expandedDocId === doc.id;
+                return (
+                  <div key={doc.id} className="rounded-2xl glass-card border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-all">
+                    <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2.5 rounded-xl bg-amber-400/10 text-amber-500 border border-amber-400/20 shrink-0">
+                          <FileText className="w-5 h-5 text-optimist-blue" />
+                        </div>
+                        <div>
+                          <strong className="block font-heading font-bold text-sm text-slate-900 dark:text-white">
+                            {doc.name}
+                          </strong>
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
+                              {doc.category || 'Official Record'}
+                            </span>
+                            <span>• {doc.date}</span>
+                            <span>• {doc.size}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setExpandedDocId(isExpanded ? null : doc.id);
+                            setSelectedDocModal(doc);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all shadow cursor-pointer ${
+                            isExpanded
+                              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
+                              : 'bg-amber-400 hover:bg-amber-500 text-slate-950'
+                          }`}
+                          title="View & Preview Document Content"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{isExpanded ? 'Hide View' : 'View'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadDocumentFile(doc)}
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold hover:bg-optimist-blue hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Download File to Computer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Inline Document Content Reader Drawer */}
+                    {isExpanded && (
+                      <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 space-y-3 animate-in fade-in duration-200">
+                        {doc.summary && (
+                          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-1">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
+                              Executive Summary
+                            </span>
+                            <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
+                              {doc.summary}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap shadow-inner max-h-96 overflow-y-auto">
+                          <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 font-sans uppercase font-bold tracking-wider">
+                            <span>Published by {doc.author || 'Club Executive Committee'}</span>
+                            <span>{doc.date}</span>
+                          </div>
+                          {doc.content || "Document preview available for download."}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => alert(`Downloading ${doc.name}...`)} className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold hover:bg-optimist-blue hover:text-white transition-colors">
-                    Download
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -1055,6 +1376,197 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   <button type="submit" className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow">Save Photo</button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* DOCUMENT UPLOAD MODAL FOR EXECUTIVE OFFICERS */}
+        {docUploadModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-optimist-blue" />
+                  <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">
+                    Upload Internal Document & Minutes
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setDocUploadModal(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white font-bold text-lg"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!docName.trim()) return;
+                  const newDoc = {
+                    id: `doc-${Date.now()}`,
+                    name: docName.trim(),
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    size: '410 KB',
+                    category: docCategory,
+                    author: currentUser?.name || 'Club Executive Officer',
+                    summary: `Official document "${docName.trim()}" uploaded to member area by ${currentUser?.name || 'Executive Committee'}.`,
+                    content: `OFFICIAL RECORD: ${docName.trim().toUpperCase()}\n\nUploaded on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} by ${currentUser?.name || 'Executive Officer'}.\nCategory: ${docCategory}.\nStatus: Active Record.`
+                  };
+                  setInternalDocs([newDoc, ...internalDocs]);
+                  setDocName('');
+                  setDocUploadModal(false);
+                  alert(`Successfully uploaded "${newDoc.name}" to Internal Documents & Minutes!`);
+                }}
+                className="space-y-4 text-xs"
+              >
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                    Document / Minutes Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Monthly Meeting Minutes - October 2025"
+                    value={docName}
+                    onChange={(e) => setDocName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                    Document Category *
+                  </label>
+                  <select
+                    value={docCategory}
+                    onChange={(e) => setDocCategory(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  >
+                    <option value="Meeting Minutes">Meeting Minutes</option>
+                    <option value="Governance & Bylaws">Governance & Bylaws</option>
+                    <option value="Financial Reports">Financial Reports</option>
+                    <option value="Event Schedules">Event Schedules & Rosters</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                    Select Document File (PDF / Word / Excel) *
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-optimist-blue file:text-white hover:file:bg-blue-700 cursor-pointer"
+                  />
+                </div>
+
+                <div className="pt-3 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setDocUploadModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold text-xs shadow cursor-pointer"
+                  >
+                    Upload Document
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* DOCUMENT PREVIEW MODAL */}
+        {selectedDocModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 animate-in fade-in zoom-in duration-200 my-8 max-h-[90vh] flex flex-col justify-between">
+              {/* Header */}
+              <div className="flex justify-between items-start border-b border-slate-200 dark:border-slate-800 pb-4 shrink-0">
+                <div className="space-y-1 pr-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-optimist-blue text-white">
+                      {selectedDocModal.category || 'Official Document'}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">{selectedDocModal.size}</span>
+                  </div>
+                  <h3 className="font-heading font-black text-xl text-slate-900 dark:text-white">
+                    {selectedDocModal.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Published by <strong className="text-slate-800 dark:text-slate-200">{selectedDocModal.author || 'Club Executive Committee'}</strong> on {selectedDocModal.date}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedDocModal(null)}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold transition-colors shrink-0 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Document Body & Viewer Frame */}
+              <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+                {/* Executive Summary */}
+                {selectedDocModal.summary && (
+                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
+                      Executive Summary & Highlights
+                    </span>
+                    <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
+                      {selectedDocModal.summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Reader Document Paper Frame */}
+                <div className="p-6 sm:p-8 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4 shadow-inner font-mono text-xs leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-wrap max-h-[50vh] overflow-y-auto pr-3">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 font-sans uppercase tracking-widest font-bold">
+                    <span>Optimist International • Club # 78008</span>
+                    <span>Official Internal Record</span>
+                  </div>
+                  <div>
+                    {selectedDocModal.content || (
+                      <div className="py-8 text-center text-slate-500 font-sans space-y-2">
+                        <FileText className="w-10 h-10 text-optimist-blue mx-auto opacity-70" />
+                        <p className="font-bold">Full PDF / Document Reader Stream Available</p>
+                        <p className="text-xs text-slate-400">Click "Download Attachment" below to view complete raw file.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Document</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setSelectedDocModal(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    Close Viewer
+                  </button>
+                  <button
+                    onClick={() => downloadDocumentFile(selectedDocModal)}
+                    className="px-5 py-2 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Attachment</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
