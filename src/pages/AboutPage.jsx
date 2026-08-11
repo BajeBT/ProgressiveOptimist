@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Users,
   Award,
@@ -21,6 +22,8 @@ import {
 } from 'lucide-react';
 
 export const AboutPage = () => {
+  const { siteSettings } = useAuth();
+
   // Executive Officers with custom role placeholder images
   const currentOfficers = [
     {
@@ -47,7 +50,7 @@ export const AboutPage = () => {
     {
       name: "Edwin Workman",
       title: "OI Representative",
-      role: "Optimist International & Caribbean District Liaison",
+      role: "Optimist International & Caribbean District Liaison (non-voting)",
       email: "oirep@progressiveoptimist.org",
       image: "/avatars/oirep_placeholder.jpg"
     }
@@ -55,20 +58,20 @@ export const AboutPage = () => {
 
   const executiveRoles = [
     { title: "President", holder: "Richelle Lucas", badge: "Executive Head" },
-    { title: "President Elect", holder: "Richelle Lucas", badge: "Leadership" },
+    { title: "President Elect", holder: "Cameron P. Sobers", badge: "Leadership" },
     { title: "Vice President - Internal", holder: "Executive Committee", badge: "Internal Ops" },
     { title: "Vice President - External", holder: "Executive Committee", badge: "Outreach & Public" },
     { title: "Immediate Past President", holder: "Richelle Lucas", badge: "Advisory" },
     { title: "Secretary", holder: "Charmaine London", badge: "Administration" },
     { title: "Treasurer", holder: "Sharon Mohammed", badge: "Finance" },
-    { title: "OI Representative", holder: "Edwin Workman", badge: "International" }
+    { title: "OI Representative", holder: "Edwin Workman", badge: "International (non-voting)" }
   ];
 
   const currentDirectors = [
     { name: "Omolara DeRiggs-Morris", role: "Board Director & Past President (2023)", image: "/avatars/director_placeholder.jpg" },
     { name: "Dawn-Marie Watson", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
     { name: "Deborah Bayne", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
-    { name: "Cameron Sobers", role: "Board Director & Past President (2014)", image: "/avatars/director_placeholder.jpg" }
+    { name: "Cameron Sobers", role: "President-Elect & Past President (2014)", image: "/avatars/director_placeholder.jpg" }
   ];
 
   // Complete Past Presidents List from 2010 to 2025
@@ -82,10 +85,10 @@ export const AboutPage = () => {
     { year: "2019", name: "Shirley Hoyte" },
     { year: "2018", name: "Maureen Dottin" },
     { year: "2017", name: "Charmaine London" },
-    { year: "2016", name: "Margot Aquan" },
+    { year: "2016", name: "Margot Aquan", badge: "Distinguished" },
     { year: "2015", name: "Janelle Ottley" },
-    { year: "2014", name: "Cameron Sobers" },
-    { year: "2013", name: "Edwin Workman" },
+    { year: "2014", name: "Cameron Sobers", badge: "Distinguished" },
+    { year: "2013", name: "Edwin Workman", badge: "Distinguished" },
     { year: "2012", name: "Simeon Ellis" },
     { year: "2011", name: "Carmel Haynes" },
     { year: "2010", name: "JoyAnn Carter", badge: "Charter Year" }
@@ -141,7 +144,7 @@ export const AboutPage = () => {
           </div>
           <h3 className="font-heading text-xl font-bold">Caribbean District Theme</h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            <strong>C.A.R.E</strong> – Championing Authentic & Reinvigorating Engagement across all Caribbean island chapters.
+            {siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement"}
           </p>
         </div>
 
@@ -302,7 +305,11 @@ export const AboutPage = () => {
                 </div>
 
                 {p.badge && (
-                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                  <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                    p.badge === 'Distinguished'
+                      ? 'gold-gradient text-slate-950 font-black shadow-sm'
+                      : 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                  }`}>
                     {p.badge}
                   </span>
                 )}

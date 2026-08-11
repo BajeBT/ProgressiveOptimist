@@ -302,10 +302,10 @@ export const Navbar = ({ onOpenPostModal }) => {
             {currentUser ? (
               <button
                 onClick={logout}
-                className="hidden sm:inline-flex pl-2.5 pr-0 py-2.5 text-red-500 hover:text-red-400 transition-colors"
+                className="hidden sm:inline-flex p-2 rounded-xl bg-red-600/90 hover:bg-red-600 text-white shadow transition-all items-center justify-center opacity-90 hover:opacity-100"
                 title="Logout"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-2.5 h-2.5 text-white opacity-90" />
               </button>
             ) : (
               <Link
@@ -330,8 +330,8 @@ export const Navbar = ({ onOpenPostModal }) => {
         </div>
       </div>
 
-      {/* 3. LOGGED-IN UTILITY SUB-NAVBAR ROW */}
-      {currentUser && (
+      {/* 3. LOGGED-IN UTILITY SUB-NAVBAR ROW (Hidden on /membership and /admin pages) */}
+      {currentUser && !['/membership', '/admin', '/admin-settings'].includes(location.pathname) && (
         <div className="bg-slate-100/80 dark:bg-slate-900 border-t border-b border-slate-200 dark:border-slate-800 py-2.5">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             

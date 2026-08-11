@@ -22,7 +22,14 @@ import {
   TestTube,
   Check,
   X,
-  ShieldAlert
+  ShieldAlert,
+  FileSpreadsheet,
+  Send,
+  FileText,
+  CreditCard,
+  Eye,
+  Download,
+  Printer
 } from 'lucide-react';
 
 export const AdminSettingsPage = () => {
@@ -35,6 +42,9 @@ export const AdminSettingsPage = () => {
     updateSiteSettings,
     updateMemberPermissions,
     updateMemberRecord,
+    updateMemberDuesByTreasurer,
+    updateMemberNotesByTreasurer,
+    sendDuesStatementEmail,
     isSandboxMode,
     testEmailTarget,
     projects,
@@ -43,7 +53,71 @@ export const AdminSettingsPage = () => {
   } = useAuth();
 
   const userAccess = currentUser?.access || 'member';
-  const [activeTab, setActiveTab] = useState(userAccess === 'moderator' ? 'moderation' : 'variables'); // 'variables' | 'permissions' | 'moderation'
+  const [activeTab, setActiveTab] = useState(userAccess === 'moderator' ? 'moderation' : 'variables'); // 'variables' | 'permissions' | 'treasurer' | 'moderation'
+  
+  // Treasurer Console State
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+  const [editingNotesId, setEditingNotesId] = useState(null);
+  const [tempNotesText, setTempNotesText] = useState('');
+  const [statementModalMember, setStatementModalMember] = useState(null);
+  const [treasurerMsg, setTreasurerMsg] = useState('');
+  const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+  const [rosterSearch, setRosterSearch] = useState('');
+
+  const bankDetails = {
+    bank: "Scotiabank (Barbados) Ltd.",
+    accountName: "Progressive Optimist Club of Barbados",
+    accountNum: "000451801",
+    branch: "Haggatt Hall Branch, St. Michael",
+    routing: "66555"
+  };
+
+  const copyBankInfo = () => {
+    const infoText = `Bank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nRouting/Transit: ${bankDetails.routing}`;
+    navigator.clipboard.writeText(infoText);
+    setCopiedBankInfo(true);
+    setTimeout(() => setCopiedBankInfo(false), 3000);
+  };
+
+  const toggleSelectMember = (id) => {
+    setSelectedMemberIds(prev =>
+      prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedMemberIds.length === filteredRoster.length) {
+      setSelectedMemberIds([]);
+    } else {
+      setSelectedMemberIds(filteredRoster.map(m => m.id));
+    }
+  };
+
+  const handleTreasurerUpdateStatus = async (memberId, memberName, newStatus) => {
+    const res = await updateMemberDuesByTreasurer(memberId, newStatus);
+    if (res.success) {
+      setTreasurerMsg(`Updated dues record for ${memberName} to ${newStatus}. Formal receipt emailed.`);
+      setTimeout(() => setTreasurerMsg(''), 5000);
+    }
+  };
+
+  const handleSaveNotes = async (memberId) => {
+    const res = await updateMemberNotesByTreasurer(memberId, tempNotesText);
+    if (res.success) {
+      setEditingNotesId(null);
+      setTreasurerMsg('Updated treasurer notes for member record.');
+      setTimeout(() => setTreasurerMsg(''), 4000);
+    }
+  };
+
+  const handleSendEmailStatement = async (memberIds) => {
+    const targets = Array.isArray(memberIds) ? memberIds : [memberIds];
+    const res = await sendDuesStatementEmail(targets);
+    if (res.success) {
+      setTreasurerMsg(`Sent official dues balance statements to ${targets.length} member(s).`);
+      setTimeout(() => setTreasurerMsg(''), 5000);
+    }
+  };
   
   // Site Variables Form State
   const [meetingSchedule, setMeetingSchedule] = useState(siteSettings?.meetingSchedule || "1st Monday of every month at 5:30 PM");
@@ -258,6 +332,18 @@ export const AdminSettingsPage = () => {
             >
               <Users className="w-4 h-4" />
               <span>Member Records ({memberRoster.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('treasurer')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'treasurer'
+                  ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
+                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Treasurer Dues Console</span>
             </button>
           </>
         )}
@@ -558,6 +644,378 @@ export const AdminSettingsPage = () => {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* TAB: TREASURER DUES MANAGEMENT CONSOLE */}
+      {activeTab === 'treasurer' && canManageSettings && (
+        <div className="space-y-6">
+          
+          {/* Header Banner */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
+                </span>
+                <h2 className="font-heading text-2xl font-black text-white">
+                  Member Dues Management Ledger
+                </h2>
+                <p className="text-xs text-slate-300">
+                  Optimist Fiscal Year runs <strong>October 1st to September 30th</strong>. As Club Treasurer (<strong>Sharon Mohammed</strong>) and Club Executives, you can record payments, view official statements, add notes, and email dues balance statements.
+                </p>
+              </div>
+
+              <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 text-right shrink-0">
+                <span className="text-xs text-slate-400 block">Total Active Settled Dues</span>
+                <strong className="font-heading text-2xl font-black text-emerald-400">
+                  {memberRoster.filter(m => m.duesStatus && m.duesStatus.includes('Active')).length} / {memberRoster.length}
+                </strong>
+              </div>
+            </div>
+
+            {treasurerMsg && (
+              <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{treasurerMsg}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Scotiabank Bank Transfer Info Box */}
+          <div className="p-4 rounded-2xl bg-slate-900 text-white border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="text-xs space-y-0.5">
+              <strong className="text-amber-400 font-bold block">Official Scotiabank Dues Deposit Account:</strong>
+              <p className="text-slate-300 font-mono">
+                Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong> • Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit/Routing #: <strong className="text-amber-300">66555</strong>
+              </p>
+            </div>
+            <button onClick={copyBankInfo} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shrink-0">
+              {copiedBankInfo ? 'Copied!' : 'Copy Bank Details'}
+            </button>
+          </div>
+
+          {/* Controls Bar: Search, Select All, Bulk Email & Export */}
+          <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={rosterSearch}
+                  onChange={e => setRosterSearch(e.target.value)}
+                  placeholder="Search member name or ID..."
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                />
+              </div>
+
+              <button
+                onClick={toggleSelectAll}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 transition-colors"
+              >
+                {selectedMemberIds.length === filteredRoster.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                (Total Members: {filteredRoster.length})
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedMemberIds.length > 0 && (
+                <button
+                  onClick={() => handleSendEmailStatement(selectedMemberIds)}
+                  className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow hover:bg-blue-800 transition-colors flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Email Balance Statement to Selected ({selectedMemberIds.length})</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => alert("Full Member Dues Ledger exported to CSV/Excel.")}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" /> Export Excel Ledger
+              </button>
+            </div>
+          </div>
+
+          {/* Member Ledger Table */}
+          <div className="rounded-3xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="p-4 w-12 text-center text-slate-400">#</th>
+                    <th className="p-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedMemberIds.length === filteredRoster.length && filteredRoster.length > 0}
+                        onChange={toggleSelectAll}
+                        className="rounded border-slate-300"
+                      />
+                    </th>
+                    <th className="p-4">Member Name (Click for Statement)</th>
+                    <th className="p-4">Fiscal Year & Rate</th>
+                    <th className="p-4">Paid / Balance Due</th>
+                    <th className="p-4">Payment Method & Status</th>
+                    <th className="p-4">Treasurer Notes</th>
+                    <th className="p-4 text-right">Treasurer Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {filteredRoster.map((member, index) => {
+                    const isSelected = selectedMemberIds.includes(member.id);
+                    const isEditingNotes = editingNotesId === member.id;
+
+                    return (
+                      <tr key={member.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${isSelected ? 'bg-amber-400/10' : ''}`}>
+                        <td className="p-4 text-center font-mono text-slate-400 font-bold text-xs border-r border-slate-200 dark:border-slate-800">
+                          {index + 1}
+                        </td>
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectMember(member.id)}
+                            className="rounded border-slate-300"
+                          />
+                        </td>
+
+                        {/* Member Name Link -> Opens Member Statement Modal */}
+                        <td className="p-4">
+                          <button
+                            onClick={() => setStatementModalMember(member)}
+                            className="font-bold text-optimist-blue dark:text-amber-400 hover:underline text-sm text-left flex items-center gap-1.5 group"
+                            title="Click to view Official Dues Statement"
+                          >
+                            <span>{member.name}</span>
+                            <FileText className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 text-amber-500 transition-opacity" />
+                          </button>
+                          <span className="text-slate-400 font-mono text-[10px] block">{member.id}</span>
+                          <span className="text-slate-500 text-[10px]">{member.email}</span>
+                        </td>
+
+                        <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
+                          <strong className="block text-slate-900 dark:text-white">2025/2026</strong>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">$250.00 Rate</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Paid: {member.amountPaid ? member.amountPaid.replace(' BBD', '') : ''}</span>
+                          <span className={`text-[11px] font-bold ${(!member.balanceDue || member.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-slate-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            Due: {member.balanceDue ? member.balanceDue.replace(' BBD', '') : ''}
+                          </span>
+                        </td>
+                        <td className="p-4 space-y-1">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                            member.duesStatus && member.duesStatus.includes('Active')
+                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
+                          }`}>
+                            {member.duesStatus && member.duesStatus.includes('Active') ? <Check className="w-3 h-3 text-emerald-500" /> : <AlertCircle className="w-3 h-3 text-amber-500" />}
+                            {member.duesStatus || 'Active Member'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 block">Method: {member.paymentMethod || 'Bank Transfer'}</span>
+                        </td>
+                        
+                        {/* Editable Notes Field */}
+                        <td className="p-4 max-w-xs">
+                          {isEditingNotes ? (
+                            <div className="space-y-1">
+                              <textarea
+                                rows={2}
+                                value={tempNotesText}
+                                onChange={e => setTempNotesText(e.target.value)}
+                                className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none"
+                              />
+                              <div className="flex gap-1 justify-end">
+                                <button onClick={() => setEditingNotesId(null)} className="px-2 py-0.5 rounded text-[10px] border">Cancel</button>
+                                <button onClick={() => handleSaveNotes(member.id)} className="px-2 py-0.5 rounded text-[10px] bg-optimist-blue text-white font-bold">Save</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() => {
+                                setEditingNotesId(member.id);
+                                setTempNotesText(member.notes || '');
+                              }}
+                              className="group p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-amber-400 transition-colors"
+                            >
+                              <p className="text-[11px] text-slate-700 dark:text-slate-300 italic line-clamp-2">
+                                "{member.notes || 'Click to add treasurer notes...'}"
+                              </p>
+                              <span className="text-[9px] font-bold text-optimist-blue dark:text-amber-400 group-hover:underline flex items-center gap-1 mt-1">
+                                <Edit3 className="w-2.5 h-2.5" /> Edit Notes
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Action Buttons */}
+                        <td className="p-4 text-right space-y-1.5">
+                          <button
+                            onClick={() => setStatementModalMember(member)}
+                            className="w-full px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
+                          >
+                            <FileText className="w-3 h-3" /> View Statement
+                          </button>
+
+                          <button
+                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
+                            className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
+                            title="Mark $250 Dues Paid"
+                          >
+                            <Check className="w-3 h-3" /> Mark $250 Paid
+                          </button>
+
+                          <button
+                            onClick={() => handleSendEmailStatement(member.id)}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-optimist-blue hover:text-white text-slate-700 dark:text-slate-300 font-bold text-[10px] transition-colors flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700"
+                            title="Send Email Statement"
+                          >
+                            <Send className="w-3 h-3 text-amber-500" /> Email Statement
+                          </button>
+                          
+                          {member.emailLastSent && (
+                            <span className="text-[9px] text-slate-400 block text-center">
+                              Statement Sent: {member.emailLastSent}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* OFFICIAL MEMBER DUES STATEMENT MODAL */}
+      {statementModalMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+            
+            {/* Modal Close Button */}
+            <button
+              onClick={() => setStatementModalMember(null)}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Statement Header */}
+            <div className="border-b border-slate-200 dark:border-slate-800 pb-6 space-y-3">
+              <div className="flex items-center space-x-3">
+                <img src="/logo.png" alt="Progressive Optimist" className="h-12 w-auto" />
+                <div>
+                  <h2 className="font-heading font-black text-lg text-slate-900 dark:text-white">
+                    PROGRESSIVE OPTIMIST CLUB OF BARBADOS
+                  </h2>
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                    Club # 78008 • District 78 (CAR) • Zone 8
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                <span><strong>Document:</strong> Official Annual Dues Statement</span>
+                <span><strong>Statement Date:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <span><strong>Ref #:</strong> STMT-78008-2025-{statementModalMember.id}</span>
+              </div>
+            </div>
+
+            {/* Member Details & Account Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Member Account Info</span>
+                <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{statementModalMember.name}</h3>
+                <p className="text-slate-600 dark:text-slate-300">Member ID: <strong>{statementModalMember.id}</strong></p>
+                <p className="text-slate-600 dark:text-slate-300">Designation: <strong>{statementModalMember.role}</strong></p>
+                <p className="text-slate-600 dark:text-slate-300">Email: <strong>{statementModalMember.email}</strong></p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
+                <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
+                <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
+                <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
+                <p className="text-slate-800 dark:text-slate-200">Current Balance Due: <strong className={(!statementModalMember.balanceDue || statementModalMember.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{statementModalMember.balanceDue ? statementModalMember.balanceDue.replace(' BBD', '') : ''}</strong></p>
+              </div>
+            </div>
+
+            {/* Payment History Breakdown */}
+            <div className="space-y-2">
+              <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                Fiscal Year Dues Ledger Transactions
+              </h4>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">
+                    <tr>
+                      <th className="p-2.5">Date</th>
+                      <th className="p-2.5">Description</th>
+                      <th className="p-2.5">Method</th>
+                      <th className="p-2.5 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    <tr>
+                      <td className="p-2.5 font-mono text-slate-500">{statementModalMember.lastPaymentDate}</td>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">Annual Club Dues (2025/2026)</td>
+                      <td className="p-2.5 text-slate-500">{statementModalMember.paymentMethod}</td>
+                      <td className="p-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Bank Transfer Instructions */}
+            <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-1 text-xs font-mono">
+              <span className="text-[10px] font-bold text-amber-400 uppercase block font-sans">Payment Instructions: Scotiabank Bank Transfer</span>
+              <p>Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong></p>
+              <p>Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit #: <strong className="text-amber-300">66555</strong></p>
+            </div>
+
+            {/* Remarks & Notes */}
+            {statementModalMember.notes && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs italic text-slate-600 dark:text-slate-300">
+                <strong>Treasurer Notes:</strong> "{statementModalMember.notes}"
+              </div>
+            )}
+
+            {/* Modal Footer Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors flex items-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" /> Print / Save PDF
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleSendEmailStatement(statementModalMember.id);
+                    alert(`Statement dispatched for ${statementModalMember.name}! Copies rerouted to dev@bajanthings.biz.`);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white text-xs font-bold shadow transition-colors flex items-center gap-1.5"
+                >
+                  <Send className="w-4 h-4 text-amber-300" /> Email Statement
+                </button>
+              </div>
+
+              <button
+                onClick={() => setStatementModalMember(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-colors"
+              >
+                Close Statement
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

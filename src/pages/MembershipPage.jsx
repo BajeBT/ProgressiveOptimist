@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { activeRoster21 } from '../data/rosterData';
 import {
   User,
   Lock,
@@ -33,7 +34,8 @@ import {
   X,
   Users,
   Eye,
-  Loader2
+  Loader2,
+  MapPin
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -57,7 +59,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'apply'
   
   // Dashboard tabs (when logged in)
-  const [dashboardTab, setDashboardTab] = useState('projects'); // 'projects' | 'gallery' | 'resources' | 'dues' | 'treasurer'
+  const [dashboardTab, setDashboardTab] = useState('projects'); // 'projects' | 'gallery' | 'directory' | 'resources' | 'dues' | 'treasurer'
+  const [dirSearchTerm, setDirSearchTerm] = useState('');
+  const [copiedText, setCopiedText] = useState(null);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -531,6 +535,65 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     m.id.toLowerCase().includes(rosterSearch.toLowerCase())
   );
 
+  // Combine memberRoster and activeRoster21 into a unified read-only directory list
+  const combinedDirectory = useMemo(() => {
+    const map = new Map();
+
+    // 1. Populate from activeRoster21 (official roster with phone/email/address)
+    if (Array.isArray(activeRoster21)) {
+      activeRoster21.forEach(m => {
+        const key = m.id || (m.email ? m.email.toLowerCase().trim() : null);
+        if (key) {
+          map.set(key, {
+            id: m.id,
+            name: m.fullName || `${m.firstName || ''} ${m.lastName || ''}`.trim(),
+            email: m.email || '',
+            phone: m.phone || '',
+            address: m.address || '',
+            role: m.role || 'Active Member',
+            status: m.status || 'Active Member',
+            avatar: null
+          });
+        }
+      });
+    }
+
+    // 2. Merge live memberRoster records
+    if (Array.isArray(memberRoster)) {
+      memberRoster.forEach(m => {
+        const key = m.id || (m.email ? m.email.toLowerCase().trim() : null);
+        if (key) {
+          const existing = map.get(key) || {};
+          map.set(key, {
+            ...existing,
+            id: m.id || existing.id,
+            name: m.name || existing.name,
+            email: m.email || existing.email,
+            phone: m.phone || existing.phone || '',
+            address: m.address || existing.address,
+            role: m.role || existing.role || 'Active Member',
+            status: m.duesStatus ? (m.duesStatus.includes('Active') ? 'Active Member' : m.duesStatus) : (existing.status || 'Active Member'),
+            avatar: m.avatar || existing.avatar
+          });
+        }
+      });
+    }
+
+    return Array.from(map.values());
+  }, [memberRoster]);
+
+  const filteredDirectory = combinedDirectory.filter(m => {
+    const term = dirSearchTerm.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      (m.name && m.name.toLowerCase().includes(term)) ||
+      (m.email && m.email.toLowerCase().includes(term)) ||
+      (m.phone && m.phone.toLowerCase().includes(term)) ||
+      (m.role && m.role.toLowerCase().includes(term)) ||
+      (m.id && m.id.toLowerCase().includes(term))
+    );
+  });
+
   // If user is LOGGED IN: Render Member Portal Dashboard
   if (currentUser) {
     const myProjects = projects.filter(p => p.authorId === currentUser.memberId || p.author === currentUser.name);
@@ -552,11 +615,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border-2 border-emerald-500 p-1 shadow-lg object-cover"
             />
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-                  Welcome, {currentUser.name}!
+                  <span>Welcome,</span>{' '}
+                  <span className="whitespace-nowrap">{currentUser.name}!</span>
                 </h1>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded gold-gradient text-slate-950">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded gold-gradient text-slate-950 shrink-0">
                   {currentUser.role}
                 </span>
               </div>
@@ -598,10 +662,10 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
             <button
               onClick={logout}
-              className="p-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
+              className="p-2 rounded-xl bg-red-600/90 hover:bg-red-600 text-white shadow-md transition-all shrink-0 flex items-center justify-center opacity-90 hover:opacity-100"
               title="Logout"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-2.5 h-2.5 text-white opacity-90" />
             </button>
           </div>
         </div>
@@ -631,6 +695,18 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           </button>
 
           <button
+            onClick={() => setDashboardTab('directory')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              dashboardTab === 'directory'
+                ? 'bg-optimist-blue text-white shadow'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Members Directory ({combinedDirectory.length})</span>
+          </button>
+
+          <button
             onClick={() => setDashboardTab('resources')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               dashboardTab === 'resources'
@@ -651,21 +727,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           >
             My Dues Record ($250)
           </button>
-
-          {/* Dedicated Treasurer Management Tab (Restricted to President & Treasurer) */}
-          {canAccessTreasurerConsole && (
-            <button
-              onClick={() => setDashboardTab('treasurer')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                dashboardTab === 'treasurer'
-                  ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
-                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Treasurer Dues Console</span>
-            </button>
-          )}
         </div>
 
         {/* Tab 1: Member Projects */}
@@ -743,6 +804,198 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Tab: Read-Only Members Directory */}
+        {dashboardTab === 'directory' && (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Read-Only Directory
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                      Internal Roster
+                    </span>
+                  </div>
+                  <h2 className="font-heading text-2xl font-black text-white mt-2 flex items-center gap-2">
+                    <Users className="w-6 h-6 text-amber-400" />
+                    Active Members Directory
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+                    Official internal membership roster and contact directory for the Progressive Optimist Club of Barbados. Accessible exclusively to authenticated club members.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-700 text-center">
+                    <span className="block text-2xl font-black text-amber-400 leading-none">
+                      {combinedDirectory.length}
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      Active Members
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={dirSearchTerm}
+                    onChange={(e) => setDirSearchTerm(e.target.value)}
+                    placeholder="Search member name, phone number, email address, or role..."
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                  />
+                  {dirSearchTerm && (
+                    <button
+                      onClick={() => setDirSearchTerm('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {copiedText && (
+                <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 pt-1">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{copiedText} copied to clipboard!</span>
+                </div>
+              )}
+            </div>
+
+            {/* Members Directory Table (Name, Club Position, Email, Phone) */}
+            <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <th className="py-4 px-6">Name</th>
+                    <th className="py-4 px-6">Club Position</th>
+                    <th className="py-4 px-6">Email Address</th>
+                    <th className="py-4 px-6">Phone Number</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
+                  {filteredDirectory.map((member) => (
+                    <tr
+                      key={member.id || member.email}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      {/* Name */}
+                      <td className="py-4 px-6 font-bold text-slate-900 dark:text-white">
+                        <div className="flex items-center space-x-3">
+                          {member.avatar ? (
+                            <img
+                              src={member.avatar}
+                              alt={member.name}
+                              className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-optimist-blue/20 text-optimist-blue dark:text-amber-400 font-extrabold text-xs flex items-center justify-center border border-optimist-blue/30 shrink-0">
+                              {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="block font-extrabold text-slate-900 dark:text-white truncate">{member.name}</span>
+                            <span className="text-[10px] font-mono text-slate-400 block">{member.id}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Club Position */}
+                      <td className="py-4 px-6 text-slate-700 dark:text-slate-300">
+                        <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-optimist-blue dark:bg-blue-950/60 dark:text-amber-400 border border-blue-200 dark:border-blue-800">
+                          {member.role || 'Active Member'}
+                        </span>
+                      </td>
+
+                      {/* Email */}
+                      <td className="py-4 px-6 text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center space-x-2">
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="font-semibold text-slate-800 dark:text-slate-200 hover:text-optimist-blue dark:hover:text-amber-400 hover:underline flex items-center gap-1.5"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span>{member.email}</span>
+                          </a>
+                          {member.email && (
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(member.email);
+                                setCopiedText(`Email for ${member.name}`);
+                                setTimeout(() => setCopiedText(null), 2000);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                              title="Copy Email Address"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Phone */}
+                      <td className="py-4 px-6 text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center space-x-2">
+                          {member.phone ? (
+                            <>
+                              <a
+                                href={`tel:${member.phone.replace(/[^0-9+]/g, '')}`}
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline flex items-center gap-1.5"
+                              >
+                                <Phone className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                <span>{member.phone}</span>
+                              </a>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(member.phone);
+                                  setCopiedText(`Phone for ${member.name}`);
+                                  setTimeout(() => setCopiedText(null), 2000);
+                                }}
+                                className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                title="Copy Phone Number"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 italic">Not listed</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredDirectory.length === 0 && (
+              <div className="p-12 text-center rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-3">
+                <Search className="w-10 h-10 text-slate-400 mx-auto" />
+                <h3 className="font-heading font-bold text-slate-900 dark:text-white">
+                  No Members Found
+                </h3>
+                <p className="text-xs text-slate-500">
+                  No member matches "{dirSearchTerm}". Try searching by another name, phone number, or email address.
+                </p>
+                <button
+                  onClick={() => setDirSearchTerm('')}
+                  className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow"
+                >
+                  Clear Search Filter
+                </button>
+              </div>
+            )}
           </div>
         )}
 
