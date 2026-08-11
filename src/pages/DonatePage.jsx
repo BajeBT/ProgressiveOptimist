@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check, Building2, Copy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
+
+// Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.
+const BBD_TO_USD = 0.5;
 
 export const DonatePage = () => {
   const [selectedTier, setSelectedTier] = useState(50);
@@ -7,7 +10,25 @@ export const DonatePage = () => {
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [donationSuccess, setDonationSuccess] = useState(false);
+  const [donationCanceled, setDonationCanceled] = useState(false);
+  const [donationError, setDonationError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [paidAmount, setPaidAmount] = useState(null);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+
+  // Stripe redirects back here after checkout - read the outcome from the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setDonationSuccess(true);
+      setPaidAmount(params.get('amount'));
+    } else if (params.get('canceled') === 'true') {
+      setDonationCanceled(true);
+    }
+    if (params.has('success') || params.has('canceled')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const bankDetails = {
     bank: "Scotiabank",
@@ -31,9 +52,35 @@ export const DonatePage = () => {
     { amount: 250, label: "Community Youth Champion", desc: "Sponsors school outreach & youth development programs" }
   ];
 
-  const handleDonateSubmit = (e) => {
+  const handleDonateSubmit = async (e) => {
     e.preventDefault();
-    setDonationSuccess(true);
+    setDonationError('');
+
+    const amount = Number(customAmount || selectedTier);
+    if (!Number.isFinite(amount) || amount < 5) {
+      setDonationError('Donation amount must be at least $5 BBD.');
+      return;
+    }
+
+    setIsRedirecting(true);
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bbdAmount: amount, donorName, donorEmail })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setDonationError(data.message || 'Failed to start checkout. Please try again.');
+        setIsRedirecting(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setDonationError('Network error. Please try again.');
+      setIsRedirecting(false);
+    }
   };
 
   return (
@@ -195,11 +242,27 @@ export const DonatePage = () => {
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
                 <h4 className="font-heading font-bold text-lg">Thank You For Your Contribution!</h4>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Your generous gift of <strong>${customAmount || selectedTier} BBD</strong> will directly support youth projects in Barbados.
+                  {paidAmount
+                    ? <>Your generous gift of <strong>${paidAmount} USD</strong> will directly support youth projects in Barbados.</>
+                    : <>Your generous gift will directly support youth projects in Barbados.</>}
                 </p>
               </div>
             ) : (
               <form onSubmit={handleDonateSubmit} className="space-y-4">
+                {donationCanceled && (
+                  <div className="p-3 rounded-xl bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold flex items-start gap-2">
+                    <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Checkout was canceled. No charge was made - feel free to try again whenever you're ready.</span>
+                  </div>
+                )}
+
+                {donationError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{donationError}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
                     Donation Amount (BBD)
@@ -207,13 +270,18 @@ export const DonatePage = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
+                      min="5"
                       value={customAmount || selectedTier}
                       onChange={e => setCustomAmount(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold outline-none"
+                      disabled={isRedirecting}
                       required
                     />
                     <span className="text-xs font-bold text-slate-500">BBD</span>
                   </div>
+                  <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    Charged as <strong>${(Number(customAmount || selectedTier) * BBD_TO_USD || 0).toFixed(2)} USD</strong> (BBD is pegged at 2 = 1 USD).
+                  </p>
                 </div>
 
                 <div>
@@ -224,6 +292,7 @@ export const DonatePage = () => {
                     onChange={e => setDonorName(e.target.value)}
                     placeholder="e.g. John Sobers"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
+                    disabled={isRedirecting}
                     required
                   />
                 </div>
@@ -236,16 +305,27 @@ export const DonatePage = () => {
                     onChange={e => setDonorEmail(e.target.value)}
                     placeholder="info@ProgressiveOptimist.org"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
+                    disabled={isRedirecting}
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                  disabled={isRedirecting}
+                  className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Donate ${customAmount || selectedTier} BBD Now</span>
+                  {isRedirecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Redirecting to secure checkout…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      <span>Donate ${customAmount || selectedTier} BBD Now</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}
