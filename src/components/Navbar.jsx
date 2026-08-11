@@ -177,51 +177,17 @@ export const Navbar = ({ onOpenPostModal }) => {
               )}
             </div>
 
-            {/* Nav 3: Projects & Activities Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setActiveDropdown('projects')}
-              onMouseLeave={() => setActiveDropdown(null)}
+            {/* Nav 3: Activities */}
+            <Link
+              to="/projects"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                isActive('/projects')
+                  ? 'bg-optimist-blue text-white shadow-md'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
-              <Link
-                to="/projects"
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
-                  isActive('/projects')
-                    ? 'bg-optimist-blue text-white shadow-md'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <span>Projects & Work</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-              </Link>
-
-              {activeDropdown === 'projects' && (
-                <div className="absolute top-full left-0 w-64 pt-2 z-50">
-                  <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-1">
-                    <Link
-                      to="/projects"
-                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
-                    >
-                      <Sparkles className="w-4 h-4 text-optimist-blue group-hover:scale-110 transition-transform" />
-                      <div>
-                        <strong className="block text-xs text-slate-900 dark:text-white">RISE Summer Experience</strong>
-                        <span className="text-[10px] text-slate-500">Youth Mentorship & Life Skills</span>
-                      </div>
-                    </Link>
-                    <Link
-                      to="/projects"
-                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
-                    >
-                      <Heart className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <strong className="block text-xs text-slate-900 dark:text-white">Easter Cheer Giveaway</strong>
-                        <span className="text-[10px] text-slate-500">Primary School Kites & Cheer</span>
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+              Activities
+            </Link>
 
             {/* Nav 4: Barbados & Global Network */}
             <div
@@ -443,7 +409,7 @@ export const Navbar = ({ onOpenPostModal }) => {
             onClick={() => setMobileMenuOpen(false)}
             className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            Projects & Work
+            Activities
           </Link>
           <Link
             to="/barbados-clubs"

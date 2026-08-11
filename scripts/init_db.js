@@ -223,8 +223,9 @@ async function initializeDatabase() {
       );
     `;
 
-    // Guarantee the column is added if it already exists
+    // Guarantee the columns are added if they already exist
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS access VARCHAR(50) DEFAULT 'member';`;
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password VARCHAR(255);`;
 
     // 2. Create dues_ledger table
     console.log("Creating table 'dues_ledger'...");

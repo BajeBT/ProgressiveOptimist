@@ -283,7 +283,7 @@ export const AuthProvider = ({ children }) => {
         // Fetch Members & Dues Ledgers from Neon PostgreSQL
         const rows = await sql`
           SELECT 
-            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access,
+            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access, m.password,
             d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due, 
             d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
           FROM members m
@@ -315,6 +315,7 @@ export const AuthProvider = ({ children }) => {
               address: r.address,
               avatar: r.avatar,
               access: r.access || defaultAccess,
+              password: r.password || '',
               fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
               duesRate: r.dues_rate || '$250.00',
               amountPaid: r.amount_paid || '$250.00',
@@ -527,8 +528,16 @@ export const AuthProvider = ({ children }) => {
     // Look up in roster first if available
     const matchedRosterItem = memberRoster.find(m => m.email.toLowerCase().trim() === cleanEmail);
 
+    if (matchedRosterItem && matchedRosterItem.access === 'pending_verification') {
+      return { success: false, message: 'Please check your email and verify your email address to set your password before logging in.' };
+    }
+
     if (matchedRosterItem && matchedRosterItem.access === 'pending') {
-      return { success: false, message: 'Your membership application is currently pending approval by the Club Treasurer/President.' };
+      return { success: false, message: 'Your membership application is currently pending review by the Membership Review Committee.' };
+    }
+
+    if (matchedRosterItem && matchedRosterItem.password && password !== matchedRosterItem.password) {
+      return { success: false, message: 'Invalid password. Please check your credentials.' };
     }
 
     if (cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail === 'sharon@topaz-bb.com' || cleanEmail.includes('treasurer')) {
@@ -601,13 +610,13 @@ export const AuthProvider = ({ children }) => {
       phone: formData.phone || '',
       address: addressString,
       role: 'Pending Member',
-      access: 'pending',
+      access: 'pending_verification',
       fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
       duesRate: '$250.00',
       amountPaid: '$0.00',
       balanceDue: '$250.00',
       paymentMethod: 'Pending',
-      duesStatus: 'Pending Approval',
+      duesStatus: 'Pending Verification',
       lastPaymentDate: 'None',
       notes: notesString,
       emailLastSent: 'None',
@@ -618,17 +627,45 @@ export const AuthProvider = ({ children }) => {
 
     setMemberRoster(prev => [newMemberRecord, ...prev]);
 
+    // Send email verification link (Simulated and rerouted strictly to dev@bajanthings.biz per user rules)
+    const verifyToken = 'tok-' + Math.floor(100000 + Math.random() * 900000);
+    const verifyLink = `http://localhost:3000/membership?action=verify-email&email=${encodeURIComponent(formData.email)}&token=${verifyToken}`;
+
+    const verifyEmailBody = `
+======================================================================
+TO: dev@bajanthings.biz (Simulated Rerouting from: ${formData.email})
+FROM: registration@progressiveoptimist.org
+SUBJECT: [Action Required] Verify Your Email Address & Set Password
+======================================================================
+
+Dear ${name},
+
+Thank you for applying to the Progressive Optimist Club of Barbados.
+
+To complete your application process, please click the secure link below to verify your email address and set your portal login password:
+
+Verify Email & Set Password:
+${verifyLink}
+
+Once verified, your application will be reviewed by the Membership Review Committee.
+
+Regards,
+Progressive Optimist Club of Barbados Membership Review Committee
+======================================================================
+`;
+    console.log("%c[SIMULATED EMAIL VERIFICATION SENT]", "color: #3b82f6; font-weight: bold;", verifyEmailBody);
+
     // Async sync to Neon DB
     (async () => {
       try {
         await sql`
           INSERT INTO members (id, name, email, phone, role, avatar, address, access)
-          VALUES (${memberId}, ${name}, ${formData.email}, ${formData.phone || ''}, 'Pending Member', ${avatar}, ${addressString}, 'pending')
+          VALUES (${memberId}, ${name}, ${formData.email}, ${formData.phone || ''}, 'Pending Member', ${avatar}, ${addressString}, 'pending_verification')
           ON CONFLICT (id) DO NOTHING;
         `;
         await sql`
           INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
-          VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$0.00', '$250.00', 'Pending', 'Pending Approval', ${notesString});
+          VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$0.00', '$250.00', 'Pending', 'Pending Verification', ${notesString});
         `;
       } catch (err) {
         console.warn("Neon DB member insert sync error:", err);
@@ -636,6 +673,42 @@ export const AuthProvider = ({ children }) => {
     })();
 
     return { success: true, user: newMemberRecord };
+  };
+
+  // Verify email and set password for pending applicant
+  const verifyMemberEmailAndPassword = async (email, password) => {
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Update local state roster
+    setMemberRoster(prev => prev.map(m => {
+      if (m.email.toLowerCase().trim() === cleanEmail) {
+        return {
+          ...m,
+          access: 'pending', // Awaiting committee approval now
+          duesStatus: 'Pending Approval',
+          password: password
+        };
+      }
+      return m;
+    }));
+
+    // Update Neon DB
+    try {
+      await sql`
+        UPDATE members
+        SET access = 'pending', password = ${password}
+        WHERE LOWER(TRIM(email)) = ${cleanEmail};
+      `;
+      await sql`
+        UPDATE dues_ledger
+        SET dues_status = 'Pending Approval'
+        WHERE member_id = (SELECT id FROM members WHERE LOWER(TRIM(email)) = ${cleanEmail});
+      `;
+      return { success: true, message: 'Email verified and password created successfully!' };
+    } catch (err) {
+      console.warn("Neon DB verification update error:", err);
+      return { success: false, message: 'Database sync failed.' };
+    }
   };
 
   // Update member dues record for current user
@@ -912,6 +985,7 @@ Progressive Optimist Club of Barbados
         currentUser,
         login,
         registerMember,
+        verifyMemberEmailAndPassword,
         updateDuesStatus,
         memberRoster,
         updateMemberDuesByTreasurer,

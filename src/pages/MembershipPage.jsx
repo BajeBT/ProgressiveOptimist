@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -39,6 +39,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     currentUser,
     login,
     registerMember,
+    verifyMemberEmailAndPassword,
     updateDuesStatus,
     memberRoster,
     updateMemberDuesByTreasurer,
@@ -81,6 +82,50 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     comments: ''
   });
   const [appSuccess, setAppSuccess] = useState(false);
+
+  // Email verification state variables
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyToken, setVerifyToken] = useState('');
+  const [verifyPassword, setVerifyPassword] = useState('');
+  const [verifySuccess, setVerifySuccess] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+
+  // Handle URL email verification link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const email = params.get('email');
+    const token = params.get('token');
+
+    if (action === 'verify-email' && email && token) {
+      setVerifyEmail(email);
+      setVerifyToken(token);
+      setAuthTab('verify');
+    }
+  }, []);
+
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    setVerifyError('');
+    if (verifyPassword.length < 6) {
+      setVerifyError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    const res = await verifyMemberEmailAndPassword(verifyEmail, verifyPassword);
+    if (res.success) {
+      setVerifySuccess(true);
+      setTimeout(() => {
+        // Clean URL parameters and redirect to login
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setAuthTab('login');
+        setVerifySuccess(false);
+        setVerifyPassword('');
+      }, 4000);
+    } else {
+      setVerifyError(res.message || 'Verification failed.');
+    }
+  };
 
   // Gallery photo upload state
   const [photoUploadModal, setPhotoUploadModal] = useState(false);
@@ -1160,7 +1205,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto animate-bounce" />
               <h3 className="font-heading font-black text-lg">Application Submitted Successfully!</h3>
               <p className="text-xs text-slate-600 dark:text-slate-350 max-w-md mx-auto leading-relaxed">
-                Thank you for applying! Your membership application is currently pending review by the Club President and Treasurer. We will contact you shortly regarding the status of your application.
+                Thank you for applying! Your membership application is currently pending review by the Membership Review Committee. Please check your email inbox to verify your address and create your portal password.
               </p>
             </div>
           ) : (
@@ -1398,6 +1443,78 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-black text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
               >
                 <span>Submit Membership Application</span>
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* EMAIL VERIFICATION & PASSWORD SETUP FORM */}
+      {authTab === 'verify' && (
+        <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 shadow-xl max-w-lg mx-auto space-y-6">
+          <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-pulse" />
+            <div>
+              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+                Verify Email & Create Password
+              </h2>
+              <p className="text-xs text-slate-500">
+                Set your secure password to complete your membership registration.
+              </p>
+            </div>
+          </div>
+
+          {verifySuccess ? (
+            <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-center space-y-3">
+              <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
+              <h3 className="font-heading font-bold text-lg">Email Verified!</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-350">
+                Your password has been successfully saved. Your application is now pending review by the Membership Review Committee. Redirecting you to login...
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleVerifySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={verifyEmail}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-850 text-slate-500 text-xs outline-none"
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                  Create Password *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    value={verifyPassword}
+                    onChange={e => setVerifyPassword(e.target.value)}
+                    placeholder="Enter secure password (min 6 chars)"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue font-mono"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              {verifyError && (
+                <p className="text-xs font-bold text-rose-500 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
+                  {verifyError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-black text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Verify Account & Set Password</span>
               </button>
             </form>
           )}
