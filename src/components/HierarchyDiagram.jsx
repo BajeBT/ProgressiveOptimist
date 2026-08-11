@@ -4,6 +4,11 @@ import { ExternalLink, Layers, CheckCircle2, ChevronDown, ArrowDown } from 'luci
 
 export const HierarchyDiagram = () => {
   const [selectedLevel, setSelectedLevel] = useState(hierarchyLevels[0]);
+  const [expandedDomain, setExpandedDomain] = useState(null);
+
+  const toggleDomain = (idx) => {
+    setExpandedDomain(expandedDomain === idx ? null : idx);
+  };
 
   return (
     <div className="py-10">
@@ -66,7 +71,11 @@ export const HierarchyDiagram = () => {
             <h3 className="font-heading text-2xl font-bold text-white mt-1">
               {selectedLevel.title}
             </h3>
-            <p className="text-slate-400 text-sm">{selectedLevel.subtitle} ({selectedLevel.scope})</p>
+            <p className="text-slate-400 text-sm">
+              {selectedLevel.level === 1
+                ? `${selectedLevel.subtitle} - ${selectedLevel.scope}`
+                : `${selectedLevel.subtitle} (${selectedLevel.scope})`}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -86,19 +95,75 @@ export const HierarchyDiagram = () => {
           {selectedLevel.description}
         </p>
 
-        <div className="mt-6">
-          <h4 className="text-xs uppercase font-bold text-optimist-gold tracking-wider mb-3">
-            Key Responsibilities & Scope
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {selectedLevel.responsibilities.map((resp, idx) => (
-              <div key={idx} className="flex items-start space-x-2.5 bg-slate-800/70 p-3 rounded-xl border border-slate-700/60 text-xs text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>{resp}</span>
+        {selectedLevel.domains ? (
+          <div className="mt-8 space-y-8">
+            {/* 4 Operational Domains */}
+            <div className="space-y-4">
+              {selectedLevel.domains.map((dom, domIdx) => {
+                const isExpanded = expandedDomain === domIdx;
+                return (
+                  <div key={domIdx} className="rounded-2xl bg-slate-800/40 border border-slate-700/60 overflow-hidden transition-all duration-300">
+                    <button
+                      type="button"
+                      onClick={() => toggleDomain(domIdx)}
+                      className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-800/80 transition-colors gap-4"
+                    >
+                      <h4 className="font-heading text-base sm:text-lg font-bold text-amber-300">{dom.title}</h4>
+                      <ChevronDown className={`w-5 h-5 text-amber-400 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isExpanded && (
+                      <div className="px-5 pb-5 pt-1 space-y-4 border-t border-slate-800/60 animate-fadeIn">
+                        <p className="text-xs text-slate-300 italic leading-relaxed">
+                          <strong>Primary Objective:</strong> {dom.objective}
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800/40">
+                          {dom.points.map((pt, ptIdx) => (
+                            <div key={ptIdx} className="flex items-start space-x-2.5 text-xs text-slate-200">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{pt}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Core Values Section */}
+            {selectedLevel.coreValues && (
+              <div className="pt-6 border-t border-slate-800">
+                <h4 className="text-xs uppercase font-bold text-optimist-gold tracking-wider mb-4">
+                  Foundational Core Values & Purposes
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {selectedLevel.coreValues.map((val, valIdx) => (
+                    <div key={valIdx} className="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
+                      <strong className="block text-amber-400 font-heading mb-1">{val.name}</strong>
+                      <span className="text-slate-300 leading-relaxed">{val.text}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="mt-6">
+            <h4 className="text-xs uppercase font-bold text-optimist-gold tracking-wider mb-3">
+              Key Responsibilities & Scope
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {selectedLevel.responsibilities.map((resp, idx) => (
+                <div key={idx} className="flex items-start space-x-2.5 bg-slate-800/70 p-3 rounded-xl border border-slate-700/60 text-xs text-slate-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{resp}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
     </div>
