@@ -213,6 +213,16 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   if (currentUser) {
     const myProjects = projects.filter(p => p.authorId === currentUser.memberId || p.author === currentUser.name);
 
+    const canAccessTreasurerConsole = currentUser && (
+      currentUser.isTreasurer ||
+      currentUser.role?.includes('Treasurer') ||
+      currentUser.role?.includes('President') ||
+      currentUser.email === 'treasurer@progressiveoptimist.org' ||
+      currentUser.email === 'president@progressiveoptimist.org' ||
+      currentUser.email === 'sharon@topaz-bb.com' ||
+      currentUser.email === 'richelle.lucas16@gmail.com'
+    );
+
     return (
       <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -314,18 +324,20 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             My Dues Record ($250 BBD)
           </button>
 
-          {/* Dedicated Treasurer Management Tab */}
-          <button
-            onClick={() => setDashboardTab('treasurer')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              dashboardTab === 'treasurer'
-                ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
-                : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Treasurer Dues Console</span>
-          </button>
+          {/* Dedicated Treasurer Management Tab (Restricted to President & Treasurer) */}
+          {canAccessTreasurerConsole && (
+            <button
+              onClick={() => setDashboardTab('treasurer')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                dashboardTab === 'treasurer'
+                  ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
+                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Treasurer Dues Console</span>
+            </button>
+          )}
         </div>
 
         {/* Tab 1: Member Projects */}
@@ -548,19 +560,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   <p><strong>Branch:</strong> {bankDetails.branch}</p>
                   <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{bankDetails.routing}</span></p>
                 </div>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 space-y-4 shadow-xl">
-                <div className="flex items-center space-x-3">
-                  <img src="/avatars/treasurer_placeholder.jpg" alt="Treasurer" className="w-12 h-12 rounded-full border border-amber-400 object-cover" />
-                  <div>
-                    <h4 className="font-heading font-bold text-sm text-white">Sharon Mohammed</h4>
-                    <span className="text-[10px] text-amber-400 uppercase font-bold">Club Treasurer</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  For bank transfer details, check payments, or treasurer receipts, contact <strong>sharon@topaz-bb.com</strong> or <strong>treasurer@progressiveoptimist.org</strong>.
-                </p>
               </div>
             </div>
           </div>

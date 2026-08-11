@@ -14,6 +14,7 @@ import { MembershipPage } from './pages/MembershipPage';
 import { MembershipDirectoryPage } from './pages/MembershipDirectoryPage';
 import { DonatePage } from './pages/DonatePage';
 import { ContactPage } from './pages/ContactPage';
+import { AdminSettingsPage } from './pages/AdminSettingsPage';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -77,6 +78,7 @@ export function App() {
                 <Route path="/directory" element={<MembershipDirectoryPage />} />
                 <Route path="/donate" element={<DonatePage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/admin" element={<AdminSettingsPage />} />
               </Routes>
             </main>
 

@@ -37,7 +37,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-01",
     notes: "Full annual dues paid. FCIB Transfer ref #98421.",
-    emailLastSent: "2025-10-01"
+    emailLastSent: "2025-10-01",
+    hasTreasurerConsoleAccess: true,
+    hasInitiativeAccess: true,
+    accessTier: "Super Admin"
   },
   {
     id: "78008-0010",
@@ -52,7 +55,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-02",
     notes: "Paid in full via Cheque #00412.",
-    emailLastSent: "2025-10-02"
+    emailLastSent: "2025-10-02",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: true,
+    accessTier: "Officer"
   },
   {
     id: "78008-0152",
@@ -67,7 +73,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-09-28",
     notes: "Treasurer annual dues settled in full.",
-    emailLastSent: "2025-09-28"
+    emailLastSent: "2025-09-28",
+    hasTreasurerConsoleAccess: true,
+    hasInitiativeAccess: true,
+    accessTier: "Treasurer Admin"
   },
   {
     id: "78008-0021",
@@ -82,7 +91,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-05",
     notes: "OI Representative dues processed.",
-    emailLastSent: "2025-10-05"
+    emailLastSent: "2025-10-05",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: false,
+    accessTier: "Officer"
   },
   {
     id: "78008-0121",
@@ -97,7 +109,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-01",
     notes: "Paid cash at October monthly meeting.",
-    emailLastSent: "2025-10-01"
+    emailLastSent: "2025-10-01",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: false,
+    accessTier: "Officer"
   },
   {
     id: "78008-0148",
@@ -112,7 +127,10 @@ const initialRoster = [
     duesStatus: "Pending Dues Payment",
     lastPaymentDate: "2024-10-15",
     notes: "Awaiting 2025/2026 annual renewal statement.",
-    emailLastSent: "2025-10-10"
+    emailLastSent: "2025-10-10",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: false,
+    accessTier: "Standard Member"
   },
   {
     id: "78008-0153",
@@ -127,7 +145,10 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-08",
     notes: "Annual dues settled.",
-    emailLastSent: "2025-10-08"
+    emailLastSent: "2025-10-08",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: false,
+    accessTier: "Officer"
   },
   {
     id: "78008-0038",
@@ -142,9 +163,27 @@ const initialRoster = [
     duesStatus: "Active Member (2025/2026)",
     lastPaymentDate: "2025-10-04",
     notes: "President-Elect annual dues paid.",
-    emailLastSent: "2025-10-04"
+    emailLastSent: "2025-10-04",
+    hasTreasurerConsoleAccess: false,
+    hasInitiativeAccess: false,
+    accessTier: "Officer"
   }
 ];
+
+const defaultPrimaryInitiatives = [
+  "RISE Summer Experience & Challenge",
+  "Easter Cheer Kite Giveaway (Westbury & Ignatius Byer Primary)",
+  "Laptop & Tablet Fundraiser for Students",
+  "Mini Millionaires in the Making Mentorship"
+];
+
+const defaultSiteSettings = {
+  meetingSchedule: "1st Monday of every month at 5:30 PM",
+  meetingVenue: "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",
+  supportEmail: "info@progressiveoptimist.org",
+  contactPhone: "+1 (246) 836-6185",
+  annualDuesRate: "$250.00 BBD"
+};
 
 export const AuthProvider = ({ children }) => {
   // Sandbox & Email Rerouting Configuration
@@ -152,6 +191,25 @@ export const AuthProvider = ({ children }) => {
   const testEmailTarget = "dev@bajanthings.biz";
   const testWhatsAppTarget = "12468366185";
   const [dbConnected, setDbConnected] = useState(false);
+
+  // Site Variables & Primary Initiatives state
+  const [primaryInitiatives, setPrimaryInitiatives] = useState(() => {
+    try {
+      const saved = localStorage.getItem('optimist_initiatives');
+      return saved ? JSON.parse(saved) : defaultPrimaryInitiatives;
+    } catch (e) {
+      return defaultPrimaryInitiatives;
+    }
+  });
+
+  const [siteSettings, setSiteSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('optimist_site_settings');
+      return saved ? JSON.parse(saved) : defaultSiteSettings;
+    } catch (e) {
+      return defaultSiteSettings;
+    }
+  });
 
   // Current user state (with try-catch safety)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -175,7 +233,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // Member Roster (Treasurer Ledger)
+  // Member Roster (Treasurer Ledger & Access Control)
   const [memberRoster, setMemberRoster] = useState(() => {
     try {
       const savedRoster = localStorage.getItem('optimist_roster');
@@ -221,24 +279,32 @@ export const AuthProvider = ({ children }) => {
         `;
 
         if (rows && rows.length > 0) {
-          const mappedRoster = rows.map(r => ({
-            id: r.id,
-            name: r.name,
-            email: r.email,
-            role: r.role,
-            phone: r.phone,
-            address: r.address,
-            avatar: r.avatar,
-            fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
-            duesRate: r.dues_rate || '$250.00 BBD',
-            amountPaid: r.amount_paid || '$250.00 BBD',
-            balanceDue: r.balance_due || '$0.00 BBD',
-            paymentMethod: r.payment_method || 'Bank Transfer',
-            duesStatus: r.dues_status || 'Active Member (2025/2026)',
-            lastPaymentDate: r.last_payment_date || '2025-10-01',
-            notes: r.notes || '',
-            emailLastSent: r.email_last_sent || ''
-          }));
+          const mappedRoster = rows.map(r => {
+            const isTreasurerUser = r.email === 'sharon@topaz-bb.com' || r.id === '78008-0152';
+            const isPresidentUser = r.email === 'richelle.lucas16@gmail.com' || r.id === '78008-0150';
+
+            return {
+              id: r.id,
+              name: r.name,
+              email: r.email,
+              role: r.role,
+              phone: r.phone,
+              address: r.address,
+              avatar: r.avatar,
+              fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
+              duesRate: r.dues_rate || '$250.00 BBD',
+              amountPaid: r.amount_paid || '$250.00 BBD',
+              balanceDue: r.balance_due || '$0.00 BBD',
+              paymentMethod: r.payment_method || 'Bank Transfer',
+              duesStatus: r.dues_status || 'Active Member (2025/2026)',
+              lastPaymentDate: r.last_payment_date || '2025-10-01',
+              notes: r.notes || '',
+              emailLastSent: r.email_last_sent || '',
+              hasTreasurerConsoleAccess: isTreasurerUser || isPresidentUser,
+              hasInitiativeAccess: isTreasurerUser || isPresidentUser,
+              accessTier: isPresidentUser ? 'Super Admin' : isTreasurerUser ? 'Treasurer Admin' : r.role.includes('Director') ? 'Officer' : 'Standard Member'
+            };
+          });
           setMemberRoster(mappedRoster);
           setDbConnected(true);
         }
@@ -286,6 +352,20 @@ export const AuthProvider = ({ children }) => {
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
+  // Save primary initiatives to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('optimist_initiatives', JSON.stringify(primaryInitiatives));
+    } catch (e) {}
+  }, [primaryInitiatives]);
+
+  // Save site settings to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('optimist_site_settings', JSON.stringify(siteSettings));
+    } catch (e) {}
+  }, [siteSettings]);
+
   // Save projects to localStorage
   useEffect(() => {
     try {
@@ -307,6 +387,26 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   }, [memberGallery]);
 
+  // Update Primary Initiatives
+  const updatePrimaryInitiatives = (newList) => {
+    setPrimaryInitiatives(newList);
+  };
+
+  // Update Site Settings
+  const updateSiteSettings = (newSettings) => {
+    setSiteSettings(prev => ({ ...prev, ...newSettings }));
+  };
+
+  // Update Member Permissions Matrix
+  const updateMemberPermissions = (memberId, permissionKey, val) => {
+    setMemberRoster(prev => prev.map(m => {
+      if (m.id === memberId) {
+        return { ...m, [permissionKey]: val };
+      }
+      return m;
+    }));
+  };
+
   // Login handler
   const login = (email, password) => {
     if (!email || !password) {
@@ -318,17 +418,29 @@ export const AuthProvider = ({ children }) => {
     let role = 'Member';
     let avatar = '/avatars/president_placeholder.jpg';
     let isTreasurer = false;
+    let memberId = '78008-' + Math.floor(1000 + Math.random() * 9000);
 
-    if (cleanEmail === 'treasurer@progressiveoptimist.org') {
+    // Look up in roster first if available
+    const matchedRosterItem = memberRoster.find(m => m.email.toLowerCase().trim() === cleanEmail);
+
+    if (cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail === 'sharon@topaz-bb.com' || cleanEmail.includes('treasurer')) {
       name = 'Sharon Mohammed';
       role = 'Club Treasurer & Admin';
       avatar = '/avatars/treasurer_placeholder.jpg';
       isTreasurer = true;
-    } else if (cleanEmail === 'president@progressiveoptimist.org') {
+      memberId = '78008-0152';
+    } else if (cleanEmail === 'president@progressiveoptimist.org' || cleanEmail === 'richelle.lucas16@gmail.com' || cleanEmail.includes('president')) {
       name = 'Richelle Lucas';
       role = 'Club President & Admin';
       avatar = '/avatars/president_placeholder.jpg';
       isTreasurer = true;
+      memberId = '78008-0150';
+    } else if (matchedRosterItem) {
+      name = matchedRosterItem.name;
+      role = matchedRosterItem.role;
+      memberId = matchedRosterItem.id;
+      avatar = matchedRosterItem.avatar || avatar;
+      isTreasurer = Boolean(matchedRosterItem.is_treasurer || matchedRosterItem.is_president || role.includes('Treasurer') || role.includes('President') || role.includes('Admin'));
     } else {
       const nameFromEmail = cleanEmail.split('@')[0].replace('.', ' ');
       name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
@@ -339,7 +451,7 @@ export const AuthProvider = ({ children }) => {
       name,
       role,
       isTreasurer,
-      memberId: cleanEmail === 'treasurer@progressiveoptimist.org' ? '78008-0152' : '78008-' + Math.floor(1000 + Math.random() * 9000),
+      memberId,
       duesStatus: 'Active Member in Good Standing (2025/2026)',
       joinedDate: '2022',
       avatar
@@ -379,7 +491,10 @@ export const AuthProvider = ({ children }) => {
       duesStatus: 'Pending Dues Payment',
       lastPaymentDate: 'None',
       notes: 'New member application submitted.',
-      emailLastSent: 'None'
+      emailLastSent: 'None',
+      hasTreasurerConsoleAccess: false,
+      hasInitiativeAccess: false,
+      accessTier: 'Standard Member'
     };
 
     setMemberRoster(prev => [newMemberRecord, ...prev]);
@@ -581,6 +696,11 @@ export const AuthProvider = ({ children }) => {
         testEmailTarget,
         testWhatsAppTarget,
         dbConnected,
+        primaryInitiatives,
+        updatePrimaryInitiatives,
+        siteSettings,
+        updateSiteSettings,
+        updateMemberPermissions,
         currentUser,
         login,
         registerMember,

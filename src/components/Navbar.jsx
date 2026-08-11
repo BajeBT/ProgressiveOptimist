@@ -24,7 +24,8 @@ import {
   Lock,
   TestTube,
   ShieldAlert,
-  Database
+  Database,
+  ShieldCheck
 } from 'lucide-react';
 
 export const Navbar = ({ onOpenPostModal }) => {
@@ -264,7 +265,7 @@ export const Navbar = ({ onOpenPostModal }) => {
                       <BookOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
                       <div>
                         <strong className="block text-xs text-slate-900 dark:text-white flex items-center gap-1">
-                          Club # 78008 Directory <Lock className="w-3 h-3 text-amber-500" />
+                          Progressive Optimist Directory <Lock className="w-3 h-3 text-amber-500" />
                         </strong>
                         <span className="text-[10px] text-slate-500">Members Only Roster</span>
                       </div>
@@ -355,6 +356,17 @@ export const Navbar = ({ onOpenPostModal }) => {
                   <PlusCircle className="w-4 h-4" />
                   <span>+ Post Project</span>
                 </button>
+
+                { (currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 px-3 py-2 rounded-xl font-bold text-xs shadow transition-all"
+                    title="Admin & Site Settings Console"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    <span className="hidden md:inline">Admin Settings</span>
+                  </Link>
+                )}
 
                 <Link
                   to="/membership"
