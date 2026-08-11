@@ -20,8 +20,17 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+      },
+      fontSize: {
+        'xl': ['1.06rem', { lineHeight: '1.5rem' }],
+        '2xl': ['1.275rem', { lineHeight: '1.75rem' }],
+        '3xl': ['1.59rem', { lineHeight: '2rem' }],
+        '4xl': ['1.91rem', { lineHeight: '2.25rem' }],
+        '5xl': ['2.55rem', { lineHeight: '1' }],
+        '6xl': ['3.18rem', { lineHeight: '1' }],
+        '7xl': ['3.82rem', { lineHeight: '1' }],
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',

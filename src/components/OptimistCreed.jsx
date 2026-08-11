@@ -31,9 +31,9 @@ const iconMap = {
 
 export const OptimistCreed = () => {
   const [copiedId, setCopiedId] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('Inner Strength');
 
-  const categories = ['All', ...new Set(optimistCreed.map(c => c.category))];
+  const categories = [...new Set(optimistCreed.map(c => c.category)), 'All'];
 
   const filteredCreed = activeCategory === 'All'
     ? optimistCreed
@@ -65,8 +65,23 @@ export const OptimistCreed = () => {
             Written by Christian D. Larson in 1912 and officially adopted by Optimist International in 1922, these ten principles guide our daily lives and youth service in Barbados.
           </p>
 
+          {/* Full Creed Text Block */}
+          <div className="mt-8 p-6 sm:p-8 rounded-2xl bg-slate-850/60 border border-slate-750 max-w-3xl mx-auto text-left space-y-3.5 shadow-inner">
+            <h3 className="font-heading text-base font-bold text-amber-400 border-b border-slate-800 pb-2 text-center uppercase tracking-wider">
+              Promise Yourself:
+            </h3>
+            <div className="space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed font-serif italic">
+              {optimistCreed.map(item => (
+                <div key={item.id} className="flex items-start gap-3">
+                  <span className="text-amber-400 font-extrabold shrink-0 mt-0.5">•</span>
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Category Filter Pills */}
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <div className="mt-12 flex flex-wrap justify-center gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}

@@ -29,46 +29,172 @@ const all21Members = [
 
 const initialProjects = [
   {
-    id: "proj-1",
-    title: "RISE Summer Experience 2025",
-    category: "Youth Empowerment",
-    date: "July 2025",
-    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1000&q=80",
-    excerpt: "Our flagship annual summer program empowering Bajan youth with leadership, STEM workshops, and conflict resolution skills.",
-    content: "The RISE Summer Experience brings together primary and secondary students across Barbados for an immersive 2-week workshop. Participants engage in interactive robotics challenges, public speaking mentorship, environmental conservation projects, and life-skills training led by Optimist volunteers and guest Bajan professionals.",
-    impact: "Impacted 120 Bajan Children",
+    id: "rise-2025-summer",
+    title: "RISE 2025 Summer Experience",
+    category: "Youth Mentorship & Summer Camp",
+    date: "May 2025",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2025/05/RISE-Teens-Flyer-768x768.jpg",
+    excerpt: "Reinvigorating & Inspiring Student Excellence — empowering teens with tools to BE YOU, BE SUCCESSFUL, and BE AWESOME!",
+    content: "The RISE 2025 Summer Experience is the Progressive Optimist Club's flagship youth development initiative in Barbados. Designed to equip teens and primary students with essential life skills, conflict resolution, career mentorship, self-confidence, and interactive workshops.",
+    impact: "150+ Teenagers & Youth Participated",
+    isFeatured: true,
+    author: "Progressive Optimist Board",
+    authorId: "78008-0150",
+    postedAt: "2025-05-15"
+  },
+  {
+    id: "2025-easter-cheer",
+    title: "2025 Easter Cheer & Kite Giveaway",
+    category: "Community Outreach",
+    date: "April 2025",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2025/04/2025-Easter-Cheer-1-768x768.jpg",
+    excerpt: "Annual Easter cheer kite giveaway celebrating traditional Bajan kite flying with primary school students.",
+    content: "Bringing joy to young Bajans! The Progressive Optimist Club of Barbados distributed hand-crafted Easter kites, healthy treat packages, and educational books to students at Westbury Primary and Ignatius Byer Primary School.",
+    impact: "200+ Kites & Gift Packages Delivered",
     isFeatured: true,
     author: "Richelle Lucas",
     authorId: "78008-0150",
-    postedAt: "2025-07-15"
+    postedAt: "2025-04-12"
   },
   {
-    id: "proj-2",
-    title: "Annual Primary School Laptop & Tablet Drive",
-    category: "Education & Technology",
-    date: "September 2025",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80",
-    excerpt: "Donating refurbished laptops and digital tablets to underserved primary school students across St. Michael and Christ Church.",
-    content: "Digital inclusion is critical for modern education in Barbados. Through corporate partnerships and fundraising drives, Progressive Optimist Club donated 45 laptops and tablets to deserving students at Westbury Primary, St. Mary's Primary, and St. Giles Primary schools.",
-    impact: "45 Devices Donated",
+    id: "rise-challenge",
+    title: "RISE Challenge Youth Empowerment",
+    category: "Skill Building & Mentorship",
+    date: "April 2025",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2025/04/RISE-Flyer-768x982.jpg",
+    excerpt: "Interactive student challenge building problem-solving skills, public speaking, and community leadership.",
+    content: "An empowering youth challenge series where young participants solve real-world community puzzles, practice public speaking, and collaborate in teams under the mentorship of Optimist members.",
+    impact: "80+ Students Completed Challenge",
     isFeatured: true,
     author: "Sharon Mohammed",
     authorId: "78008-0152",
-    postedAt: "2025-09-10"
+    postedAt: "2025-04-05"
   },
   {
-    id: "proj-3",
-    title: "Easter Kite & Joy Giveaway at Westbury Primary",
-    category: "Community Outreach",
-    date: "April 2025",
-    image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=1000&q=80",
-    excerpt: "Bringing traditional Bajan Easter kite-flying cheer, stationery packs, and healthy snacks to over 150 primary school children.",
-    content: "Celebrating Bajan culture and Easter traditions! Optimist members spent the morning teaching children how to craft traditional Bajan paper kites, followed by an afternoon of kite flying, storytelling, and handing out school supply care packages.",
-    impact: "150 Children Reached",
+    id: "volunteers-june-2024",
+    title: "Volunteers for the Month of June",
+    category: "Volunteer Spotlight",
+    date: "June 2024",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2024/06/JuneVolunteers-768x768.jpg",
+    excerpt: "Honoring our dedicated club volunteers and community members giving back to youth in Barbados.",
+    content: "Celebrating the passionate Optimist volunteers who give their time, skills, and hearts to support educational programs, school visits, and community fundraisers across St. Michael and Barbados.",
+    impact: "Special Member & Volunteer Recognition",
+    isFeatured: false,
+    author: "Richelle Lucas",
+    authorId: "78008-0150",
+    postedAt: "2024-06-01"
+  },
+  {
+    id: "trivia-night-2023",
+    title: "Trivia Night Fundraiser (Fri. Jun 2nd)",
+    category: "Fundraiser & Fellowship",
+    date: "June 2023",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2023/05/TriviaNight-Jun2023-768x994.jpg",
+    excerpt: "An exciting evening of general knowledge trivia, fellowship, prizes, and fundraising for student initiatives.",
+    content: "Our annual Trivia Night fundraiser brought together community members, Optimist members, and friends for friendly competition. All proceeds went directly toward purchasing school supplies and funding student mentorship camps.",
+    impact: "Raised Funds for Youth School Supplies",
     isFeatured: false,
     author: "Edwin Workman",
     authorId: "78008-0021",
-    postedAt: "2025-04-18"
+    postedAt: "2023-05-20"
+  },
+  {
+    id: "mini-millionaires-2022",
+    title: "Mini Millionaires In The Making Mentorship",
+    category: "Financial Literacy & Mentorship",
+    date: "June 2022",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/06/Mini-768x1365.jpg",
+    excerpt: "Entrepreneurship and financial literacy mentorship program teaching Bajan children money management.",
+    content: "Register now for Mini Millionaires In The Making! A practical, fun-filled workshop introducing children to saving, budgeting, ethical business concepts, and entrepreneurship.",
+    impact: "45 Children Mentored in Business",
+    isFeatured: false,
+    author: "Sharon Mohammed",
+    authorId: "78008-0152",
+    postedAt: "2022-06-10"
+  },
+  {
+    id: "healthy-eating-westbury",
+    title: "Healthy Eating For Healthy Living at Westbury Primary",
+    category: "Health & Nutrition",
+    date: "April 2022",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/04/Produce-Donation-at-Westbury-Primary-1-0-768x576.jpeg",
+    excerpt: "Donating fresh local produce and hosting nutritional awareness workshops at Westbury Primary School.",
+    content: "As part of our commitment to childhood wellness, club members donated fresh local fruits and vegetables to Westbury Primary School and hosted interactive healthy eating sessions for students.",
+    impact: "120+ Primary Students Reached",
+    isFeatured: false,
+    author: "Richelle Lucas",
+    authorId: "78008-0150",
+    postedAt: "2022-04-18"
+  },
+  {
+    id: "easter-cheer-ignatius-byer",
+    title: "Easter Cheer & Kite Donation at Ignatius Byer Primary",
+    category: "Primary School Outreach",
+    date: "April 2022",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/04/Kite-Donation-7-0-768x576.jpeg",
+    excerpt: "Spreading Easter cheer and kite-flying traditions with students at Ignatius Byer Primary School.",
+    content: "Bringing smiles to Ignatius Byer Primary School! Club officers presented colorful handmade kites and holiday treats to students, preserving Bajan Easter heritage.",
+    impact: "Ignatius Byer Students Supported",
+    isFeatured: false,
+    author: "Edwin Workman",
+    authorId: "78008-0021",
+    postedAt: "2022-04-14"
+  },
+  {
+    id: "ignatius-byer-stem-books",
+    title: "STEM Books Presentation to Ignatius Byer Primary",
+    category: "Education & STEM",
+    date: "March 2022",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/03/Ignatius-Byer-Donation-6-0-768x1024.jpg",
+    excerpt: "Donating science, technology, engineering, and mathematics books to enhance the school library.",
+    content: "Promoting literacy and STEM curiosity among young learners! The Progressive Optimist Club donated a collection of STEM books and learning materials to the library at Ignatius Byer Primary School.",
+    impact: "New STEM Library Collection Donated",
+    isFeatured: false,
+    author: "Richelle Lucas",
+    authorId: "78008-0150",
+    postedAt: "2022-03-25"
+  },
+  {
+    id: "tree-planting-zone9",
+    title: "Community Tree Planting (Zone 9 Environment Project)",
+    category: "Environment & Sustainability",
+    date: "March 2022",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/03/POCB-Tree-Planting-1-0-768x1024.jpeg",
+    excerpt: "Planting shade and fruit trees around school grounds and community parks in Barbados.",
+    content: "Promoting environmental stewardship! Optimist members and youth volunteers joined hands to plant trees, fostering green spaces and educating students on climate responsibility.",
+    impact: "Environmental Greening & Education",
+    isFeatured: false,
+    author: "Edwin Workman",
+    authorId: "78008-0021",
+    postedAt: "2022-03-18"
+  },
+  {
+    id: "christmas-charm-outreach-2021",
+    title: "Christmas CHaRM Outreach & Childhood Cancer Support (2021)",
+    category: "Childhood Health & Care",
+    date: "December 2021",
+    image: "https://progressiveoptimist.org/wp/wp-content/uploads/2022/03/2021-Christmas-Cheer-768x768.png",
+    excerpt: "Special Christmas outreach delivering food hampers, toys, and childhood cancer care support packages.",
+    content: "CHaRM (Children's Health and Wellness) holiday initiative supporting children battling childhood cancer and underprivileged families in Barbados during the Christmas season.",
+    impact: "Holiday Hampers & Care Packages",
+    isFeatured: false,
+    author: "Sharon Mohammed",
+    authorId: "78008-0152",
+    postedAt: "2021-12-20"
+  },
+  {
+    id: "karaoke-bingo-2020",
+    title: "Karaoke Bingo Fundraiser Night (2020)",
+    category: "Fundraiser & Fellowship",
+    date: "January 2020",
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1000&q=80",
+    excerpt: "A fun-filled evening of music, bingo games, singing, and community fundraising.",
+    content: "Combining musical karaoke with classic bingo games! Community members and Optimist friends gathered for an entertaining fundraiser to support our youth academic scholarships.",
+    impact: "Raised Scholarship Funds",
+    isFeatured: false,
+    author: "Paul Nurse",
+    authorId: "78008-0165",
+    postedAt: "2020-01-15"
   }
 ];
 
@@ -138,56 +264,46 @@ async function initializeDatabase() {
     // 4. Seed 21 Active Members & Dues Records
     console.log("Seeding 21 Active Members and Dues Ledgers into Neon DB...");
     for (const m of all21Members) {
-      const isTreasurer = m.email === 'sharon@topaz-bb.com' || m.email === 'treasurer@progressiveoptimist.org';
-      const isPresident = m.email === 'richelle.lucas16@gmail.com';
-      const avatar = isTreasurer ? '/avatars/treasurer_placeholder.jpg' : isPresident ? '/avatars/president_placeholder.jpg' : `/avatars/director_placeholder.jpg`;
-      const isPending = m.email === 'lisabrome@yahoo.com';
-
-      // Insert Member
       await sql`
         INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar)
-        VALUES (${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, ${m.joinDate}, ${m.sponsor}, ${m.role}, ${isTreasurer}, ${isPresident}, ${avatar})
+        VALUES (
+          ${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, 
+          ${m.joinDate}, ${m.sponsor}, ${m.role}, 
+          ${m.id === '78008-0152'}, ${m.id === '78008-0150'},
+          ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`}
+        )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           email = EXCLUDED.email,
           phone = EXCLUDED.phone,
           address = EXCLUDED.address,
-          role = EXCLUDED.role,
-          is_treasurer = EXCLUDED.is_treasurer,
-          is_president = EXCLUDED.is_president;
+          role = EXCLUDED.role;
       `;
 
-      // Insert Dues Ledger
+      // Seed dues ledgers separately
       await sql`
         INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, last_payment_date, notes, email_last_sent)
         VALUES (
-          ${m.id},
-          '2025/2026 (Oct 1 - Sep 30)',
-          '$250.00 BBD',
-          ${isPending ? '$0.00 BBD' : '$250.00 BBD'},
-          ${isPending ? '$250.00 BBD' : '$0.00 BBD'},
-          ${isPending ? 'Pending' : 'Bank Transfer'},
-          ${isPending ? 'Pending Dues Payment' : 'Active Member (2025/2026)'},
-          ${isPending ? 'None' : '2025-10-01'},
-          ${isPending ? 'Awaiting 2025/2026 annual renewal statement.' : 'Full annual dues paid via Scotiabank transfer.'},
-          '2025-10-01'
-        );
+          ${m.id}, '2025/2026 (Oct 1 - Sep 30)', '$250.00 BBD', '$250.00 BBD', '$0.00 BBD', 
+          'Bank Transfer', 'Active Member (2025/2026)', '2025-10-01', 'Annual dues paid in full.', '2025-10-01'
+        )
+        ON CONFLICT DO NOTHING;
       `;
     }
 
-    // 5. Seed Projects
-    console.log("Seeding Community Projects into Neon DB...");
+    // 5. Seed actual Projects & Events
+    console.log("Cleaning and seeding actual live Projects & Events...");
+    await sql`TRUNCATE TABLE projects;`;
     for (const p of initialProjects) {
       await sql`
         INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at)
-        VALUES (${p.id}, ${p.title}, ${p.category}, ${p.date}, ${p.image}, ${p.excerpt}, ${p.content}, ${p.impact}, ${p.isFeatured}, ${p.author}, ${p.authorId}, ${p.postedAt})
-        ON CONFLICT (id) DO NOTHING;
+        VALUES (${p.id}, ${p.title}, ${p.category}, ${p.date}, ${p.image}, ${p.excerpt}, ${p.content}, ${p.impact}, ${p.isFeatured}, ${p.author}, ${p.authorId}, ${p.postedAt});
       `;
     }
 
-    console.log("SUCCESS: Neon PostgreSQL Master Database fully initialized and seeded!");
-  } catch (err) {
-    console.error("ERROR initializing Neon Database:", err);
+    console.log("Database initialized & seeded successfully!");
+  } catch (error) {
+    console.error("Database initialization failed:", error);
     process.exit(1);
   }
 }
