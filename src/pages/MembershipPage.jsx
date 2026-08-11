@@ -32,7 +32,8 @@ import {
   Printer,
   X,
   Users,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -134,6 +135,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [photoCaption, setPhotoCaption] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState('');
   
   // Document upload state & viewer modal
   const [internalDocs, setInternalDocs] = useState([
@@ -472,27 +475,47 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     }
   };
 
+  const MAX_GALLERY_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
   const handlePhotoUpload = (e) => {
+    setPhotoUploadError('');
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-        setPhotoUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (file.size > MAX_GALLERY_FILE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      setPhotoUploadError(`File size limit exceeded! Selected image is ${sizeMB} MB. Maximum allowed size is 5.0 MB.`);
+      e.target.value = '';
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+      setPhotoUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const submitPhoto = (e) => {
+  const submitPhoto = async (e) => {
     e.preventDefault();
     if (!photoTitle || !photoUrl) return;
 
-    addGalleryPhoto({
+    setPhotoUploadError('');
+    setPhotoUploading(true);
+
+    const result = await addGalleryPhoto({
       title: photoTitle,
       caption: photoCaption,
       image: photoUrl
     });
+
+    setPhotoUploading(false);
+
+    if (!result.success) {
+      setPhotoUploadError(result.message || 'Failed to upload photo. Please try again.');
+      return;
+    }
 
     setPhotoUploadModal(false);
     setPhotoTitle('');
@@ -604,7 +627,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            Member Photo Gallery ({memberGallery.length})
+            Shared Members Photos ({memberGallery.length})
           </button>
 
           <button
@@ -1306,9 +1329,19 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         {photoUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-              <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">Upload Member Photo</h3>
-              
+              <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">Upload to Shared Members Photos</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-2">
+                Photo is uploaded to the club's shared Google Photos album (max 5 MB).
+              </p>
+
               <form onSubmit={submitPhoto} className="space-y-4">
+                {photoUploadError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{photoUploadError}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Photo Title *</label>
                   <input
@@ -1317,6 +1350,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     onChange={e => setPhotoTitle(e.target.value)}
                     placeholder="e.g. Kite Workshop at Westbury"
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
+                    disabled={photoUploading}
                     required
                   />
                 </div>
@@ -1329,12 +1363,19 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     onChange={e => setPhotoCaption(e.target.value)}
                     placeholder="Short description of the photo..."
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
+                    disabled={photoUploading}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Select Photo File</label>
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="w-full text-xs text-slate-500" />
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    onChange={handlePhotoUpload}
+                    className="w-full text-xs text-slate-500"
+                    disabled={photoUploading}
+                  />
                 </div>
 
                 {photoPreview && (
@@ -1342,8 +1383,22 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 )}
 
                 <div className="flex justify-end space-x-2 pt-2">
-                  <button type="button" onClick={() => setPhotoUploadModal(false)} className="px-4 py-2 rounded-xl text-xs font-bold border">Cancel</button>
-                  <button type="submit" className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow">Save Photo</button>
+                  <button
+                    type="button"
+                    onClick={() => { setPhotoUploadModal(false); setPhotoUploadError(''); }}
+                    disabled={photoUploading}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={photoUploading}
+                    className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    {photoUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {photoUploading ? 'Uploading to Google Photos…' : 'Save Photo'}
+                  </button>
                 </div>
               </form>
             </div>

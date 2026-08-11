@@ -4,25 +4,6 @@ import { sql } from '../db/neon';
 
 const AuthContext = createContext();
 
-const defaultGallery = [
-  {
-    id: "g1",
-    title: "RISE Workshop Team",
-    image: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80",
-    uploader: "Sarah Haynes",
-    date: "2025-06-20",
-    caption: "Mentors working with children during RISE 2025."
-  },
-  {
-    id: "g2",
-    title: "Kite Distribution Day",
-    image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=800&q=80",
-    uploader: "David Boyce",
-    date: "2025-04-12",
-    caption: "Easter kite cheer at Westbury Primary School!"
-  }
-];
-
 const initialRoster = [
   {
     "id": "78008-0153",
@@ -493,14 +474,16 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // Member photo uploads gallery
+  // Member photo uploads gallery (backed by Google Photos; see api/gallery-*.js).
+  // localStorage is only a same-device cache for instant paint on repeat visits -
+  // the real fetch below always overwrites it with live data.
   const [memberGallery, setMemberGallery] = useState(() => {
     try {
       const savedGallery = localStorage.getItem('optimist_gallery');
-      return savedGallery ? JSON.parse(savedGallery) : defaultGallery;
+      return savedGallery ? JSON.parse(savedGallery) : [];
     } catch (e) {
       console.warn("Failed to parse optimist_gallery from localStorage", e);
-      return defaultGallery;
+      return [];
     }
   });
 
@@ -611,6 +594,24 @@ export const AuthProvider = ({ children }) => {
     }
 
     loadNeonData();
+  }, []);
+
+  // Load the shared photo gallery (Google Photos, via api/gallery-list.js).
+  // Kept independent of loadNeonData above so a gallery failure can never
+  // block roster/project loading, or vice versa.
+  useEffect(() => {
+    async function loadGallery() {
+      try {
+        const res = await fetch('/api/gallery-list');
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setMemberGallery(data.photos);
+        }
+      } catch (err) {
+        console.warn("Gallery fetch fallback to local cache:", err);
+      }
+    }
+    loadGallery();
   }, []);
 
   useEffect(() => {
@@ -1217,21 +1218,34 @@ Progressive Optimist Club of Barbados
     })();
   };
 
-  // Add photo to gallery
-  const addGalleryPhoto = (photoData) => {
+  // Add photo to the shared gallery. Uploads through api/gallery-upload.js,
+  // which pushes the image into the club's Google Photos account and only
+  // stores metadata (title/caption/uploader/Google media item id) in Neon.
+  const addGalleryPhoto = async (photoData) => {
     if (!currentUser) return { success: false, message: 'Must be logged in to post photos.' };
 
-    const newPhoto = {
-      id: 'g-' + Date.now(),
-      title: photoData.title,
-      image: photoData.image,
-      uploader: currentUser.name,
-      date: new Date().toISOString().split('T')[0],
-      caption: photoData.caption
-    };
-
-    setMemberGallery(prev => [newPhoto, ...prev]);
-    return { success: true, photo: newPhoto };
+    try {
+      const res = await fetch('/api/gallery-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: photoData.title,
+          caption: photoData.caption,
+          imageBase64: photoData.image,
+          uploaderName: currentUser.name,
+          uploaderId: currentUser.memberId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.message || 'Failed to upload photo.' };
+      }
+      setMemberGallery(prev => [data.photo, ...prev]);
+      return { success: true, photo: data.photo };
+    } catch (err) {
+      console.error("Gallery upload error:", err);
+      return { success: false, message: 'Network error while uploading photo. Please try again.' };
+    }
   };
 
   return (
