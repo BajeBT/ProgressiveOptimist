@@ -25,10 +25,13 @@ import {
 } from 'lucide-react';
 
 export const HomePage = ({ onOpenPostModal }) => {
-  const { projects, currentUser } = useAuth();
+  const { projects, memberRoster, currentUser } = useAuth();
   const [selectedProject, setSelectedProject] = useState(null);
 
-  const featuredProjects = projects.slice(0, 3);
+  const approvedProjects = projects.filter(p => p.approved !== false);
+  const featuredProjects = approvedProjects.slice(0, 3);
+  const totalChildrenFromProjects = approvedProjects.reduce((sum, p) => sum + (Number(p.childrenServed) || 0), 0);
+  const totalChildrenServedDisplay = 12184 + totalChildrenFromProjects;
 
   return (
     <div className="space-y-16 pb-16">
@@ -66,7 +69,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                 to="/membership"
                 className="gold-gradient text-slate-950 font-bold px-7 py-3.5 rounded-xl shadow-lg hover:brightness-110 transition-all text-sm flex items-center gap-2"
               >
-                <span>Join As A Member</span>
+                <span>Become a member</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
@@ -110,26 +113,26 @@ export const HomePage = ({ onOpenPostModal }) => {
                   Our Impact In Barbados
                 </span>
                 <span className="text-xs font-bold px-2.5 py-1 rounded bg-amber-400/20 text-amber-900 dark:text-amber-300">
-                  Est. 2011
+                  Est. 2010
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
                   <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
-                    1,200+
+                    {totalChildrenServedDisplay.toLocaleString()}+
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
-                    Youth Reached
+                    Children Reached
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30">
-                  <div className="font-heading text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                    150 / 150
+                <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
+                    {memberRoster && memberRoster.length > 0 ? memberRoster.length : 21}
                   </div>
-                  <div className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Devices Fulfilled
+                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
+                    Volunteer Members
                   </div>
                 </div>
 
@@ -144,7 +147,7 @@ export const HomePage = ({ onOpenPostModal }) => {
 
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
                   <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
-                    14+
+                    16+
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
                     Years of Service
@@ -180,7 +183,7 @@ export const HomePage = ({ onOpenPostModal }) => {
             to="/projects"
             className="text-xs font-bold text-optimist-blue dark:text-amber-400 hover:underline flex items-center gap-1"
           >
-            <span>View All Projects ({projects.length})</span>
+            <span>View All Projects ({approvedProjects.length})</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>

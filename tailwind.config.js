@@ -20,8 +20,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
-        heading: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['"Zoho Puvi"', 'Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['"Zoho Puvi"', 'Outfit', 'Plus Jakarta Sans', 'sans-serif'],
       },
       fontSize: {
         'xl': ['1.06rem', { lineHeight: '1.5rem' }],

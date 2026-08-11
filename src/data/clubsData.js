@@ -3,7 +3,7 @@ export const barbadosClubs = [
     id: "progressive",
     name: "Progressive Optimist Club of Barbados",
     isHost: true,
-    charterYear: "2011",
+    charterYear: "2010",
     motto: "Bringing Out The Best In Children",
     meetingSchedule: "1st Monday of every month at 5:30 PM",
     location: "Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",

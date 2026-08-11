@@ -21,7 +21,16 @@ export const ProjectsPage = ({ onOpenPostModal }) => {
     'Environment & Sustainability'
   ];
 
+  const isModerator = currentUser && ['super admin', 'finance', 'admin', 'moderator'].includes(currentUser.access);
+
   const filteredProjects = projects.filter(project => {
+    const isApproved = project.approved !== false;
+    const isAuthor = currentUser && (project.authorId === currentUser.memberId || project.author === currentUser.name);
+    
+    // Non-moderators can only see approved projects, unless they are the author of a pending project.
+    const isVisible = isApproved || isAuthor || isModerator;
+    if (!isVisible) return false;
+
     const matchesCategory = activeCategory === 'All' || project.category === activeCategory;
     const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           project.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||

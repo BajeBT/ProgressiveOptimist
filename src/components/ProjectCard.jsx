@@ -21,6 +21,13 @@ export const ProjectCard = ({ project, onClick }) => {
           {project.category}
         </span>
 
+        {/* Pending Approval Badge */}
+        {project.approved === false && (
+          <span className="absolute top-3 right-3 bg-rose-600 text-white text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full shadow-md animate-pulse">
+            Pending Approval
+          </span>
+        )}
+
         {/* Impact Badge */}
         {project.impact && (
           <span className="absolute bottom-3 right-3 bg-amber-400 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded-lg shadow flex items-center gap-1">

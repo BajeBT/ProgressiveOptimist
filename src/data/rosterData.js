@@ -188,7 +188,7 @@ export const activeRoster21 = [
     address: "Hothersal Turning, St. Michael, BB11038 BB",
     phone: "+1 (246) 425-4203 / +1 (246) 436-1216",
     email: "medottin@gmail.com",
-    joinDate: "11/17/2011",
+    joinDate: "11/17/2010",
     sponsor: "Charter Member",
     role: "Foundation Rep-Elect & Past President (2018)",
     status: "Active"
@@ -218,7 +218,7 @@ export const activeRoster21 = [
     email: "carmel.haynes@gmail.com",
     joinDate: "05/27/2010",
     sponsor: "Charter Member",
-    role: "Charter President (2011) & Active Member",
+    role: "Charter President (2010) & Active Member",
     status: "Active"
   },
   {

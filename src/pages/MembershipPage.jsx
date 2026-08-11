@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   User,
@@ -29,7 +30,8 @@ import {
   Building2,
   Copy,
   Printer,
-  X
+  X,
+  Users
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -59,15 +61,24 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // Application form state
+  // Application form state (Structured using the ProgressiveOCB Membership Application template)
   const [appForm, setAppForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    profession: '',
-    sponsorName: '',
-    reason: ''
+    addressLine1: '',
+    addressLine2: '',
+    village: '',
+    parish: '',
+    country: 'Barbados',
+    dob: '',
+    gender: 'Male',
+    hearAboutUs: 'Website',
+    referrerName: '',
+    occupation: '',
+    employer: '',
+    comments: ''
   });
   const [appSuccess, setAppSuccess] = useState(false);
 
@@ -142,7 +153,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   };
 
   const handleTreasurerUpdateStatus = (memberId, memberName, newStatus) => {
-    updateMemberDuesByTreasurer(memberId, newStatus, "$250.00 BBD", "Bank Transfer");
+    updateMemberDuesByTreasurer(memberId, newStatus, "$250.00", "Bank Transfer");
     setTreasurerMsg(`Updated ${memberName}'s dues record to: ${newStatus}`);
     setTimeout(() => setTreasurerMsg(''), 4000);
   };
@@ -203,7 +214,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     setPhotoPreview(null);
   };
 
-  const filteredRoster = memberRoster.filter(m =>
+  const uniqueMembers = Array.from(new Map(memberRoster.map(m => [m.id, m])).values());
+  const filteredRoster = uniqueMembers.filter(m =>
     m.name.toLowerCase().includes(rosterSearch.toLowerCase()) ||
     m.email.toLowerCase().includes(rosterSearch.toLowerCase()) ||
     m.id.toLowerCase().includes(rosterSearch.toLowerCase())
@@ -214,13 +226,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     const myProjects = projects.filter(p => p.authorId === currentUser.memberId || p.author === currentUser.name);
 
     const canAccessTreasurerConsole = currentUser && (
-      currentUser.isTreasurer ||
-      currentUser.role?.includes('Treasurer') ||
-      currentUser.role?.includes('President') ||
-      currentUser.email === 'treasurer@progressiveoptimist.org' ||
-      currentUser.email === 'president@progressiveoptimist.org' ||
-      currentUser.email === 'sharon@topaz-bb.com' ||
-      currentUser.email === 'richelle.lucas16@gmail.com'
+      currentUser.access === 'super admin' ||
+      currentUser.access === 'finance'
     );
 
     return (
@@ -252,6 +259,17 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-3">
+            {canAccessTreasurerConsole && (
+              <Link
+                to="/admin"
+                className="bg-slate-900 hover:bg-slate-850 text-amber-400 border border-slate-700 px-4 py-2.5 rounded-xl font-bold text-xs shadow transition-all flex items-center gap-1.5"
+                title="Go to Admin & Site Settings Console"
+              >
+                <ShieldCheck className="w-4.5 h-4.5 text-amber-400" />
+                <span>Admin Settings</span>
+              </Link>
+            )}
+
             <button
               onClick={onOpenPostModal}
               className="gold-gradient text-slate-950 font-bold px-5 py-2.5 rounded-xl shadow hover:brightness-110 transition-all text-xs flex items-center gap-2"
@@ -321,7 +339,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            My Dues Record ($250 BBD)
+            My Dues Record ($250)
           </button>
 
           {/* Dedicated Treasurer Management Tab (Restricted to President & Treasurer) */}
@@ -489,10 +507,10 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                 <div className="space-y-3 pt-2">
                   <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">
-                    Pay Annual Membership Dues ($250 BBD)
+                    Pay Annual Membership Dues ($250)
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Annual dues (BDS$ 250.00 / year) support club operations, Caribbean District registration, and primary school student projects in Barbados.
+                    Annual dues ($250.00 / year) support club operations, Caribbean District registration, and primary school student projects in Barbados.
                   </p>
 
                   <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -501,8 +519,18 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       className="px-5 py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow hover:brightness-110 transition-all flex items-center gap-2"
                     >
                       <CreditCard className="w-4 h-4" />
-                      <span>Pay Dues & Update Record ($250 BBD)</span>
+                      <span>Pay Dues & Update Record ($250)</span>
                     </button>
+
+                    {canAccessTreasurerConsole && (
+                      <button
+                        onClick={() => setDashboardTab('treasurer')}
+                        className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow transition-colors flex items-center gap-1.5"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>View Members Dues Roster</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={() => updateDuesStatus('Pending Dues Payment')}
@@ -525,14 +553,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       <strong className="block text-slate-900 dark:text-white">2025/2026 Optimist Year (Oct 1 - Sep 30)</strong>
                       <span className="text-slate-400">Processed via Member Portal</span>
                     </div>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 BBD Paid</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 Paid</span>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <div>
                       <strong className="block text-slate-900 dark:text-white">2024/2025 Optimist Year (Oct 1 - Sep 30)</strong>
                       <span className="text-slate-400">Processed October 2024</span>
                     </div>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 BBD Paid</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 Paid</span>
                   </div>
                 </div>
               </div>
@@ -577,7 +605,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
                   </span>
                   <h2 className="font-heading text-2xl font-black text-white">
-                    Member Dues Management Ledger (BDS$ 250.00 / Year)
+                    Member Dues Management Ledger
                   </h2>
                   <p className="text-xs text-slate-300">
                     Optimist Fiscal Year runs <strong>October 1st to September 30th</strong>. As Club Treasurer (<strong>Sharon Mohammed</strong>), you can record payments, click member names to view statements, add notes, and email dues balance statements.
@@ -633,6 +661,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 >
                   {selectedMemberIds.length === filteredRoster.length ? 'Deselect All' : 'Select All'}
                 </button>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  (Total Members: {filteredRoster.length})
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -661,6 +692,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[10px]">
                     <tr>
+                      <th className="p-4 w-12 text-center text-slate-400">#</th>
                       <th className="p-4 w-10">
                         <input
                           type="checkbox"
@@ -678,12 +710,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {filteredRoster.map((member) => {
+                    {filteredRoster.map((member, index) => {
                       const isSelected = selectedMemberIds.includes(member.id);
                       const isEditingNotes = editingNotesId === member.id;
 
                       return (
                         <tr key={member.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${isSelected ? 'bg-amber-400/10' : ''}`}>
+                          <td className="p-4 text-center font-mono text-slate-400 font-bold text-xs border-r border-slate-200 dark:border-slate-800">
+                            {index + 1}
+                          </td>
                           <td className="p-4">
                             <input
                               type="checkbox"
@@ -709,12 +744,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                           <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
                             <strong className="block text-slate-900 dark:text-white">2025/2026</strong>
-                            <span className="text-amber-600 dark:text-amber-400 font-bold">$250.00 BBD Rate</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">$250.00 Rate</span>
                           </td>
                           <td className="p-4">
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Paid: {member.amountPaid}</span>
-                            <span className={`text-[11px] font-bold ${member.balanceDue === '$0.00 BBD' ? 'text-slate-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                              Due: {member.balanceDue}
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Paid: {member.amountPaid ? member.amountPaid.replace(' BBD', '') : ''}</span>
+                            <span className={`text-[11px] font-bold ${(!member.balanceDue || member.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-slate-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              Due: {member.balanceDue ? member.balanceDue.replace(' BBD', '') : ''}
                             </span>
                           </td>
                           <td className="p-4 space-y-1">
@@ -851,9 +886,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
                   <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
-                  <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>BDS$ 250.00</strong></p>
-                  <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid}</strong></p>
-                  <p className="text-slate-800 dark:text-slate-200">Current Balance Due: <strong className={statementModalMember.balanceDue === '$0.00 BBD' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{statementModalMember.balanceDue}</strong></p>
+                  <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
+                  <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
+                  <p className="text-slate-800 dark:text-slate-200">Current Balance Due: <strong className={(!statementModalMember.balanceDue || statementModalMember.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{statementModalMember.balanceDue ? statementModalMember.balanceDue.replace(' BBD', '') : ''}</strong></p>
                 </div>
               </div>
 
@@ -996,7 +1031,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           Progressive Optimist Member Portal
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          Log in to publish new project posts, manage annual dues ($250 BBD / year), and upload activity photos to the website, or apply for new membership with the Barbados club.
+          Log in to publish new project posts, manage annual dues ($250 / year), and upload activity photos to the website, or apply for new membership with the Barbados club.
         </p>
       </div>
 
@@ -1021,7 +1056,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 : 'text-slate-700 dark:text-slate-300 hover:text-black'
             }`}
           >
-            New Member Application
+            Become a Member
           </button>
         </div>
       </div>
@@ -1102,91 +1137,267 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               Sign In As Member
             </button>
           </form>
-
         </div>
       )}
 
       {/* NEW MEMBER APPLICATION FORM */}
       {authTab === 'apply' && (
         <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 shadow-xl max-w-2xl mx-auto space-y-6">
-          <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
-            Online Membership Application
-          </h2>
+          <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <Users className="w-6 h-6 text-optimist-blue" />
+            <div>
+              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+                ProgressiveOCB Membership Application
+              </h2>
+              <p className="text-xs text-slate-500">
+                Please complete this form to apply for membership with the Progressive Optimist Club of Barbados.
+              </p>
+            </div>
+          </div>
 
           {appSuccess ? (
-            <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-center space-y-3">
-              <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-              <h3 className="font-heading font-bold text-lg">Application Submitted!</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Welcome to the Progressive Optimist Club of Barbados! Your member portal account has been activated.
+            <div className="p-8 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-center space-y-4 shadow border border-emerald-300/30">
+              <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto animate-bounce" />
+              <h3 className="font-heading font-black text-lg">Application Submitted Successfully!</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-350 max-w-md mx-auto leading-relaxed">
+                Thank you for applying! Your membership application is currently pending review by the Club President and Treasurer. We will contact you shortly regarding the status of your application.
               </p>
             </div>
           ) : (
-            <form onSubmit={handleAppSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    value={appForm.firstName}
-                    onChange={e => setAppForm({ ...appForm, firstName: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
-                    required
-                  />
+            <form onSubmit={handleAppSubmit} className="space-y-5">
+              
+              {/* Section 1: Contact Information */}
+              <div className="space-y-4">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                  Contact Information
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">First Name *</label>
+                    <input
+                      type="text"
+                      value={appForm.firstName}
+                      onChange={e => setAppForm({ ...appForm, firstName: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Last Name *</label>
+                    <input
+                      type="text"
+                      value={appForm.lastName}
+                      onChange={e => setAppForm({ ...appForm, lastName: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    value={appForm.lastName}
-                    onChange={e => setAppForm({ ...appForm, lastName: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
-                    required
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Email Address *</label>
+                    <input
+                      type="email"
+                      value={appForm.email}
+                      onChange={e => setAppForm({ ...appForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Whatsapp Number *</label>
+                    <input
+                      type="tel"
+                      value={appForm.phone}
+                      onChange={e => setAppForm({ ...appForm, phone: e.target.value })}
+                      placeholder="(246) 000-0000"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Email Address *</label>
-                  <input
-                    type="email"
-                    value={appForm.email}
-                    onChange={e => setAppForm({ ...appForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
-                    required
-                  />
+              {/* Section 2: Address */}
+              <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                  Postal Address
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Street Address *</label>
+                    <input
+                      type="text"
+                      value={appForm.addressLine1}
+                      onChange={e => setAppForm({ ...appForm, addressLine1: e.target.value })}
+                      placeholder="e.g. 1st Avenue Belleville"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Street Address Line 2</label>
+                    <input
+                      type="text"
+                      value={appForm.addressLine2}
+                      onChange={e => setAppForm({ ...appForm, addressLine2: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={appForm.phone}
-                    onChange={e => setAppForm({ ...appForm, phone: e.target.value })}
-                    placeholder="+1 (246) ..."
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Village / City</label>
+                    <input
+                      type="text"
+                      value={appForm.village}
+                      onChange={e => setAppForm({ ...appForm, village: e.target.value })}
+                      placeholder="e.g. Bridgetown"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Parish *</label>
+                    <input
+                      type="text"
+                      value={appForm.parish}
+                      onChange={e => setAppForm({ ...appForm, parish: e.target.value })}
+                      placeholder="e.g. St. Michael"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Country</label>
+                    <input
+                      type="text"
+                      value={appForm.country}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs outline-none"
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Why do you want to join Optimist in Barbados?</label>
-                <textarea
-                  rows={3}
-                  value={appForm.reason}
-                  onChange={e => setAppForm({ ...appForm, reason: e.target.value })}
-                  placeholder="Share your passion for helping Bajan children and community work..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none"
-                />
+              {/* Section 3: Profile Details */}
+              <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                  Applicant Profile
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Date of Birth *</label>
+                    <input
+                      type="date"
+                      value={appForm.dob}
+                      onChange={e => setAppForm({ ...appForm, dob: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Gender *</label>
+                    <div className="flex gap-4 pt-2.5">
+                      {['Male', 'Female', 'Other'].map(g => (
+                        <label key={g} className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="gender"
+                            value={g}
+                            checked={appForm.gender === g}
+                            onChange={e => setAppForm({ ...appForm, gender: e.target.value })}
+                            className="text-optimist-blue focus:ring-optimist-blue w-3.5 h-3.5"
+                          />
+                          <span>{g}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Occupation / Profession</label>
+                    <input
+                      type="text"
+                      value={appForm.occupation}
+                      onChange={e => setAppForm({ ...appForm, occupation: e.target.value })}
+                      placeholder="e.g. Attorney, Educator"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Employer / School</label>
+                    <input
+                      type="text"
+                      value={appForm.employer}
+                      onChange={e => setAppForm({ ...appForm, employer: e.target.value })}
+                      placeholder="e.g. Barbados Ministry of Education"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">How did you hear about us?</label>
+                    <select
+                      value={appForm.hearAboutUs}
+                      onChange={e => setAppForm({ ...appForm, hearAboutUs: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none font-semibold text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="Social Media">Social Media</option>
+                      <option value="Referral">Referral</option>
+                      <option value="Website">Website</option>
+                      <option value="Flyer/Poster">Flyer/Poster</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {appForm.hearAboutUs === 'Referral' && (
+                    <div className="animate-fadeIn">
+                      <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Referrer's Name *</label>
+                      <input
+                        type="text"
+                        value={appForm.referrerName}
+                        onChange={e => setAppForm({ ...appForm, referrerName: e.target.value })}
+                        placeholder="Enter the name of the member who referred you"
+                        className="w-full px-3.5 py-2 rounded-xl border border-amber-400 dark:border-amber-400 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Comments / Notes</label>
+                  <textarea
+                    rows={3}
+                    value={appForm.comments}
+                    onChange={e => setAppForm({ ...appForm, comments: e.target.value })}
+                    placeholder="Share any special skills, areas of interest, or additional comments..."
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow hover:brightness-110 transition-all"
+                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-black text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
               >
-                Submit Application & Activate Account
+                <span>Submit Membership Application</span>
               </button>
             </form>
           )}

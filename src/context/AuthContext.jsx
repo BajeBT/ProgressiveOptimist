@@ -182,7 +182,7 @@ const defaultSiteSettings = {
   meetingVenue: "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",
   supportEmail: "info@progressiveoptimist.org",
   contactPhone: "+1 (246) 836-6185",
-  annualDuesRate: "$250.00 BBD"
+  annualDuesRate: "$250.00"
 };
 
 export const AuthProvider = ({ children }) => {
@@ -237,9 +237,22 @@ export const AuthProvider = ({ children }) => {
   const [memberRoster, setMemberRoster] = useState(() => {
     try {
       const savedRoster = localStorage.getItem('optimist_roster');
-      return savedRoster ? JSON.parse(savedRoster) : initialRoster;
+      const roster = savedRoster ? JSON.parse(savedRoster) : initialRoster;
+      const unique = Array.from(new Map(roster.map(m => [m.id, m])).values());
+      return unique.map(m => ({
+        ...m,
+        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$250.00',
+        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$250.00',
+        balanceDue: m.balanceDue ? m.balanceDue.replace(' BBD', '') : '$0.00'
+      }));
     } catch (e) {
-      return initialRoster;
+      const uniqueInit = Array.from(new Map(initialRoster.map(m => [m.id, m])).values());
+      return uniqueInit.map(m => ({
+        ...m,
+        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$250.00',
+        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$250.00',
+        balanceDue: m.balanceDue ? m.balanceDue.replace(' BBD', '') : '$0.00'
+      }));
     }
   });
 
@@ -270,7 +283,7 @@ export const AuthProvider = ({ children }) => {
         // Fetch Members & Dues Ledgers from Neon PostgreSQL
         const rows = await sql`
           SELECT 
-            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar,
+            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access,
             d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due, 
             d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
           FROM members m
@@ -280,6 +293,16 @@ export const AuthProvider = ({ children }) => {
 
         if (rows && rows.length > 0) {
           const mappedRoster = rows.map(r => {
+            const emailLower = r.email.toLowerCase().trim();
+            let defaultAccess = 'member';
+            if (emailLower === 'richelle.lucas16@gmail.com' || emailLower === 'edwin@jillandee.com') {
+              defaultAccess = 'super admin';
+            } else if (emailLower === 'sharon@topaz-bb.com') {
+              defaultAccess = 'finance';
+            } else if (emailLower === 'londoncharms@hotmail.com') {
+              defaultAccess = 'admin';
+            }
+
             const isTreasurerUser = r.email === 'sharon@topaz-bb.com' || r.id === '78008-0152';
             const isPresidentUser = r.email === 'richelle.lucas16@gmail.com' || r.id === '78008-0150';
 
@@ -291,21 +314,22 @@ export const AuthProvider = ({ children }) => {
               phone: r.phone,
               address: r.address,
               avatar: r.avatar,
+              access: r.access || defaultAccess,
               fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
-              duesRate: r.dues_rate || '$250.00 BBD',
-              amountPaid: r.amount_paid || '$250.00 BBD',
-              balanceDue: r.balance_due || '$0.00 BBD',
+              duesRate: r.dues_rate || '$250.00',
+              amountPaid: r.amount_paid || '$250.00',
+              balanceDue: r.balance_due || '$0.00',
               paymentMethod: r.payment_method || 'Bank Transfer',
               duesStatus: r.dues_status || 'Active Member (2025/2026)',
               lastPaymentDate: r.last_payment_date || '2025-10-01',
               notes: r.notes || '',
               emailLastSent: r.email_last_sent || '',
               hasTreasurerConsoleAccess: isTreasurerUser || isPresidentUser,
-              hasInitiativeAccess: isTreasurerUser || isPresidentUser,
-              accessTier: isPresidentUser ? 'Super Admin' : isTreasurerUser ? 'Treasurer Admin' : r.role.includes('Director') ? 'Officer' : 'Standard Member'
+              hasInitiativeAccess: isTreasurerUser || isPresidentUser
             };
           });
-          setMemberRoster(mappedRoster);
+          const deduplicatedRoster = Array.from(new Map(mappedRoster.map(m => [m.id, m])).values());
+          setMemberRoster(deduplicatedRoster);
           setDbConnected(true);
         }
 
@@ -324,7 +348,8 @@ export const AuthProvider = ({ children }) => {
             isFeatured: p.is_featured,
             author: p.author,
             authorId: p.author_id,
-            postedAt: p.posted_at
+            postedAt: p.posted_at,
+            childrenServed: Number(p.children_served) || 0
           }));
           setProjects(mappedProjects);
         }
@@ -405,6 +430,85 @@ export const AuthProvider = ({ children }) => {
       }
       return m;
     }));
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        if (permissionKey === 'access') {
+          await sql`
+            UPDATE members
+            SET access = ${val}
+            WHERE id = ${memberId};
+          `;
+        } else if (permissionKey === 'role') {
+          await sql`
+            UPDATE members
+            SET role = ${val}
+            WHERE id = ${memberId};
+          `;
+        } else if (permissionKey === 'hasTreasurerConsoleAccess') {
+          await sql`
+            UPDATE members
+            SET is_treasurer = ${val}
+            WHERE id = ${memberId};
+          `;
+        } else if (permissionKey === 'hasInitiativeAccess') {
+          await sql`
+            UPDATE members
+            SET is_president = ${val}
+            WHERE id = ${memberId};
+          `;
+        }
+      } catch (err) {
+        console.warn("Neon DB permissions sync error:", err);
+      }
+    })();
+  };
+
+  // Full Roster Member Record Update (Syncs to DB)
+  const updateMemberRecord = (memberId, updatedFields) => {
+    setMemberRoster(prev => prev.map(m => {
+      if (m.id === memberId) {
+        return {
+          ...m,
+          ...updatedFields
+        };
+      }
+      return m;
+    }));
+
+    // Async sync to Neon DB
+    (async () => {
+      try {
+        // 1. Update members table
+        await sql`
+          UPDATE members
+          SET 
+            name = ${updatedFields.name},
+            email = ${updatedFields.email},
+            phone = ${updatedFields.phone},
+            address = ${updatedFields.address},
+            role = ${updatedFields.role},
+            access = ${updatedFields.access}
+          WHERE id = ${memberId};
+        `;
+
+        // 2. Update dues_ledger table
+        await sql`
+          UPDATE dues_ledger
+          SET 
+            dues_rate = ${updatedFields.duesRate},
+            amount_paid = ${updatedFields.amountPaid},
+            balance_due = ${updatedFields.balanceDue},
+            payment_method = ${updatedFields.paymentMethod},
+            dues_status = ${updatedFields.duesStatus},
+            last_payment_date = ${updatedFields.lastPaymentDate}
+          WHERE member_id = ${memberId};
+        `;
+      } catch (err) {
+        console.warn("Neon DB member update sync error:", err);
+      }
+    })();
   };
 
   // Login handler
@@ -422,6 +526,10 @@ export const AuthProvider = ({ children }) => {
 
     // Look up in roster first if available
     const matchedRosterItem = memberRoster.find(m => m.email.toLowerCase().trim() === cleanEmail);
+
+    if (matchedRosterItem && matchedRosterItem.access === 'pending') {
+      return { success: false, message: 'Your membership application is currently pending approval by the Club Treasurer/President.' };
+    }
 
     if (cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail === 'sharon@topaz-bb.com' || cleanEmail.includes('treasurer')) {
       name = 'Sharon Mohammed';
@@ -446,6 +554,17 @@ export const AuthProvider = ({ children }) => {
       name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
     }
 
+    let access = 'member';
+    if (cleanEmail === 'richelle.lucas16@gmail.com' || cleanEmail === 'edwin@jillandee.com' || cleanEmail === 'president@progressiveoptimist.org' || cleanEmail.includes('president')) {
+      access = 'super admin';
+    } else if (cleanEmail === 'sharon@topaz-bb.com' || cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail.includes('treasurer')) {
+      access = 'finance';
+    } else if (cleanEmail === 'londoncharms@hotmail.com' || cleanEmail === 'secretary@progressiveoptimist.org' || cleanEmail.includes('secretary')) {
+      access = 'admin';
+    } else if (matchedRosterItem && matchedRosterItem.access) {
+      access = matchedRosterItem.access;
+    }
+
     const userObj = {
       email: cleanEmail,
       name,
@@ -454,7 +573,8 @@ export const AuthProvider = ({ children }) => {
       memberId,
       duesStatus: 'Active Member in Good Standing (2025/2026)',
       joinedDate: '2022',
-      avatar
+      avatar,
+      access
     };
 
     setCurrentUser(userObj);
@@ -466,35 +586,34 @@ export const AuthProvider = ({ children }) => {
 
   // Signup / Application handler with Neon sync
   const registerMember = (formData) => {
-    const userObj = {
-      email: formData.email,
-      name: `${formData.firstName} ${formData.lastName}`,
-      phone: formData.phone,
-      role: 'Member',
-      memberId: '78008-' + Math.floor(1000 + Math.random() * 9000),
-      duesStatus: 'Pending Dues Payment',
-      joinedDate: new Date().getFullYear().toString(),
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.email)}`
-    };
+    const memberId = '78008-' + Math.floor(1000 + Math.random() * 9000);
+    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.email)}`;
+    const name = `${formData.firstName} ${formData.lastName}`;
 
-    setCurrentUser(userObj);
+    const notesString = `DOB: ${formData.dob || 'N/A'} | Gender: ${formData.gender || 'N/A'} | Occupation: ${formData.occupation || 'N/A'} | Employer: ${formData.employer || 'N/A'} | Hear About Us: ${formData.hearAboutUs || 'N/A'} ${formData.referrerName ? `(Referrer: ${formData.referrerName})` : ''} | Comments: ${formData.comments || 'None'}`;
+
+    const addressString = `${formData.addressLine1 || ''}${formData.addressLine2 ? `, ${formData.addressLine2}` : ''}${formData.village ? `, ${formData.village}` : ''}, ${formData.parish || ''}, ${formData.country || 'Barbados'}`;
+
     const newMemberRecord = {
-      id: userObj.memberId,
-      name: userObj.name,
-      email: userObj.email,
-      role: 'Member',
+      id: memberId,
+      name: name,
+      email: formData.email,
+      phone: formData.phone || '',
+      address: addressString,
+      role: 'Pending Member',
+      access: 'pending',
       fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
-      duesRate: '$250.00 BBD',
-      amountPaid: '$0.00 BBD',
-      balanceDue: '$250.00 BBD',
+      duesRate: '$250.00',
+      amountPaid: '$0.00',
+      balanceDue: '$250.00',
       paymentMethod: 'Pending',
-      duesStatus: 'Pending Dues Payment',
+      duesStatus: 'Pending Approval',
       lastPaymentDate: 'None',
-      notes: 'New member application submitted.',
+      notes: notesString,
       emailLastSent: 'None',
       hasTreasurerConsoleAccess: false,
       hasInitiativeAccess: false,
-      accessTier: 'Standard Member'
+      avatar: avatar
     };
 
     setMemberRoster(prev => [newMemberRecord, ...prev]);
@@ -503,23 +622,20 @@ export const AuthProvider = ({ children }) => {
     (async () => {
       try {
         await sql`
-          INSERT INTO members (id, name, email, phone, role, avatar)
-          VALUES (${userObj.memberId}, ${userObj.name}, ${userObj.email}, ${formData.phone || ''}, 'Member', ${userObj.avatar})
+          INSERT INTO members (id, name, email, phone, role, avatar, address, access)
+          VALUES (${memberId}, ${name}, ${formData.email}, ${formData.phone || ''}, 'Pending Member', ${avatar}, ${addressString}, 'pending')
           ON CONFLICT (id) DO NOTHING;
         `;
         await sql`
           INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
-          VALUES (${userObj.memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00 BBD', '$0.00 BBD', '$250.00 BBD', 'Pending', 'Pending Dues Payment', 'New member application submitted.');
+          VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$0.00', '$250.00', 'Pending', 'Pending Approval', ${notesString});
         `;
       } catch (err) {
         console.warn("Neon DB member insert sync error:", err);
       }
     })();
 
-    try {
-      localStorage.setItem('optimist_user', JSON.stringify(userObj));
-    } catch (e) {}
-    return { success: true, user: userObj };
+    return { success: true, user: newMemberRecord };
   };
 
   // Update member dues record for current user
@@ -533,7 +649,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Treasurer updates member dues status in central roster and Neon DB
-  const updateMemberDuesByTreasurer = (memberId, newStatus, amountPaid = "$250.00 BBD", paymentMethod = "Bank Transfer") => {
+  const updateMemberDuesByTreasurer = (memberId, newStatus, amountPaid = "$250.00", paymentMethod = "Bank Transfer") => {
     const today = new Date().toISOString().split('T')[0];
     const isPaid = newStatus.includes('Active');
 
@@ -543,8 +659,8 @@ export const AuthProvider = ({ children }) => {
           ...m,
           duesStatus: newStatus,
           lastPaymentDate: today,
-          amountPaid: isPaid ? "$250.00 BBD" : "$0.00 BBD",
-          balanceDue: isPaid ? "$0.00 BBD" : "$250.00 BBD",
+          amountPaid: isPaid ? "$250.00" : "$0.00",
+          balanceDue: isPaid ? "$0.00" : "$250.00",
           paymentMethod
         };
       }
@@ -559,8 +675,8 @@ export const AuthProvider = ({ children }) => {
           SET 
             dues_status = ${newStatus},
             last_payment_date = ${today},
-            amount_paid = ${isPaid ? '$250.00 BBD' : '$0.00 BBD'},
-            balance_due = ${isPaid ? '$0.00 BBD' : '$250.00 BBD'},
+            amount_paid = ${isPaid ? '$250.00' : '$0.00'},
+            balance_due = ${isPaid ? '$0.00' : '$250.00'},
             payment_method = ${paymentMethod},
             updated_at = CURRENT_TIMESTAMP
           WHERE member_id = ${memberId};
@@ -640,6 +756,9 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'You must be logged in as a member to post a project.' };
     }
 
+    const isModeratorUser = ['super admin', 'finance', 'admin', 'moderator'].includes(currentUser.access);
+    const isApproved = isModeratorUser; // Auto-approved if posted by a moderator
+
     const newProject = {
       id: 'proj-' + Date.now(),
       title: projectData.title,
@@ -652,7 +771,9 @@ export const AuthProvider = ({ children }) => {
       isFeatured: Boolean(projectData.isFeatured),
       author: currentUser.name,
       authorId: currentUser.memberId,
-      postedAt: new Date().toISOString().split('T')[0]
+      postedAt: new Date().toISOString().split('T')[0],
+      childrenServed: Number(projectData.childrenServed) || 0,
+      approved: isApproved
     };
 
     setProjects(prev => [newProject, ...prev]);
@@ -661,15 +782,57 @@ export const AuthProvider = ({ children }) => {
     (async () => {
       try {
         await sql`
-          INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at)
-          VALUES (${newProject.id}, ${newProject.title}, ${newProject.category}, ${newProject.date}, ${newProject.image}, ${newProject.excerpt}, ${newProject.content}, ${newProject.impact}, ${newProject.isFeatured}, ${newProject.author}, ${newProject.authorId}, ${newProject.postedAt});
+          INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at, children_served, approved)
+          VALUES (${newProject.id}, ${newProject.title}, ${newProject.category}, ${newProject.date}, ${newProject.image}, ${newProject.excerpt}, ${newProject.content}, ${newProject.impact}, ${newProject.isFeatured}, ${newProject.author}, ${newProject.authorId}, ${newProject.postedAt}, ${newProject.childrenServed}, ${newProject.approved});
         `;
       } catch (err) {
         console.warn("Neon DB project insert error:", err);
       }
     })();
 
-    return { success: true, project: newProject };
+    return {
+      success: true,
+      project: newProject,
+      message: isApproved ? "Project published immediately." : "Project submitted successfully and is pending moderator approval."
+    };
+  };
+
+  // Moderator approves a project
+  const approveProject = (projectId) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return { ...p, approved: true };
+      }
+      return p;
+    }));
+
+    (async () => {
+      try {
+        await sql`
+          UPDATE projects
+          SET approved = TRUE
+          WHERE id = ${projectId};
+        `;
+      } catch (err) {
+        console.warn("Neon DB project approve error:", err);
+      }
+    })();
+  };
+
+  // Moderator deletes/rejects a project
+  const deleteProject = (projectId) => {
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+
+    (async () => {
+      try {
+        await sql`
+          DELETE FROM projects
+          WHERE id = ${projectId};
+        `;
+      } catch (err) {
+        console.warn("Neon DB project delete error:", err);
+      }
+    })();
   };
 
   // Add photo to gallery
@@ -701,6 +864,7 @@ export const AuthProvider = ({ children }) => {
         siteSettings,
         updateSiteSettings,
         updateMemberPermissions,
+        updateMemberRecord,
         currentUser,
         login,
         registerMember,
@@ -712,6 +876,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         projects,
         addProject,
+        approveProject,
+        deleteProject,
         memberGallery,
         addGalleryPhoto,
         isDarkMode,

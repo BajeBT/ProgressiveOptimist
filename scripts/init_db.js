@@ -218,9 +218,13 @@ async function initializeDatabase() {
         is_treasurer BOOLEAN DEFAULT FALSE,
         is_president BOOLEAN DEFAULT FALSE,
         avatar TEXT,
+        access VARCHAR(50) DEFAULT 'member',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
+
+    // Guarantee the column is added if it already exists
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS access VARCHAR(50) DEFAULT 'member';`;
 
     // 2. Create dues_ledger table
     console.log("Creating table 'dues_ledger'...");
@@ -229,9 +233,9 @@ async function initializeDatabase() {
         id SERIAL PRIMARY KEY,
         member_id VARCHAR(50) REFERENCES members(id) ON DELETE CASCADE,
         fiscal_year VARCHAR(50) DEFAULT '2025/2026 (Oct 1 - Sep 30)',
-        dues_rate VARCHAR(50) DEFAULT '$250.00 BBD',
-        amount_paid VARCHAR(50) DEFAULT '$250.00 BBD',
-        balance_due VARCHAR(50) DEFAULT '$0.00 BBD',
+        dues_rate VARCHAR(50) DEFAULT '$250.00',
+        amount_paid VARCHAR(50) DEFAULT '$250.00',
+        balance_due VARCHAR(50) DEFAULT '$0.00',
         payment_method VARCHAR(100) DEFAULT 'Bank Transfer',
         dues_status VARCHAR(100) DEFAULT 'Active Member (2025/2026)',
         last_payment_date VARCHAR(50),
@@ -257,34 +261,52 @@ async function initializeDatabase() {
         author VARCHAR(255),
         author_id VARCHAR(50),
         posted_at VARCHAR(50),
+        children_served INTEGER DEFAULT 0,
+        approved BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
+    // Alter table in case it already exists to guarantee it has the columns
+    await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS children_served INTEGER DEFAULT 0;`;
+    await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT TRUE;`;
+
     // 4. Seed 21 Active Members & Dues Records
     console.log("Seeding 21 Active Members and Dues Ledgers into Neon DB...");
     for (const m of all21Members) {
+      const emailLower = m.email.toLowerCase().trim();
+      let access = 'member';
+      if (emailLower === 'richelle.lucas16@gmail.com' || emailLower === 'edwin@jillandee.com') {
+        access = 'super admin';
+      } else if (emailLower === 'sharon@topaz-bb.com') {
+        access = 'finance';
+      } else if (emailLower === 'londoncharms@hotmail.com') {
+        access = 'admin';
+      }
+
       await sql`
-        INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar)
+        INSERT INTO members (id, name, gender, email, phone, address, join_date, sponsor, role, is_treasurer, is_president, avatar, access)
         VALUES (
           ${m.id}, ${m.name}, ${m.gender}, ${m.email}, ${m.phone}, ${m.address}, 
           ${m.joinDate}, ${m.sponsor}, ${m.role}, 
           ${m.id === '78008-0152'}, ${m.id === '78008-0150'},
-          ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`}
+          ${`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.email)}`},
+          ${access}
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           email = EXCLUDED.email,
           phone = EXCLUDED.phone,
           address = EXCLUDED.address,
-          role = EXCLUDED.role;
+          role = EXCLUDED.role,
+          access = EXCLUDED.access;
       `;
 
       // Seed dues ledgers separately
       await sql`
         INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, last_payment_date, notes, email_last_sent)
         VALUES (
-          ${m.id}, '2025/2026 (Oct 1 - Sep 30)', '$250.00 BBD', '$250.00 BBD', '$0.00 BBD', 
+          ${m.id}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$250.00', '$0.00', 
           'Bank Transfer', 'Active Member (2025/2026)', '2025-10-01', 'Annual dues paid in full.', '2025-10-01'
         )
         ON CONFLICT DO NOTHING;
@@ -296,8 +318,8 @@ async function initializeDatabase() {
     await sql`TRUNCATE TABLE projects;`;
     for (const p of initialProjects) {
       await sql`
-        INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at)
-        VALUES (${p.id}, ${p.title}, ${p.category}, ${p.date}, ${p.image}, ${p.excerpt}, ${p.content}, ${p.impact}, ${p.isFeatured}, ${p.author}, ${p.authorId}, ${p.postedAt});
+        INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at, children_served)
+        VALUES (${p.id}, ${p.title}, ${p.category}, ${p.date}, ${p.image}, ${p.excerpt}, ${p.content}, ${p.impact}, ${p.isFeatured}, ${p.author}, ${p.authorId}, ${p.postedAt}, ${p.childrenServed || 0});
       `;
     }
 

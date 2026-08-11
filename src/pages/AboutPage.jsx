@@ -87,8 +87,8 @@ export const AboutPage = () => {
     { year: "2014", name: "Cameron Sobers" },
     { year: "2013", name: "Edwin Workman" },
     { year: "2012", name: "Simeon Ellis" },
-    { year: "2011", name: "Carmel Haynes", badge: "Charter Year" },
-    { year: "2010", name: "JoyAnn Carter", badge: "Founding President" }
+    { year: "2011", name: "Carmel Haynes" },
+    { year: "2010", name: "JoyAnn Carter", badge: "Charter Year" }
   ];
 
   const [presidentFilter, setPresidentFilter] = useState('');

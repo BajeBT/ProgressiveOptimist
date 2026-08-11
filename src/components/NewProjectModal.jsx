@@ -15,6 +15,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
     content: '',
     impact: '',
     image: '',
+    childrenServed: '',
     isFeatured: false
   });
 
@@ -121,8 +122,19 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    // Check 5.5: Children Served validation (mandatory for non-fundraisers)
+    const isFundraiser = formData.category.toLowerCase().includes('fundraiser');
+    if (!isFundraiser) {
+      const kidsNum = parseInt(formData.childrenServed, 10);
+      if (isNaN(kidsNum) || kidsNum <= 0) {
+        setError('Number of Children Served is mandatory for this category and must be a number greater than 0.');
+        return;
+      }
+    }
+
     const result = addProject({
       ...formData,
+      childrenServed: isFundraiser ? 0 : parseInt(formData.childrenServed, 10),
       image: formData.image || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1000&q=80'
     });
 
@@ -138,6 +150,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
           content: '',
           impact: '',
           image: '',
+          childrenServed: '',
           isFeatured: false
         });
         setImagePreview(null);
@@ -148,12 +161,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const isOfficer = currentUser && (
-    currentUser.isTreasurer ||
-    currentUser.role?.includes('President') ||
-    currentUser.role?.includes('Director') ||
-    currentUser.role?.includes('Admin')
-  );
+  const isOfficer = currentUser && ['super admin', 'finance', 'admin'].includes(currentUser.access);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
@@ -254,6 +262,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
                 <option value="Child Health & Wellness">Child Health & Wellness</option>
                 <option value="Environment & Bajan Culture">Environment & Bajan Culture</option>
                 <option value="Scholarships & Academic Awards">Scholarships & Academic Awards</option>
+                <option value="Fundraiser & Fellowship">Fundraiser & Fellowship</option>
               </select>
             </div>
 
@@ -276,6 +285,24 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
               />
             </div>
           </div>
+
+          {/* Children Served input (Mandatory except for fundraisers) */}
+          {!formData.category.toLowerCase().includes('fundraiser') && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 font-extrabold text-optimist-blue dark:text-amber-400">
+                Number of Children Served *
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.childrenServed}
+                onChange={e => setFormData({ ...formData, childrenServed: e.target.value })}
+                placeholder="e.g. 150 (Enter number of children benefitted)"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-optimist-blue outline-none"
+                required
+              />
+            </div>
+          )}
 
           {/* 3. Short Summary / Excerpt */}
           <div>
