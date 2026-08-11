@@ -748,7 +748,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
             <div className="space-y-3">
               {internalDocs.map((doc) => {
-                const isExpanded = expandedDocId === doc.id;
                 return (
                   <div key={doc.id} className="rounded-2xl glass-card border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-all">
                     <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -776,18 +775,13 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setExpandedDocId(isExpanded ? null : doc.id);
                             setSelectedDocModal(doc);
                           }}
-                          className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all shadow cursor-pointer ${
-                            isExpanded
-                              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
-                              : 'bg-amber-400 hover:bg-amber-500 text-slate-950'
-                          }`}
-                          title="View & Preview Document Content"
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold flex items-center gap-1 transition-all shadow cursor-pointer"
+                          title="View & Preview Document Content in Reader Window"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>{isExpanded ? 'Hide View' : 'View'}</span>
+                          <span>View</span>
                         </button>
                         <button
                           type="button"
@@ -800,30 +794,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                         </button>
                       </div>
                     </div>
-
-                    {/* Inline Document Content Reader Drawer */}
-                    {isExpanded && (
-                      <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 space-y-3 animate-in fade-in duration-200">
-                        {doc.summary && (
-                          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-1">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
-                              Executive Summary
-                            </span>
-                            <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
-                              {doc.summary}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap shadow-inner max-h-96 overflow-y-auto">
-                          <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 font-sans uppercase font-bold tracking-wider">
-                            <span>Published by {doc.author || 'Club Executive Committee'}</span>
-                            <span>{doc.date}</span>
-                          </div>
-                          {doc.content || "Document preview available for download."}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
