@@ -12,13 +12,7 @@ export const ProjectsPage = ({ onOpenPostModal }) => {
 
   const categories = [
     'All',
-    'Youth Mentorship & Summer Camp',
-    'Community Outreach',
-    'Skill Building & Mentorship',
-    'Fundraiser & Fellowship',
-    'Health & Nutrition',
-    'Education & STEM',
-    'Environment & Sustainability'
+    ...Array.from(new Set(projects.map(p => p.category).filter(Boolean))).sort()
   ];
 
   const isModerator = currentUser && ['super admin', 'finance', 'admin', 'moderator'].includes(currentUser.access);

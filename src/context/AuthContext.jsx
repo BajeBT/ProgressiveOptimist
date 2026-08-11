@@ -592,6 +592,7 @@ export const AuthProvider = ({ children }) => {
             category: p.category,
             date: p.date_str,
             image: p.image,
+            flyerUrl: p.flyer_url,
             excerpt: p.excerpt,
             content: p.content,
             impact: p.impact,
@@ -599,7 +600,8 @@ export const AuthProvider = ({ children }) => {
             author: p.author,
             authorId: p.author_id,
             postedAt: p.posted_at,
-            childrenServed: Number(p.children_served) || 0
+            childrenServed: Number(p.children_served) || 0,
+            approved: p.approved
           }));
           setProjects(mappedProjects);
         }
