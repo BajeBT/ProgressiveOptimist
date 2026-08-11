@@ -10,10 +10,10 @@ export const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 border-b border-slate-800">
         <div className="p-8 rounded-3xl bg-gradient-to-r from-optimist-blue via-optimist-royal to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-800">
           <div className="space-y-2 text-center md:text-left">
-            <span className="text-xs uppercase font-extrabold text-amber-300 tracking-widest">
+            <span className="text-xs uppercase font-bold text-amber-300 tracking-widest">
               The Optimist Motto
             </span>
-            <h3 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-white">
               "Bringing Out The Best In Children"
             </h3>
             <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
@@ -39,7 +39,7 @@ export const Footer = () => {
           <div className="flex items-center space-x-3">
             <img src="/logo.png" alt="Progressive Optimist Club" className="h-10 w-auto" />
             <div>
-              <h4 className="font-heading font-extrabold text-sm text-white">
+              <h4 className="font-heading font-bold text-sm text-white">
                 Progressive Optimist
               </h4>
               <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">

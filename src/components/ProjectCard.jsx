@@ -30,7 +30,7 @@ export const ProjectCard = ({ project, onClick }) => {
 
         {/* Impact Badge */}
         {project.impact && (
-          <span className="absolute bottom-3 right-3 bg-amber-400 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded-lg shadow flex items-center gap-1">
+          <span className="absolute bottom-3 right-3 bg-amber-400 text-slate-950 text-xs font-bold px-2.5 py-1 rounded-lg shadow flex items-center gap-1">
             <Award className="w-3.5 h-3.5" />
             {project.impact}
           </span>

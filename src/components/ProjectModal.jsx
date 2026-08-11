@@ -29,7 +29,7 @@ export const ProjectModal = ({ project, onClose }) => {
             <span className="bg-optimist-gold text-slate-950 font-bold text-xs uppercase px-3 py-1 rounded-full tracking-wider shadow">
               {project.category}
             </span>
-            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold mt-3 text-white leading-tight">
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold mt-3 text-white leading-tight">
               {project.title}
             </h2>
           </div>

@@ -58,7 +58,7 @@ export const OptimistCreed = () => {
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-optimist-gold/20 text-optimist-gold border border-optimist-gold/40 text-xs font-bold uppercase tracking-widest">
             <Sun className="w-3.5 h-3.5" /> Guiding Philosophy
           </span>
-          <h2 className="mt-4 font-heading text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+          <h2 className="mt-4 font-heading text-3xl sm:text-4xl font-bold tracking-tight text-white">
             The Official <span className="text-gold-gradient">Optimist Creed</span>
           </h2>
           <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
@@ -73,7 +73,7 @@ export const OptimistCreed = () => {
             <div className="space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed font-serif italic">
               {optimistCreed.map(item => (
                 <div key={item.id} className="flex items-start gap-3">
-                  <span className="text-amber-400 font-extrabold shrink-0 mt-0.5">•</span>
+                  <span className="text-amber-400 font-bold shrink-0 mt-0.5">•</span>
                   <span>{item.text}</span>
                 </div>
               ))}

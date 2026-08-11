@@ -20,8 +20,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Zoho Puvi"', 'Outfit', 'Inter', 'system-ui', 'sans-serif'],
-        heading: ['"Zoho Puvi"', 'Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['"Segoe UI Variable"', '"Segoe UI"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        heading: ['"Segoe UI Variable"', '"Segoe UI"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       fontSize: {
         'xl': ['1.06rem', { lineHeight: '1.5rem' }],

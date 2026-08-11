@@ -92,7 +92,7 @@ export const DonatePage = () => {
           <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
             Community Giving & Sponsorships
           </span>
-          <h1 className="font-heading text-3xl sm:text-5xl font-black">
+          <h1 className="font-heading text-3xl sm:text-5xl font-semibold">
             Support Bajan Youth Initiatives
           </h1>
           <p className="text-slate-300 text-xs sm:text-base leading-relaxed">
@@ -105,10 +105,10 @@ export const DonatePage = () => {
       <div className="p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-optimist-navy to-slate-900 text-white border border-amber-400/40 shadow-2xl space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
               <Building2 className="w-3.5 h-3.5" /> Official Bank Transfer & Deposit Details
             </span>
-            <h2 className="font-heading text-2xl font-black text-white">
+            <h2 className="font-heading text-2xl font-semibold text-white">
               Pay Dues or Donate via Bank Transfer / Deposit
             </h2>
             <p className="text-xs text-slate-300">
@@ -118,7 +118,7 @@ export const DonatePage = () => {
 
           <button
             onClick={copyBankInfo}
-            className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
+            className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
           >
             <Copy className="w-4 h-4" />
             <span>{copiedBankInfo ? 'Copied Bank Details!' : 'Copy Bank Details'}</span>
@@ -128,27 +128,27 @@ export const DonatePage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
           <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Bank Name</span>
-            <strong className="text-sm font-heading font-black text-white">{bankDetails.bank}</strong>
+            <strong className="text-sm font-heading font-semibold text-white">{bankDetails.bank}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Account Name</span>
-            <strong className="text-sm font-heading font-black text-amber-300">{bankDetails.accountName}</strong>
+            <strong className="text-sm font-heading font-semibold text-amber-300">{bankDetails.accountName}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Account Number</span>
-            <strong className="text-sm font-mono font-black text-emerald-400">{bankDetails.accountNum}</strong>
+            <strong className="text-sm font-mono font-semibold text-emerald-400">{bankDetails.accountNum}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Branch Name</span>
-            <strong className="text-sm font-heading font-black text-white">{bankDetails.branch}</strong>
+            <strong className="text-sm font-heading font-semibold text-white">{bankDetails.branch}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700">
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Transit / Routing #</span>
-            <strong className="text-sm font-mono font-black text-amber-300">{bankDetails.routing}</strong>
+            <strong className="text-sm font-mono font-semibold text-amber-300">{bankDetails.routing}</strong>
           </div>
         </div>
       </div>
@@ -158,14 +158,14 @@ export const DonatePage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
                 <Check className="w-3 h-3" /> Campaign Completed & Archived
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1">
                 <Archive className="w-3 h-3" /> Past Campaign
               </span>
             </div>
-            <h3 className="font-heading text-2xl font-extrabold text-white mt-1">
+            <h3 className="font-heading text-2xl font-semibold text-white mt-1">
               Student Laptop & Tablet Drive (Archived)
             </h3>
             <p className="text-xs text-slate-300">
@@ -174,7 +174,7 @@ export const DonatePage = () => {
           </div>
 
           <div className="sm:text-right shrink-0 bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
-            <span className="font-heading text-3xl font-black text-emerald-400 block">150 / 150</span>
+            <span className="font-heading text-3xl font-semibold text-emerald-400 block">150 / 150</span>
             <span className="text-xs font-bold text-slate-300">100% Target Received 🎉</span>
           </div>
         </div>
@@ -216,7 +216,7 @@ export const DonatePage = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-heading text-2xl font-black">${tier.amount} BBD</span>
+                  <span className="font-heading text-2xl font-semibold">${tier.amount} BBD</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${selectedTier === tier.amount ? 'bg-amber-400 text-slate-950' : 'bg-slate-100 dark:bg-slate-800'}`}>
                     {tier.label}
                   </span>

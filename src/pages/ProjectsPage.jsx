@@ -42,7 +42,7 @@ export const ProjectsPage = ({ onOpenPostModal }) => {
           <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
             Portfolio & Activities
           </span>
-          <h1 className="font-heading text-3xl sm:text-4xl font-black">
+          <h1 className="font-heading text-3xl sm:text-4xl font-semibold">
             Volunteer Projects & Fundraisers
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm max-w-xl">

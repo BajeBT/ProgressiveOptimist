@@ -38,7 +38,7 @@ export const HierarchyDiagram = () => {
                 >
                   {lvl.badge}
                 </span>
-                <span className={`text-2xl font-black font-heading ${isSelected ? 'text-optimist-gold' : 'text-slate-400'}`}>
+                <span className={`text-2xl font-semibold font-heading ${isSelected ? 'text-optimist-gold' : 'text-slate-400'}`}>
                   0{lvl.level}
                 </span>
               </div>

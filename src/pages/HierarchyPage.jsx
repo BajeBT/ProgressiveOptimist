@@ -11,7 +11,7 @@ export const HierarchyPage = () => {
         <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
           Global Organizational Hierarchy
         </span>
-        <h1 className="font-heading text-3xl sm:text-5xl font-black">
+        <h1 className="font-heading text-3xl sm:text-5xl font-semibold">
           Barbados, Caribbean & International Structure
         </h1>
         <p className="text-slate-300 text-xs sm:text-base max-w-3xl leading-relaxed">
@@ -46,7 +46,7 @@ export const HierarchyPage = () => {
       {/* Interactive Diagram Component */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
             Interactive Hierarchy Overview
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">

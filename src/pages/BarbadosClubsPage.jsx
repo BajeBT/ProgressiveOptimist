@@ -97,7 +97,7 @@ export const BarbadosClubsPage = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
               Barbados Optimist Directory
             </span>
-            <h1 className="font-heading text-3xl sm:text-5xl font-black mt-2">
+            <h1 className="font-heading text-3xl sm:text-5xl font-semibold mt-2">
               Optimist Clubs of Barbados
             </h1>
           </div>
@@ -138,7 +138,7 @@ export const BarbadosClubsPage = () => {
               {/* Badge & Charter */}
               <div className="flex items-center justify-between mb-4">
                 <span
-                  className={`text-xs font-extrabold uppercase px-3 py-1 rounded-full ${
+                  className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${
                     club.isHost
                       ? 'gold-gradient text-slate-950 shadow'
                       : 'bg-emerald-200/80 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
@@ -185,7 +185,7 @@ export const BarbadosClubsPage = () => {
 
               {/* Key Projects */}
               <div className="mb-6 pt-4 border-t border-emerald-200/60 dark:border-slate-800">
-                <span className="text-[10px] uppercase font-bold tracking-wider block mb-2 text-emerald-900 dark:text-optimist-gold font-extrabold">
+                <span className="text-[10px] uppercase font-bold tracking-wider block mb-2 text-emerald-900 dark:text-optimist-gold">
                   Primary Initiatives
                 </span>
                 <div className="flex flex-wrap gap-1.5">

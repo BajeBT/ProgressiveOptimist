@@ -117,7 +117,7 @@ export const AboutPage = () => {
           <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
             About Our Organization
           </span>
-          <h1 className="font-heading text-4xl sm:text-5xl font-black text-white">
+          <h1 className="font-heading text-4xl sm:text-5xl font-semibold text-white">
             Who We Are & Leadership
           </h1>
           <p className="text-slate-300 text-xs sm:text-base leading-relaxed">
@@ -162,10 +162,10 @@ export const AboutPage = () => {
       {/* 1. EXECUTIVE OFFICERS & ROLES */}
       <section className="space-y-8">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+          <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
             Executive Officers & Leadership Structure
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <h2 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mt-1">
             Club Executive Committee
           </h2>
         </div>
@@ -185,7 +185,7 @@ export const AboutPage = () => {
                 <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
                   {officer.name}
                 </h3>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-extrabold uppercase">
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold uppercase">
                   {officer.title}
                 </span>
               </div>
@@ -214,7 +214,7 @@ export const AboutPage = () => {
                     {role.holder}
                   </strong>
                 </div>
-                <span className="mt-2 self-start text-[9px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                <span className="mt-2 self-start text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                   {role.badge}
                 </span>
               </div>
@@ -268,7 +268,7 @@ export const AboutPage = () => {
               <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold flex items-center gap-1.5">
                 <Crown className="w-4 h-4 text-amber-400" /> Executive Honor Roll
               </span>
-              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white">
                 Past Presidents of Barbados (2010 – 2025)
               </h2>
               <p className="text-xs text-slate-400">
@@ -296,7 +296,7 @@ export const AboutPage = () => {
                 className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 hover:border-amber-400/50 transition-all flex items-center justify-between group shadow"
               >
                 <div>
-                  <span className="text-xs font-black text-optimist-gold block font-heading">
+                  <span className="text-xs font-semibold text-optimist-gold block font-heading">
                     {p.year}
                   </span>
                   <h4 className="font-heading font-bold text-sm text-white group-hover:text-amber-300 transition-colors">
@@ -305,9 +305,9 @@ export const AboutPage = () => {
                 </div>
 
                 {p.badge && (
-                  <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
                     p.badge === 'Distinguished'
-                      ? 'gold-gradient text-slate-950 font-black shadow-sm'
+                      ? 'gold-gradient text-slate-950 font-semibold shadow-sm'
                       : 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
                   }`}>
                     {p.badge}
@@ -322,7 +322,7 @@ export const AboutPage = () => {
       {/* Meeting Location Card */}
       <div className="p-8 rounded-3xl bg-optimist-blue text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2">
-          <span className="text-xs uppercase font-extrabold text-optimist-gold tracking-widest">
+          <span className="text-xs uppercase font-bold text-optimist-gold tracking-widest">
             Join Us At Our Next Meeting
           </span>
           <h3 className="font-heading text-2xl font-bold text-white">
@@ -345,10 +345,10 @@ export const AboutPage = () => {
       {/* Downloads & Resources Library */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+          <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
             Brochures & Documents
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <h2 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mt-1">
             Resource Library
           </h2>
         </div>

@@ -170,7 +170,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
           <div className="flex items-center space-x-2.5">
             <Sparkles className="w-5 h-5" />
             <div>
-              <h2 className="font-heading text-xl font-extrabold">
+              <h2 className="font-heading text-xl font-bold">
                 Post New Project / Activity
               </h2>
               <span className="text-[11px] font-bold text-slate-800 block">
@@ -282,7 +282,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
 
           {/* Children Impacted input (Mandatory for every project and event) */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 font-extrabold text-optimist-blue dark:text-amber-400">
+            <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 font-bold text-optimist-blue dark:text-amber-400">
               Number of Children Impacted *
             </label>
             <input
@@ -349,7 +349,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
                 <FileImage className="w-4 h-4 text-optimist-blue" />
                 Project Cover Photo Upload Controls
               </label>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-400/20 text-amber-800 dark:text-amber-300 border border-amber-400/40">
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-400/20 text-amber-800 dark:text-amber-300 border border-amber-400/40">
                 Max 5 MB Limit (PNG/JPG/WEBP)
               </span>
             </div>
@@ -428,7 +428,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
             <button
               type="submit"
               disabled={!currentUser}
-              className="px-6 py-2.5 rounded-xl gold-gradient text-slate-950 font-extrabold text-xs shadow-md hover:brightness-110 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow-md hover:brightness-110 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 text-slate-950" />
               Publish Post as {currentUser?.name || 'Member'}

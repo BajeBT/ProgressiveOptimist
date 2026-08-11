@@ -43,7 +43,7 @@ export const ContactPage = () => {
         <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
           Get In Touch
         </span>
-        <h1 className="font-heading text-3xl sm:text-5xl font-black">
+        <h1 className="font-heading text-3xl sm:text-5xl font-semibold">
           Contact Progressive Optimist
         </h1>
         <p className="text-slate-300 text-xs sm:text-base max-w-2xl leading-relaxed">

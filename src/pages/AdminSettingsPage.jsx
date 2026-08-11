@@ -223,7 +223,7 @@ export const AdminSettingsPage = () => {
       <div className="py-16 max-w-3xl mx-auto px-4 text-center space-y-6">
         <div className="p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-2xl space-y-4">
           <Lock className="w-16 h-16 text-amber-400 mx-auto" />
-          <h1 className="font-heading text-3xl font-black">Restricted Administrator Area</h1>
+          <h1 className="font-heading text-3xl font-semibold">Restricted Administrator Area</h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
             The Admin & Site Settings Console is reserved for authorized Club Executive Officers, President Richelle Lucas, and Treasurer Sharon Mohammed.
           </p>
@@ -280,10 +280,10 @@ export const AdminSettingsPage = () => {
       <div className="p-8 sm:p-10 rounded-3xl bg-slate-900 text-white border border-amber-400/30 shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
               <ShieldCheck className="w-3.5 h-3.5" /> Club Executive Administrator Portal
             </span>
-            <h1 className="font-heading text-3xl sm:text-4xl font-black">
+            <h1 className="font-heading text-3xl sm:text-4xl font-semibold">
               Admin & Site Settings Console
             </h1>
             <p className="text-xs sm:text-sm text-slate-300">
@@ -338,7 +338,7 @@ export const AdminSettingsPage = () => {
               onClick={() => setActiveTab('treasurer')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'treasurer'
-                  ? 'bg-amber-500 text-slate-950 shadow font-extrabold'
+                  ? 'bg-amber-500 text-slate-950 shadow font-bold'
                   : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200'
               }`}
             >
@@ -466,7 +466,7 @@ export const AdminSettingsPage = () => {
                   <strong>Sandbox Mode</strong>: {isSandboxMode ? `Active (All test emails are automatically rerouted to ${testEmailTarget}).` : `Inactive (Standard delivery routing engaged).`}
                 </div>
               </div>
-              <span className={`font-extrabold text-[10px] uppercase px-2.5 py-0.5 rounded ${
+              <span className={`font-bold text-[10px] uppercase px-2.5 py-0.5 rounded ${
                 isSandboxMode 
                   ? 'bg-amber-400 text-slate-950' 
                   : 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
@@ -550,7 +550,7 @@ export const AdminSettingsPage = () => {
                         </td>
 
                         <td className="p-4 text-left">
-                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase text-left block w-fit leading-relaxed ${
+                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase text-left block w-fit leading-relaxed ${
                             isPresidentUser || isTreasurerUser || isSuperAdminUser
                               ? 'gold-gradient text-slate-950'
                               : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
@@ -564,7 +564,7 @@ export const AdminSettingsPage = () => {
                           <button
                             onClick={() => !isSuperAdminUser && handleTogglePermission(m.id, 'hasTreasurerConsoleAccess', hasTreasurerAccess)}
                             disabled={isSuperAdminUser || !['super admin', 'finance'].includes(userAccess)}
-                            className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1 ${
                               hasTreasurerAccess
                                 ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
                                 : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-300'
@@ -577,7 +577,7 @@ export const AdminSettingsPage = () => {
 
                         {/* Publish Projects & Photos */}
                         <td className="p-4 text-left">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 inline-flex items-center gap-1">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 inline-flex items-center gap-1">
                             <Check className="w-3 h-3 text-blue-500" />
                             Member Access
                           </span>
@@ -596,7 +596,7 @@ export const AdminSettingsPage = () => {
                                 }
                               }}
                               disabled={!['super admin', 'finance'].includes(userAccess)}
-                              className={`px-3 py-1.5 rounded-xl font-extrabold text-[10px] uppercase shadow transition-all ${
+                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow transition-all ${
                                 ['super admin', 'finance'].includes(userAccess)
                                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
                                   : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
@@ -655,10 +655,10 @@ export const AdminSettingsPage = () => {
           <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
                   <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
                 </span>
-                <h2 className="font-heading text-2xl font-black text-white">
+                <h2 className="font-heading text-2xl font-semibold text-white">
                   Member Dues Management Ledger
                 </h2>
                 <p className="text-xs text-slate-300">
@@ -668,7 +668,7 @@ export const AdminSettingsPage = () => {
 
               <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 text-right shrink-0">
                 <span className="text-xs text-slate-400 block">Total Active Settled Dues</span>
-                <strong className="font-heading text-2xl font-black text-emerald-400">
+                <strong className="font-heading text-2xl font-semibold text-emerald-400">
                   {memberRoster.filter(m => m.duesStatus && m.duesStatus.includes('Active')).length} / {memberRoster.length}
                 </strong>
               </div>
@@ -807,7 +807,7 @@ export const AdminSettingsPage = () => {
                           </span>
                         </td>
                         <td className="p-4 space-y-1">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1 ${
                             member.duesStatus && member.duesStatus.includes('Active')
                               ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
                               : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
@@ -911,7 +911,7 @@ export const AdminSettingsPage = () => {
               <div className="flex items-center space-x-3">
                 <img src="/logo.png" alt="Progressive Optimist" className="h-12 w-auto" />
                 <div>
-                  <h2 className="font-heading font-black text-lg text-slate-900 dark:text-white">
+                  <h2 className="font-heading font-semibold text-lg text-slate-900 dark:text-white">
                     PROGRESSIVE OPTIMIST CLUB OF BARBADOS
                   </h2>
                   <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
@@ -930,7 +930,7 @@ export const AdminSettingsPage = () => {
             {/* Member Details & Account Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Member Account Info</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">Member Account Info</span>
                 <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{statementModalMember.name}</h3>
                 <p className="text-slate-600 dark:text-slate-300">Member ID: <strong>{statementModalMember.id}</strong></p>
                 <p className="text-slate-600 dark:text-slate-300">Designation: <strong>{statementModalMember.role}</strong></p>
@@ -938,7 +938,7 @@ export const AdminSettingsPage = () => {
               </div>
 
               <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
-                <span className="text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
+                <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
                 <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
                 <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
                 <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
@@ -1062,7 +1062,7 @@ export const AdminSettingsPage = () => {
                       <p className="text-xs text-slate-600 dark:text-slate-450 line-clamp-3">
                         {p.excerpt}
                       </p>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 inline-block">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 inline-block">
                         Children Impacted: {Number(p.childrenServed) || 0}
                       </span>
                     </div>
@@ -1086,7 +1086,7 @@ export const AdminSettingsPage = () => {
                         setStatusMsg(`Approved and published project post: "${p.title}"`);
                         setTimeout(() => setStatusMsg(''), 4000);
                       }}
-                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-all shadow"
+                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow"
                     >
                       Approve & Publish
                     </button>
@@ -1231,7 +1231,7 @@ export const AdminSettingsPage = () => {
 
               {/* Dues Ledger Fields Divider */}
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-4">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
                   <DollarSign className="w-3.5 h-3.5" /> Dues Ledger & Payment Details
                 </span>
 
@@ -1369,7 +1369,7 @@ export const AdminSettingsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl gold-gradient hover:brightness-110 text-slate-950 font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl gold-gradient hover:brightness-110 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
                 >
                   <Save className="w-4 h-4 text-slate-950" />
                   <span>Save Record Changes</span>

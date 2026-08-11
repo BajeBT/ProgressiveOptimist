@@ -616,7 +616,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             />
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   <span>Welcome,</span>{' '}
                   <span className="whitespace-nowrap">{currentUser.name}!</span>
                 </h1>
@@ -815,14 +815,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       Read-Only Directory
                     </span>
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
                       Internal Roster
                     </span>
                   </div>
-                  <h2 className="font-heading text-2xl font-black text-white mt-2 flex items-center gap-2">
+                  <h2 className="font-heading text-2xl font-semibold text-white mt-2 flex items-center gap-2">
                     <Users className="w-6 h-6 text-amber-400" />
                     Active Members Directory
                   </h2>
@@ -833,7 +833,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                 <div className="flex items-center gap-3">
                   <div className="bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-700 text-center">
-                    <span className="block text-2xl font-black text-amber-400 leading-none">
+                    <span className="block text-2xl font-semibold text-amber-400 leading-none">
                       {combinedDirectory.length}
                     </span>
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
@@ -877,7 +877,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <th className="py-4 px-6">Name</th>
                     <th className="py-4 px-6">Club Position</th>
                     <th className="py-4 px-6">Email Address</th>
@@ -900,12 +900,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                               className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-optimist-blue/20 text-optimist-blue dark:text-amber-400 font-extrabold text-xs flex items-center justify-center border border-optimist-blue/30 shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-optimist-blue/20 text-optimist-blue dark:text-amber-400 font-bold text-xs flex items-center justify-center border border-optimist-blue/30 shrink-0">
                               {member.name ? member.name.charAt(0).toUpperCase() : 'M'}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <span className="block font-extrabold text-slate-900 dark:text-white truncate">{member.name}</span>
+                            <span className="block font-bold text-slate-900 dark:text-white truncate">{member.name}</span>
                             <span className="text-[10px] font-mono text-slate-400 block">{member.id}</span>
                           </div>
                         </div>
@@ -1087,7 +1087,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     <CreditCard className="w-5 h-5 text-amber-400" />
                     Annual Membership Dues Record
                   </h2>
-                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                  <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
                     2025 / 2026 Optimist Year
                   </span>
                 </div>
@@ -1137,7 +1137,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     {canAccessTreasurerConsole && (
                       <button
                         onClick={() => setDashboardTab('treasurer')}
-                        className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow transition-colors flex items-center gap-1.5"
+                        className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow transition-colors flex items-center gap-1.5"
                       >
                         <ShieldCheck className="w-4 h-4" />
                         <span>View Members Dues Roster</span>
@@ -1213,10 +1213,10 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                  <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
                     <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
                   </span>
-                  <h2 className="font-heading text-2xl font-black text-white">
+                  <h2 className="font-heading text-2xl font-semibold text-white">
                     Member Dues Management Ledger
                   </h2>
                   <p className="text-xs text-slate-300">
@@ -1226,7 +1226,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                 <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 text-right shrink-0">
                   <span className="text-xs text-slate-400 block">Total Active Settled Dues</span>
-                  <strong className="font-heading text-2xl font-black text-emerald-400">
+                  <strong className="font-heading text-2xl font-semibold text-emerald-400">
                     {memberRoster.filter(m => m.duesStatus.includes('Active')).length} / {memberRoster.length}
                   </strong>
                 </div>
@@ -1365,7 +1365,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                             </span>
                           </td>
                           <td className="p-4 space-y-1">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1 ${
                               member.duesStatus.includes('Active')
                                 ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
                                 : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
@@ -1469,7 +1469,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 <div className="flex items-center space-x-3">
                   <img src="/logo.png" alt="Progressive Optimist" className="h-12 w-auto" />
                   <div>
-                    <h2 className="font-heading font-black text-lg text-slate-900 dark:text-white">
+                    <h2 className="font-heading font-semibold text-lg text-slate-900 dark:text-white">
                       PROGRESSIVE OPTIMIST CLUB OF BARBADOS
                     </h2>
                     <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
@@ -1488,7 +1488,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               {/* Member Details & Account Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
-                  <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Member Account Info</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Member Account Info</span>
                   <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{statementModalMember.name}</h3>
                   <p className="text-slate-600 dark:text-slate-300">Member ID: <strong>{statementModalMember.id}</strong></p>
                   <p className="text-slate-600 dark:text-slate-300">Designation: <strong>{statementModalMember.role}</strong></p>
@@ -1496,7 +1496,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
-                  <span className="text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
+                  <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
                   <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
                   <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
                   <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
@@ -1767,12 +1767,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               <div className="flex justify-between items-start border-b border-slate-200 dark:border-slate-800 pb-4 shrink-0">
                 <div className="space-y-1 pr-4">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-optimist-blue text-white">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-optimist-blue text-white">
                       {selectedDocModal.category || 'Official Document'}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">{selectedDocModal.size}</span>
                   </div>
-                  <h3 className="font-heading font-black text-xl text-slate-900 dark:text-white">
+                  <h3 className="font-heading font-semibold text-xl text-slate-900 dark:text-white">
                     {selectedDocModal.name}
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -1792,7 +1792,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 {/* Executive Summary */}
                 {selectedDocModal.summary && (
                   <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-1">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
                       Executive Summary & Highlights
                     </span>
                     <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
@@ -1862,7 +1862,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
           Member Access & Registration
         </span>
-        <h1 className="font-heading text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+        <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-white">
           Progressive Optimist Member Portal
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
@@ -1993,7 +1993,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           {appSuccess ? (
             <div className="p-8 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-center space-y-4 shadow border border-emerald-300/30">
               <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto animate-bounce" />
-              <h3 className="font-heading font-black text-lg">Application Submitted Successfully!</h3>
+              <h3 className="font-heading font-semibold text-lg">Application Submitted Successfully!</h3>
               <p className="text-xs text-slate-600 dark:text-slate-350 max-w-md mx-auto leading-relaxed">
                 Thank you for applying! Your membership application is currently pending review by the Membership Review Committee. Please check your email inbox to verify your address and create your portal password.
               </p>
@@ -2003,7 +2003,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               
               {/* Section 1: Contact Information */}
               <div className="space-y-4">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
                   Contact Information
                 </span>
 
@@ -2059,7 +2059,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               {/* Section 2: Address */}
               <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
                   Postal Address
                 </span>
 
@@ -2125,7 +2125,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               {/* Section 3: Profile Details */}
               <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
                   Applicant Profile
                 </span>
 
@@ -2230,7 +2230,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-black text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-semibold text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
               >
                 <span>Submit Membership Application</span>
               </button>
@@ -2302,7 +2302,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-black text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-semibold text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
               >
                 <span>Verify Account & Set Password</span>
               </button>

@@ -52,11 +52,11 @@ export const HomePage = ({ onOpenPostModal }) => {
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 py-16 sm:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-optimist-gold/20 border border-optimist-gold/40 text-optimist-gold text-xs font-extrabold uppercase tracking-widest">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-optimist-gold/20 border border-optimist-gold/40 text-optimist-gold text-xs font-bold uppercase tracking-widest">
               <Sun className="w-4 h-4" /> Progressive Optimist Club of Barbados
             </div>
 
-            <h1 className="font-heading text-4xl sm:text-5xl xl:text-6xl font-black leading-tight text-white tracking-tight">
+            <h1 className="font-heading text-4xl sm:text-5xl xl:text-6xl font-semibold leading-tight text-white tracking-tight">
               Bringing Out The Best In <span className="text-gold-gradient">Children</span>
             </h1>
 
@@ -109,7 +109,7 @@ export const HomePage = ({ onOpenPostModal }) => {
           <div className="lg:col-span-5">
             <div className="p-6 sm:p-8 rounded-3xl glass-panel border border-white/10 shadow-2xl text-slate-900 dark:text-white space-y-6">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-optimist-blue dark:text-optimist-gold">
+                <span className="text-xs font-bold uppercase tracking-wider text-optimist-blue dark:text-optimist-gold">
                   Our Impact In Barbados
                 </span>
                 <span className="text-xs font-bold px-2.5 py-1 rounded bg-amber-400/20 text-amber-900 dark:text-amber-300">
@@ -119,7 +119,7 @@ export const HomePage = ({ onOpenPostModal }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                  <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
+                  <div className="font-heading text-3xl font-bold text-optimist-blue dark:text-amber-400">
                     {totalChildrenServedDisplay.toLocaleString()}+
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
@@ -128,7 +128,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                  <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
+                  <div className="font-heading text-3xl font-bold text-optimist-blue dark:text-amber-400">
                     {memberRoster && memberRoster.length > 0 ? memberRoster.length : 21}
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
@@ -137,7 +137,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                  <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
+                  <div className="font-heading text-3xl font-bold text-optimist-blue dark:text-amber-400">
                     25+
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
@@ -146,7 +146,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                  <div className="font-heading text-3xl font-extrabold text-optimist-blue dark:text-amber-400">
+                  <div className="font-heading text-3xl font-bold text-optimist-blue dark:text-amber-400">
                     16+
                   </div>
                   <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
@@ -171,10 +171,10 @@ export const HomePage = ({ onOpenPostModal }) => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+            <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
               Volunteer Work & Outreach
             </span>
-            <h2 className="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+            <h2 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mt-1">
               Featured Community Initiatives
             </h2>
           </div>
@@ -207,10 +207,10 @@ export const HomePage = ({ onOpenPostModal }) => {
       {/* BARBADOS CLUBS SNIPPET */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+          <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
             Local Barbados Community
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <h2 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mt-1">
             Optimist Clubs in Barbados
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2">
@@ -232,7 +232,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                 <span
                   className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded ${
                     club.isHost
-                      ? 'bg-amber-400 text-slate-950 font-extrabold'
+                      ? 'bg-amber-400 text-slate-950 font-bold'
                       : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                   }`}
                 >
@@ -260,10 +260,10 @@ export const HomePage = ({ onOpenPostModal }) => {
       {/* HIERARCHY OVERVIEW COMPONENT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="text-center max-w-3xl mx-auto">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+          <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
             Organizational Structure
           </span>
-          <h2 className="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <h2 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mt-1">
             How We Fit Into The Global Optimist Movement
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2">

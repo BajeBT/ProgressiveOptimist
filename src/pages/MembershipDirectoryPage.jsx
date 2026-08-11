@@ -61,7 +61,7 @@ export const MembershipDirectoryPage = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-amber-400 px-3 py-1 rounded bg-amber-400/10 border border-amber-400/20">
               Members Only Access
             </span>
-            <h1 className="font-heading text-3xl font-black text-white">
+            <h1 className="font-heading text-3xl font-semibold text-white">
               Official Member Roster Restricted
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
@@ -114,15 +114,15 @@ export const MembershipDirectoryPage = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20 border border-amber-400/30">
               Club # {clubMetadata.clubNumber} • District {clubMetadata.district}
             </span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 px-3 py-1 rounded bg-emerald-950/60 border border-emerald-500/40">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 px-3 py-1 rounded bg-emerald-950/60 border border-emerald-500/40">
               Status: {clubMetadata.status}
             </span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-blue-300 px-3 py-1 rounded bg-blue-950/60 border border-blue-500/40">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-300 px-3 py-1 rounded bg-blue-950/60 border border-blue-500/40">
               Authenticated Member: {currentUser.name}
             </span>
           </div>
 
-          <h1 className="font-heading text-3xl sm:text-5xl font-black text-white">
+          <h1 className="font-heading text-3xl sm:text-5xl font-semibold text-white">
             Official Club Directory & Active Roster
           </h1>
           
@@ -256,15 +256,15 @@ export const MembershipDirectoryPage = () => {
                             <td colSpan={5} className="p-4 space-y-2 border-t border-slate-200 dark:border-slate-700">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                                 <div>
-                                  <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Residential / Mailing Address</span>
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Residential / Mailing Address</span>
                                   <p className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5">{m.address}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Sponsor / Endorsement</span>
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Sponsor / Endorsement</span>
                                   <p className="text-slate-800 dark:text-slate-200 font-semibold mt-0.5">{m.sponsor}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Member Status</span>
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Member Status</span>
                                   <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[10px]">
                                     {m.status} (Chartered {m.joinDate})
                                   </span>
@@ -290,10 +290,10 @@ export const MembershipDirectoryPage = () => {
           {/* Current Officers 2025 - 2026 */}
           <section className="space-y-6">
             <div className="space-y-1">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
+              <span className="text-xs font-bold uppercase tracking-widest text-optimist-blue dark:text-optimist-gold">
                 October 1st, 2025 – September 30th, 2026
               </span>
-              <h2 className="font-heading text-2xl font-black text-slate-900 dark:text-white">
+              <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white">
                 Current Executive Officers & Board Directors
               </h2>
             </div>
@@ -309,7 +309,7 @@ export const MembershipDirectoryPage = () => {
                         className="w-14 h-14 rounded-2xl border-2 border-amber-400 object-cover shadow"
                       />
                       <div>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
                           {officer.role}
                         </span>
                         <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white mt-1">
@@ -348,7 +348,7 @@ export const MembershipDirectoryPage = () => {
                 <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold flex items-center gap-1.5">
                   <Crown className="w-4 h-4 text-amber-400" /> Incoming Executive Committee
                 </span>
-                <h2 className="font-heading text-2xl font-black text-white">
+                <h2 className="font-heading text-2xl font-semibold text-white">
                   Club Officers-Elect (October 1st, 2026 – September 30th, 2027)
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -359,7 +359,7 @@ export const MembershipDirectoryPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {officersElect2026.map((elect, idx) => (
                   <div key={idx} className="p-5 rounded-2xl bg-slate-800/90 border border-slate-700 space-y-3 shadow">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 block w-fit">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 block w-fit">
                       {elect.role}
                     </span>
                     <h3 className="font-heading font-bold text-base text-white">
@@ -387,7 +387,7 @@ export const MembershipDirectoryPage = () => {
           {/* Charter Info Left */}
           <div className="lg:col-span-7 space-y-6">
             <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-6 shadow-xl">
-              <h2 className="font-heading text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <Building2 className="w-6 h-6 text-optimist-blue" />
                 Charter & Governance Metadata
               </h2>
@@ -395,17 +395,17 @@ export const MembershipDirectoryPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
                   <span className="text-[10px] font-bold text-slate-400 uppercase block">Official Club Number</span>
-                  <strong className="text-sm font-heading font-black text-slate-900 dark:text-white">{clubMetadata.clubNumber}</strong>
+                  <strong className="text-sm font-heading font-semibold text-slate-900 dark:text-white">{clubMetadata.clubNumber}</strong>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
                   <span className="text-[10px] font-bold text-slate-400 uppercase block">District & Zone</span>
-                  <strong className="text-sm font-heading font-black text-slate-900 dark:text-white">{clubMetadata.district} ({clubMetadata.zone})</strong>
+                  <strong className="text-sm font-heading font-semibold text-slate-900 dark:text-white">{clubMetadata.district} ({clubMetadata.zone})</strong>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
                   <span className="text-[10px] font-bold text-slate-400 uppercase block">Charter Date</span>
-                  <strong className="text-sm font-heading font-black text-slate-900 dark:text-white">{clubMetadata.charterDate}</strong>
+                  <strong className="text-sm font-heading font-semibold text-slate-900 dark:text-white">{clubMetadata.charterDate}</strong>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
@@ -439,7 +439,7 @@ export const MembershipDirectoryPage = () => {
               <div className="space-y-4 text-xs">
                 {clubMetadata.sponsors.map((sp, idx) => (
                   <div key={idx} className="p-4 rounded-2xl bg-slate-800 border border-slate-700 space-y-1">
-                    <span className="text-[10px] font-extrabold uppercase text-amber-400 block">{sp.type}</span>
+                    <span className="text-[10px] font-bold uppercase text-amber-400 block">{sp.type}</span>
                     <strong className="text-sm font-heading text-white block">{sp.name}</strong>
                     <span className="text-[10px] text-slate-400 font-mono">{sp.number}</span>
                   </div>
