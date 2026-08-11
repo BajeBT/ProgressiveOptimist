@@ -521,6 +521,7 @@ export const AuthProvider = ({ children }) => {
         const rows = await sql`
           SELECT 
             m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access, m.password,
+            m.is_treasurer, m.is_president,
             d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due, 
             d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
           FROM members m
@@ -542,6 +543,8 @@ export const AuthProvider = ({ children }) => {
 
             const resolvedAccess = r.access || defaultAccess;
             const isSuperAdmin = resolvedAccess === 'super admin';
+            const isTreasurerUser = emailLower === 'sharon@topaz-bb.com' || r.id === '78008-0152';
+            const isPresidentUser = emailLower === 'richelle.lucas16@gmail.com' || r.id === '78008-0150' || isSuperAdmin;
             let resolvedAvatar = r.avatar;
             if (!resolvedAvatar || resolvedAvatar.includes('dicebear')) {
               if (emailLower === 'edwin@jillandee.com') resolvedAvatar = '/avatars/oirep_placeholder.jpg';
