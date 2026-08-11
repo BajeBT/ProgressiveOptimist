@@ -604,11 +604,9 @@ export const AdminSettingsPage = () => {
                       <p className="text-xs text-slate-600 dark:text-slate-450 line-clamp-3">
                         {p.excerpt}
                       </p>
-                      {p.childrenServed > 0 && (
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 inline-block">
-                          Children Served: {p.childrenServed}
-                        </span>
-                      )}
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 inline-block">
+                        Children Impacted: {Number(p.childrenServed) || 0}
+                      </span>
                     </div>
                   </div>
 

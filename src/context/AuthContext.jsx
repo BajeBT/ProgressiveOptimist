@@ -1086,6 +1086,14 @@ Progressive Optimist Club of Barbados Membership Review Committee
       return { success: false, message: 'You must be logged in as a member to post a project.' };
     }
 
+    // Children impacted is mandatory on every project and event, and feeds the
+    // Children Reached total on the homepage. 0 is valid, blank is not.
+    const childrenServed = Number(projectData.childrenServed);
+    if (projectData.childrenServed === '' || projectData.childrenServed === null ||
+        projectData.childrenServed === undefined || !Number.isInteger(childrenServed) || childrenServed < 0) {
+      return { success: false, message: 'Number of Children Impacted is required and must be a whole number of 0 or more.' };
+    }
+
     const isModeratorUser = ['super admin', 'finance', 'admin', 'moderator'].includes(currentUser.access);
     const isApproved = isModeratorUser; // Auto-approved if posted by a moderator
 
@@ -1102,7 +1110,7 @@ Progressive Optimist Club of Barbados Membership Review Committee
       author: currentUser.name,
       authorId: currentUser.memberId,
       postedAt: new Date().toISOString().split('T')[0],
-      childrenServed: Number(projectData.childrenServed) || 0,
+      childrenServed,
       approved: isApproved
     };
 
