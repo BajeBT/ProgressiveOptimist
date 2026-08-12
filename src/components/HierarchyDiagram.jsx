@@ -62,16 +62,16 @@ export const HierarchyDiagram = () => {
       </div>
 
       {/* Selected Level Detail Panel */}
-      <div className="mt-8 p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-2xl relative">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+      <div className="mt-8 p-6 sm:p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 border border-slate-300 shadow-2xl relative">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-400/50">
           <div>
             <span className="text-xs uppercase font-bold text-optimist-gold tracking-widest">
               Selected Level Details • Level 0{selectedLevel.level}
             </span>
-            <h3 className="font-heading text-2xl font-bold text-white mt-1">
+            <h3 className="font-heading text-2xl font-bold text-slate-900 mt-1">
               {selectedLevel.title}
             </h3>
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-600 text-sm">
               {selectedLevel.level === 1
                 ? `${selectedLevel.subtitle} - ${selectedLevel.scope}`
                 : `${selectedLevel.subtitle} (${selectedLevel.scope})`}
@@ -91,7 +91,7 @@ export const HierarchyDiagram = () => {
           </div>
         </div>
 
-        <p className="mt-6 text-slate-300 text-sm sm:text-base leading-relaxed">
+        <p className="mt-6 text-slate-600 text-sm sm:text-base leading-relaxed">
           {selectedLevel.description}
         </p>
 
@@ -102,25 +102,25 @@ export const HierarchyDiagram = () => {
               {selectedLevel.domains.map((dom, domIdx) => {
                 const isExpanded = expandedDomain === domIdx;
                 return (
-                  <div key={domIdx} className="rounded-2xl bg-slate-800/40 border border-slate-700/60 overflow-hidden transition-all duration-300">
+                  <div key={domIdx} className="rounded-2xl bg-white border border-slate-300 overflow-hidden transition-all duration-300">
                     <button
                       type="button"
                       onClick={() => toggleDomain(domIdx)}
-                      className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-800/80 transition-colors gap-4"
+                      className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-50 transition-colors gap-4"
                     >
-                      <h4 className="font-heading text-base sm:text-lg font-bold text-amber-300">{dom.title}</h4>
-                      <ChevronDown className={`w-5 h-5 text-amber-400 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                      <h4 className="font-heading text-base sm:text-lg font-bold text-amber-700">{dom.title}</h4>
+                      <ChevronDown className={`w-5 h-5 text-amber-600 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
 
                     {isExpanded && (
-                      <div className="px-5 pb-5 pt-1 space-y-4 border-t border-slate-800/60 animate-fadeIn">
-                        <p className="text-xs text-slate-300 italic leading-relaxed">
+                      <div className="px-5 pb-5 pt-1 space-y-4 border-t border-slate-200 animate-fadeIn">
+                        <p className="text-xs text-slate-600 italic leading-relaxed">
                           <strong>Primary Objective:</strong> {dom.objective}
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800/40">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
                           {dom.points.map((pt, ptIdx) => (
-                            <div key={ptIdx} className="flex items-start space-x-2.5 text-xs text-slate-200">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <div key={ptIdx} className="flex items-start space-x-2.5 text-xs text-slate-700">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                               <span>{pt}</span>
                             </div>
                           ))}
@@ -134,15 +134,15 @@ export const HierarchyDiagram = () => {
 
             {/* Core Values Section */}
             {selectedLevel.coreValues && (
-              <div className="pt-6 border-t border-slate-800">
+              <div className="pt-6 border-t border-slate-400/50">
                 <h4 className="text-xs uppercase font-bold text-optimist-gold tracking-wider mb-4">
                   Foundational Core Values & Purposes
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {selectedLevel.coreValues.map((val, valIdx) => (
-                    <div key={valIdx} className="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
-                      <strong className="block text-amber-400 font-heading mb-1">{val.name}</strong>
-                      <span className="text-slate-300 leading-relaxed">{val.text}</span>
+                    <div key={valIdx} className="p-4 rounded-xl bg-white border border-slate-300 text-xs">
+                      <strong className="block text-amber-700 font-heading mb-1">{val.name}</strong>
+                      <span className="text-slate-600 leading-relaxed">{val.text}</span>
                     </div>
                   ))}
                 </div>
@@ -156,8 +156,8 @@ export const HierarchyDiagram = () => {
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {selectedLevel.responsibilities.map((resp, idx) => (
-                <div key={idx} className="flex items-start space-x-2.5 bg-slate-800/70 p-3 rounded-xl border border-slate-700/60 text-xs text-slate-200">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div key={idx} className="flex items-start space-x-2.5 bg-white p-3 rounded-xl border border-slate-300 text-xs text-slate-700">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>{resp}</span>
                 </div>
               ))}

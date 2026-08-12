@@ -45,6 +45,9 @@ export const AdminSettingsPage = () => {
     updateSiteSettings,
     updateMemberPermissions,
     updateMemberRecord,
+    addMembers,
+    approveMemberRecord,
+    resetMemberPassword,
     updateMemberDuesByTreasurer,
     updateMemberNotesByTreasurer,
     sendDuesStatementEmail,
@@ -187,6 +190,167 @@ export const AdminSettingsPage = () => {
     setStatusMsg(`Successfully updated member record details and dues for ${editForm.name}.`);
     setTimeout(() => setStatusMsg(''), 4000);
   };
+
+  // Add Member (individual) modal state
+  const emptyAddForm = {
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    role: 'Active Member',
+    access: 'member',
+    duesRate: '$250.00',
+    amountPaid: '$0.00',
+    balanceDue: '$250.00',
+    paymentMethod: 'Pending',
+    duesStatus: 'Pending Dues Payment'
+  };
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addForm, setAddForm] = useState(emptyAddForm);
+
+  // Bulk Add modal state - members are typed straight into the grid.
+  const emptyBulkRow = { name: '', email: '', phone: '', role: 'Active Member' };
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkRows, setBulkRows] = useState([{ ...emptyBulkRow }, { ...emptyBulkRow }, { ...emptyBulkRow }]);
+
+  const [isSavingMembers, setIsSavingMembers] = useState(false);
+  const [addMemberError, setAddMemberError] = useState('');
+
+  // Both add paths report through the same summary so the outcome reads the
+  // same whether one member or twenty were entered.
+  const reportAddResult = (res) => {
+    if (!res.success) {
+      setAddMemberError(res.message || 'Could not save the member record(s).');
+      return false;
+    }
+    const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+    const skippedNote = skipped.length > 0
+      ? ` ${skipped.length} skipped (${skipped.map(s => `${s.email}: ${s.reason}`).join('; ')}).`
+      : '';
+    setStatusMsg(`${res.message}${skippedNote}`);
+    setTimeout(() => setStatusMsg(''), 8000);
+    return true;
+  };
+
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    setAddMemberError('');
+    setIsSavingMembers(true);
+    const res = await addMembers(addForm);
+    setIsSavingMembers(false);
+    if (reportAddResult(res)) {
+      setShowAddMember(false);
+      setAddForm(emptyAddForm);
+    }
+  };
+
+  const handleBulkAdd = async (e) => {
+    e.preventDefault();
+    setAddMemberError('');
+
+    const filled = bulkRows.filter(r => r.name.trim() || r.email.trim());
+    if (filled.length === 0) {
+      setAddMemberError('Enter at least one member.');
+      return;
+    }
+    const incomplete = filled.find(r => !r.name.trim() || !r.email.trim());
+    if (incomplete) {
+      setAddMemberError('Every row needs both a name and an email address.');
+      return;
+    }
+
+    setIsSavingMembers(true);
+    const res = await addMembers(filled);
+    setIsSavingMembers(false);
+    if (reportAddResult(res)) {
+      setShowBulkAdd(false);
+      setBulkRows([{ ...emptyBulkRow }, { ...emptyBulkRow }, { ...emptyBulkRow }]);
+    }
+  };
+
+  const updateBulkRow = (index, field, value) => {
+    setBulkRows(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  };
+
+  const handleApproveMember = async (memberId, memberName) => {
+    const res = await approveMemberRecord(memberId);
+    if (res.success) {
+      setStatusMsg(`${memberName} approved and activated.`);
+    } else {
+      setStatusMsg(res.message || `Could not approve ${memberName}.`);
+    }
+    setTimeout(() => setStatusMsg(''), 5000);
+  };
+
+  // Only the President, Treasurer, Secretary, or the super admin account may
+  // clear a record added by someone else.
+  const currentMemberRecord = memberRoster.find(m => m.id === currentUser?.memberId);
+  const canApproveMembers = Boolean(
+    currentMemberRecord?.hasInitiativeAccess ||
+    currentMemberRecord?.hasTreasurerConsoleAccess ||
+    currentMemberRecord?.hasSecretaryAccess ||
+    currentUser?.email === 'admin@progressiveoptimist.org'
+  );
+  // Reset Password: super admin only. Choosing a method opens resetPasswordTarget;
+  // the result is shown once via resetPasswordResult so it can be copied and
+  // handed to the member - never persisted or logged anywhere client-side.
+  const [resetPasswordTarget, setResetPasswordTarget] = useState(null);
+  const [resetPasswordMode, setResetPasswordMode] = useState('random');
+  const [customPassword, setCustomPassword] = useState('');
+  const [customPasswordConfirm, setCustomPasswordConfirm] = useState('');
+  const [resetPasswordError, setResetPasswordError] = useState('');
+  const [resetPasswordResult, setResetPasswordResult] = useState(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [copiedResetPassword, setCopiedResetPassword] = useState(false);
+
+  const openResetPassword = (member) => {
+    setResetPasswordTarget(member);
+    setResetPasswordMode('random');
+    setCustomPassword('');
+    setCustomPasswordConfirm('');
+    setResetPasswordError('');
+  };
+
+  const handleConfirmResetPassword = async (e) => {
+    e.preventDefault();
+    setResetPasswordError('');
+
+    let passwordToSet;
+    if (resetPasswordMode === 'custom') {
+      if (customPassword.length < 8) {
+        setResetPasswordError('Password must be at least 8 characters long.');
+        return;
+      }
+      if (customPassword !== customPasswordConfirm) {
+        setResetPasswordError('Passwords do not match.');
+        return;
+      }
+      passwordToSet = customPassword;
+    }
+
+    setIsResettingPassword(true);
+    const res = await resetMemberPassword(resetPasswordTarget.id, passwordToSet);
+    setIsResettingPassword(false);
+
+    if (res.success) {
+      setResetPasswordResult({ name: resetPasswordTarget.name, email: resetPasswordTarget.email, password: res.password });
+      setResetPasswordTarget(null);
+    } else {
+      setResetPasswordError(res.message || `Could not reset the password for ${resetPasswordTarget.name}.`);
+    }
+  };
+
+  // The intake pipeline. Most records arrive from the public ProgressiveOCB
+  // Membership Application (added_by is null); admin-entered ones are the
+  // secondary route. Applicants still verifying their email are shown too, so
+  // the queue reflects the whole pipeline rather than only its last step.
+  const pendingApprovalMembers = memberRoster
+    .filter(m => m.approvalStatus === 'pending_approval' || m.access === 'pending_verification')
+    .map(m => ({
+      ...m,
+      fromApplication: !m.addedBy,
+      awaitingVerification: m.access === 'pending_verification'
+    }));
 
   // Member Search State
   const [memberSearch, setMemberSearch] = useState('');
@@ -729,42 +893,42 @@ export const AdminSettingsPage = () => {
         <div className="space-y-6">
           
           {/* Header Banner */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 border border-slate-300 shadow-xl space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-400/40 flex items-center gap-1.5 w-fit">
                   <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
                 </span>
-                <h2 className="font-heading text-2xl font-semibold text-white">
+                <h2 className="font-heading text-2xl font-semibold text-slate-900">
                   Member Dues Management Ledger
                 </h2>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-slate-600">
                   Optimist Fiscal Year runs <strong>October 1st to September 30th</strong>. As Club Treasurer (<strong>Sharon Mohammed</strong>) and Club Executives, you can record payments, view official statements, add notes, and email dues balance statements.
                 </p>
               </div>
 
-              <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 text-right shrink-0">
-                <span className="text-xs text-slate-400 block">Total Active Settled Dues</span>
-                <strong className="font-heading text-2xl font-semibold text-emerald-400">
+              <div className="bg-white p-3 rounded-2xl border border-slate-300 text-right shrink-0">
+                <span className="text-xs text-slate-500 block">Total Active Settled Dues</span>
+                <strong className="font-heading text-2xl font-semibold text-emerald-600">
                   {memberRoster.filter(m => m.duesStatus && m.duesStatus.includes('Active')).length} / {memberRoster.length}
                 </strong>
               </div>
             </div>
 
             {treasurerMsg && (
-              <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-400/40 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{treasurerMsg}</span>
               </div>
             )}
           </div>
 
           {/* Scotiabank Bank Transfer Info Box */}
-          <div className="p-4 rounded-2xl bg-slate-900 text-white border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-[#c1c4c7] text-slate-900 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="text-xs space-y-0.5">
-              <strong className="text-amber-400 font-bold block">Official Scotiabank Dues Deposit Account:</strong>
-              <p className="text-slate-300 font-mono">
-                Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong> • Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit/Routing #: <strong className="text-amber-300">66555</strong>
+              <strong className="text-amber-700 font-bold block">Official Scotiabank Dues Deposit Account:</strong>
+              <p className="text-slate-600 font-mono">
+                Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong> • Account #: <strong className="text-emerald-600">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit/Routing #: <strong className="text-amber-700">66555</strong>
               </p>
             </div>
             <button onClick={copyBankInfo} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shrink-0">
@@ -798,6 +962,20 @@ export const AdminSettingsPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => { setAddMemberError(''); setShowAddMember(true); }}
+                className="px-4 py-2 rounded-xl gold-gradient hover:brightness-110 text-slate-950 text-xs font-bold shadow transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Member
+              </button>
+
+              <button
+                onClick={() => { setAddMemberError(''); setShowBulkAdd(true); }}
+                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold shadow transition-colors flex items-center gap-1.5"
+              >
+                <Users className="w-3.5 h-3.5 text-amber-300" /> Bulk Add Members
+              </button>
+
               {selectedMemberIds.length > 0 && (
                 <button
                   onClick={() => handleSendEmailStatement(selectedMemberIds)}
@@ -816,6 +994,80 @@ export const AdminSettingsPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Members awaiting an officer's approval. Records the Treasurer adds
+              are active immediately and never appear here. */}
+          {pendingApprovalMembers.length > 0 && (
+            <div className="p-5 rounded-2xl glass-card border border-amber-400/50 space-y-3">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-500" />
+                <h3 className="font-heading text-sm font-bold text-slate-900 dark:text-white">
+                  Membership Intake ({pendingApprovalMembers.length})
+                </h3>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {canApproveMembers
+                  ? 'Applications from the Become a Member form, plus any records entered here by an admin other than the Treasurer. Approve to activate.'
+                  : 'Only the President, Treasurer, or Secretary can approve these records.'}
+              </p>
+
+              <div className="space-y-2">
+                {pendingApprovalMembers.map(m => (
+                  <div
+                    key={m.id}
+                    className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900"
+                  >
+                    <div className="text-xs space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <strong className="text-slate-900 dark:text-white">{m.name}</strong>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                          m.fromApplication
+                            ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300'
+                            : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}>
+                          {m.fromApplication ? 'Membership Application' : 'Added by Admin'}
+                        </span>
+                        {m.awaitingVerification && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                            Awaiting Email Verification
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-500 font-mono text-[10px] block">{m.id} • {m.email}</span>
+                      <span className="text-slate-500 text-[10px] block">Role: {m.role}</span>
+                      {m.phone && <span className="text-slate-500 text-[10px] block">Phone: {m.phone}</span>}
+                      {m.address && <span className="text-slate-500 text-[10px] block">Address: {m.address}</span>}
+                      {/* Everything the applicant entered on the application form. */}
+                      {m.notes && (
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 italic break-words pt-0.5">
+                          {m.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handleApproveMember(m.id, m.name)}
+                      disabled={!canApproveMembers || m.awaitingVerification}
+                      className={`px-3.5 py-1.5 rounded-xl text-[10px] font-bold uppercase shadow transition-all shrink-0 ${
+                        canApproveMembers && !m.awaitingVerification
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                      }`}
+                      title={
+                        m.awaitingVerification
+                          ? 'This applicant must verify their email and set a password first'
+                          : canApproveMembers
+                            ? 'Approve and activate this member record'
+                            : 'Reserved for the President, Treasurer, or Secretary'
+                      }
+                    >
+                      <Check className="w-3 h-3 inline mr-1" /> Approve
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Member Ledger Table */}
           <div className="rounded-3xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 shadow-xl">
@@ -1184,10 +1436,403 @@ export const AdminSettingsPage = () => {
         </div>
       )}
 
+      {/* RESET PASSWORD: choose random vs. manually-set password. Rendered
+          above the Edit Record modal (z-[60] vs its z-50) since this opens
+          on top of it, not in place of it. */}
+      {resetPasswordTarget && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-500" />
+              <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Reset Password</h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              For <strong className="text-slate-800 dark:text-slate-200">{resetPasswordTarget.name}</strong> ({resetPasswordTarget.email}).
+              Their current password will stop working immediately.
+            </p>
+
+            <form onSubmit={handleConfirmResetPassword} className="space-y-3">
+              {resetPasswordError && (
+                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{resetPasswordError}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 p-3 rounded-xl border border-slate-300 dark:border-slate-700 cursor-pointer has-[:checked]:border-optimist-blue has-[:checked]:bg-optimist-blue/5">
+                  <input
+                    type="radio"
+                    checked={resetPasswordMode === 'random'}
+                    onChange={() => setResetPasswordMode('random')}
+                  />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Generate a random password</span>
+                </label>
+                <label className="flex items-center gap-2 p-3 rounded-xl border border-slate-300 dark:border-slate-700 cursor-pointer has-[:checked]:border-optimist-blue has-[:checked]:bg-optimist-blue/5">
+                  <input
+                    type="radio"
+                    checked={resetPasswordMode === 'custom'}
+                    onChange={() => setResetPasswordMode('custom')}
+                  />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Set a specific password</span>
+                </label>
+              </div>
+
+              {resetPasswordMode === 'custom' && (
+                <div className="space-y-2 animate-fadeIn">
+                  <input
+                    type="text"
+                    value={customPassword}
+                    onChange={e => setCustomPassword(e.target.value)}
+                    placeholder="New password (min. 8 characters)"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono focus:ring-2 focus:ring-optimist-blue outline-none"
+                    autoComplete="new-password"
+                  />
+                  <input
+                    type="text"
+                    value={customPasswordConfirm}
+                    onChange={e => setCustomPasswordConfirm(e.target.value)}
+                    placeholder="Confirm password"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono focus:ring-2 focus:ring-optimist-blue outline-none"
+                    autoComplete="new-password"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordTarget(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow transition-all disabled:opacity-60"
+                >
+                  {isResettingPassword ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RESET PASSWORD RESULT: shown exactly once, never persisted */}
+      {resetPasswordResult && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-500" />
+              <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Password Reset</h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              New password for <strong className="text-slate-800 dark:text-slate-200">{resetPasswordResult.name}</strong> ({resetPasswordResult.email}).
+              This is shown only once — copy it now before closing this dialog.
+            </p>
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+              <code className="flex-1 text-sm font-mono font-bold text-slate-900 dark:text-white break-all">
+                {resetPasswordResult.password}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(resetPasswordResult.password);
+                  setCopiedResetPassword(true);
+                  setTimeout(() => setCopiedResetPassword(false), 2500);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-optimist-blue text-white text-xs font-bold shrink-0"
+              >
+                {copiedResetPassword ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setResetPasswordResult(null); setCopiedResetPassword(false); }}
+              className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ADD MEMBER (INDIVIDUAL) MODAL */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-optimist-blue" /> Add Member
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Creates the membership record. Only members on this database can create a portal account.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddMember(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMember} className="p-6 space-y-4">
+              {addMemberError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{addMemberError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={addForm.name}
+                    onChange={e => setAddForm({ ...addForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={addForm.email}
+                    onChange={e => setAddForm({ ...addForm, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={addForm.phone}
+                    onChange={e => setAddForm({ ...addForm, phone: e.target.value })}
+                    placeholder="+1 (246) ..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Roster Role
+                  </label>
+                  <input
+                    type="text"
+                    value={addForm.role}
+                    onChange={e => setAddForm({ ...addForm, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Postal Address
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={addForm.address}
+                    onChange={e => setAddForm({ ...addForm, address: e.target.value })}
+                    placeholder="Physical address in Barbados..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Access Permission Level
+                  </label>
+                  <select
+                    value={addForm.access}
+                    onChange={e => setAddForm({ ...addForm, access: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none font-semibold"
+                  >
+                    <option value="member">member</option>
+                    <option value="moderator">moderator</option>
+                    <option value="admin">admin</option>
+                    {userAccess === 'super admin' && <option value="finance">finance</option>}
+                  </select>
+                  {addForm.access !== 'member' && !addForm.email.toLowerCase().endsWith('@progressiveoptimist.org') && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-start gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span>
+                        Admin access on a personal email address is temporary - it is revoked automatically
+                        on October 1st. Use an @progressiveoptimist.org address for permanent access.
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMember(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMembers}
+                  className="flex-1 px-4 py-2.5 rounded-xl gold-gradient hover:brightness-110 text-slate-950 text-xs font-bold shadow transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {isSavingMembers ? 'Saving...' : 'Save Member'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BULK ADD MEMBERS MODAL */}
+      {showBulkAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-4 h-4 text-optimist-blue" /> Bulk Add Members
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Type each member into a row. Name and email are required; blank rows are ignored.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBulkAdd(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkAdd} className="p-6 space-y-4">
+              {addMemberError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{addMemberError}</span>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-3 w-10 text-center text-slate-400">#</th>
+                      <th className="p-3">Full Name *</th>
+                      <th className="p-3">Email Address *</th>
+                      <th className="p-3">Phone</th>
+                      <th className="p-3">Role</th>
+                      <th className="p-3 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {bulkRows.map((row, index) => (
+                      <tr key={index}>
+                        <td className="p-2 text-center font-mono text-slate-400 text-[10px]">{index + 1}</td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={row.name}
+                            onChange={e => updateBulkRow(index, 'name', e.target.value)}
+                            placeholder="Jane Doe"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="email"
+                            value={row.email}
+                            onChange={e => updateBulkRow(index, 'email', e.target.value)}
+                            placeholder="jane@example.com"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={row.phone}
+                            onChange={e => updateBulkRow(index, 'phone', e.target.value)}
+                            placeholder="(246) ..."
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={row.role}
+                            onChange={e => updateBulkRow(index, 'role', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                          />
+                        </td>
+                        <td className="p-2 text-center">
+                          {bulkRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setBulkRows(prev => prev.filter((_, i) => i !== index))}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                              title="Remove this row"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setBulkRows(prev => [...prev, { ...emptyBulkRow }])}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
+              >
+                <Plus className="w-3.5 h-3.5 text-optimist-blue" /> Add Row
+              </button>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkAdd(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMembers}
+                  className="flex-1 px-4 py-2.5 rounded-xl gold-gradient hover:brightness-110 text-slate-950 text-xs font-bold shadow transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {isSavingMembers ? 'Saving...' : 'Save All Members'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {selectedMemberToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
-            
+
             {/* Header */}
             <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-900 text-white rounded-t-3xl">
               <div className="flex items-center space-x-2.5">
@@ -1201,12 +1846,25 @@ export const AdminSettingsPage = () => {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedMemberToEdit(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-850 text-slate-400 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {userAccess === 'super admin' && (
+                  <button
+                    type="button"
+                    onClick={() => openResetPassword(selectedMemberToEdit)}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-[10px] font-bold uppercase inline-flex items-center gap-1.5 transition-colors"
+                    title="Reset this member's password"
+                  >
+                    <Lock className="w-3 h-3" />
+                    Reset Password
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedMemberToEdit(null)}
+                  className="p-1.5 rounded-xl hover:bg-slate-850 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSaveMemberRecord} className="p-6 space-y-6">
