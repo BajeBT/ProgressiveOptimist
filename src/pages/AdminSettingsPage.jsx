@@ -97,10 +97,10 @@ export const AdminSettingsPage = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedMemberIds.length === filteredRoster.length) {
+    if (selectedMemberIds.length === treasurerRoster.length) {
       setSelectedMemberIds([]);
     } else {
-      setSelectedMemberIds(filteredRoster.map(m => m.id));
+      setSelectedMemberIds(treasurerRoster.map(m => m.id));
     }
   };
 
@@ -439,12 +439,29 @@ export const AdminSettingsPage = () => {
     setTimeout(() => setStatusMsg(''), 3000);
   };
 
+  // Official @progressiveoptimist.org accounts (admin@, treasurer@, etc.) are
+  // login/admin utility accounts for whoever holds that office, not separate
+  // members - each real office-holder already has their own personal-email
+  // record. They stay visible everywhere on the admin page (admins need to
+  // manage them), but are excluded from member counts and sorted to the
+  // bottom of every roster listing so they don't read as duplicate people.
+  const isOfficialAccount = m => Boolean(m.email && m.email.toLowerCase().endsWith('@progressiveoptimist.org'));
+  const realMemberCount = memberRoster.filter(m => !isOfficialAccount(m)).length;
+
   // Filter roster for permissions table
-  const filteredRoster = memberRoster.filter(m =>
-    m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.email.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    m.id.toLowerCase().includes(memberSearch.toLowerCase())
-  );
+  const filteredRoster = memberRoster
+    .filter(m =>
+      m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.email.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.id.toLowerCase().includes(memberSearch.toLowerCase())
+    )
+    .sort((a, b) => Number(isOfficialAccount(a)) - Number(isOfficialAccount(b)));
+
+  // The Treasurer Dues console is about tracking real dues payments, which
+  // official utility accounts don't have (they're seeded Exempt/Honorary) -
+  // unlike the Permissions tab, they're excluded here entirely rather than
+  // just sorted to the bottom.
+  const treasurerRoster = filteredRoster.filter(m => !isOfficialAccount(m));
 
   return (
     <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -504,7 +521,7 @@ export const AdminSettingsPage = () => {
               }`}
             >
               <Users className="w-4 h-4" />
-              <span>Member Records ({memberRoster.length})</span>
+              <span>Member Records ({realMemberCount})</span>
             </button>
 
             <button
@@ -911,7 +928,7 @@ export const AdminSettingsPage = () => {
               <div className="bg-white p-3 rounded-2xl border border-slate-300 text-right shrink-0">
                 <span className="text-xs text-slate-500 block">Total Active Settled Dues</span>
                 <strong className="font-heading text-2xl font-semibold text-emerald-600">
-                  {memberRoster.filter(m => m.duesStatus && m.duesStatus.includes('Active')).length} / {memberRoster.length}
+                  {memberRoster.filter(m => !isOfficialAccount(m) && m.duesStatus && m.duesStatus.includes('Active')).length} / {realMemberCount}
                 </strong>
               </div>
             </div>
@@ -955,10 +972,10 @@ export const AdminSettingsPage = () => {
                 onClick={toggleSelectAll}
                 className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 transition-colors"
               >
-                {selectedMemberIds.length === filteredRoster.length ? 'Deselect All' : 'Select All'}
+                {selectedMemberIds.length === treasurerRoster.length ? 'Deselect All' : 'Select All'}
               </button>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                (Total Members: {filteredRoster.length})
+                (Total Members: {treasurerRoster.length})
               </span>
             </div>
 
@@ -1080,7 +1097,7 @@ export const AdminSettingsPage = () => {
                     <th className="p-4 w-10">
                       <input
                         type="checkbox"
-                        checked={selectedMemberIds.length === filteredRoster.length && filteredRoster.length > 0}
+                        checked={selectedMemberIds.length === treasurerRoster.length && treasurerRoster.length > 0}
                         onChange={toggleSelectAll}
                         className="rounded border-slate-300"
                       />
@@ -1094,7 +1111,7 @@ export const AdminSettingsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {filteredRoster.map((member, index) => {
+                  {treasurerRoster.map((member, index) => {
                     const isSelected = selectedMemberIds.includes(member.id);
                     const isEditingNotes = editingNotesId === member.id;
 
