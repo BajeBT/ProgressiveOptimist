@@ -10,6 +10,7 @@ import {
 } from '../lib/db.js';
 import { getSession, requireAccess } from '../lib/session.js';
 import { generateRandomPassword } from '../lib/password.js';
+import { getDefaultAvatarForRole } from '../lib/roles.js';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -74,6 +75,9 @@ async function insertOneMember(entry, actor, approvalStatus) {
     ? new Date().toISOString()
     : null;
 
+  const role = entry.role || 'Active Member';
+  const avatar = getDefaultAvatarForRole(role);
+
   const existing = await sql`
     SELECT id, access FROM members WHERE LOWER(TRIM(email)) = ${email} LIMIT 1;
   `;
@@ -88,7 +92,8 @@ async function insertOneMember(entry, actor, approvalStatus) {
         SET name = ${name},
             phone = ${entry.phone || ''},
             address = ${entry.address || ''},
-            role = ${entry.role || 'Active Member'},
+            role = ${role},
+            avatar = ${avatar},
             access = ${access},
             approval_status = ${approvalStatus},
             admin_granted_at = ${adminGrantedAt},
@@ -108,7 +113,7 @@ async function insertOneMember(entry, actor, approvalStatus) {
     )
     VALUES (
       ${memberId}, ${name}, ${email}, ${entry.phone || ''}, ${entry.address || ''},
-      ${entry.role || 'Active Member'}, '/avatars/active_member_icon.jpg', ${access},
+      ${role}, ${avatar}, ${access},
       ${approvalStatus}, ${adminGrantedAt}, ${actor.id}
     );
   `;
@@ -177,7 +182,8 @@ async function handleApprove(req, res, session) {
     UPDATE members
     SET approval_status = 'approved',
         access = CASE WHEN access = 'pending' THEN 'member' ELSE access END,
-        role = CASE WHEN role = 'Pending Member' THEN 'Active Member' ELSE role END
+        role = CASE WHEN role = 'Pending' THEN 'Active Member' ELSE role END,
+        avatar = CASE WHEN role = 'Pending' THEN ${getDefaultAvatarForRole('Active Member')} ELSE avatar END
     WHERE id = ${memberId}
     RETURNING id, name;
   `;
@@ -248,13 +254,15 @@ async function handleUpdateRecord(req, res) {
     adminGrantedAt = null;
   }
 
+  const role = fields.role || 'Active Member';
   await sql`
     UPDATE members
     SET name = ${fields.name},
         email = ${email},
         phone = ${fields.phone || ''},
         address = ${fields.address || ''},
-        role = ${fields.role || 'Active Member'},
+        role = ${role},
+        avatar = ${getDefaultAvatarForRole(role)},
         access = ${access},
         admin_granted_at = ${adminGrantedAt}
     WHERE id = ${memberId};

@@ -9,6 +9,7 @@ import {
 } from '../lib/db.js';
 import { sendEmail } from '../lib/email.js';
 import { createSession, getSession } from '../lib/session.js';
+import { getDefaultAvatarForRole } from '../lib/roles.js';
 
 const BCRYPT_ROUNDS = 10;
 const TOKEN_TTL_MINUTES = 60;
@@ -278,8 +279,8 @@ async function handleRegister(req, res) {
   await sql`
     INSERT INTO members (id, name, email, phone, role, avatar, address, access, approval_status)
     VALUES (
-      ${memberId}, ${name}, ${email}, ${form.phone || ''}, 'Pending Member',
-      '/avatars/active_member_icon.jpg', ${addressString}, 'pending_verification', 'pending_approval'
+      ${memberId}, ${name}, ${email}, ${form.phone || ''}, 'Pending',
+      ${getDefaultAvatarForRole('Pending')}, ${addressString}, 'pending_verification', 'pending_approval'
     );
   `;
   await sql`

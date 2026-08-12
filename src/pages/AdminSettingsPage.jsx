@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { MEMBER_ROLES } from '../../lib/roles';
 import {
   ShieldCheck,
   Settings,
@@ -776,9 +777,9 @@ export const AdminSettingsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {filteredRoster.map((m) => {
-                    const isSuperAdminUser = m.access === 'super admin' || m.email === 'edwin@jillandee.com' || m.email === 'richelle.lucas16@gmail.com';
-                    const isTreasurerUser = m.email === 'sharon@topaz-bb.com' || m.id === '78008-0152';
-                    const isPresidentUser = m.email === 'richelle.lucas16@gmail.com' || m.id === '78008-0150' || isSuperAdminUser;
+                    const isSuperAdminUser = m.access === 'super admin';
+                    const isTreasurerUser = m.access === 'finance' || Boolean(m.hasTreasurerConsoleAccess);
+                    const isPresidentUser = isSuperAdminUser || Boolean(m.hasInitiativeAccess);
                     const hasTreasurerAccess = isSuperAdminUser || isTreasurerUser || isPresidentUser || Boolean(m.hasTreasurerConsoleAccess);
                     const hasInitiativeAccess = isSuperAdminUser || isTreasurerUser || isPresidentUser || Boolean(m.hasInitiativeAccess);
                     const canPublishProjects = true; // All active members can post projects
@@ -1632,12 +1633,13 @@ export const AdminSettingsPage = () => {
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                     Roster Role
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={addForm.role}
                     onChange={e => setAddForm({ ...addForm, role: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                  />
+                  >
+                    {MEMBER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -1774,12 +1776,13 @@ export const AdminSettingsPage = () => {
                           />
                         </td>
                         <td className="p-2">
-                          <input
-                            type="text"
+                          <select
                             value={row.role}
                             onChange={e => updateBulkRow(index, 'role', e.target.value)}
                             className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
-                          />
+                          >
+                            {MEMBER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
                         </td>
                         <td className="p-2 text-center">
                           {bulkRows.length > 1 && (
@@ -1916,14 +1919,35 @@ export const AdminSettingsPage = () => {
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                     Roster Role
                   </label>
-                  <input
-                    type="text"
-                    value={editForm.role}
-                    onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                    placeholder="e.g. Active Member"
+                  <select
+                    value={MEMBER_ROLES.includes(editForm.role) ? editForm.role : 'Other'}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setEditForm({ ...editForm, role: val === 'Other' ? '' : val });
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                  />
+                  >
+                    {MEMBER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    <option value="Other">Other (legacy role text)</option>
+                  </select>
                 </div>
+
+                {/* Show text input if the stored role predates the fixed role list */}
+                {!MEMBER_ROLES.includes(editForm.role) && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                      Legacy Role Text *
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.role}
+                      onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                      placeholder="e.g. Active Member & Charter Member"
+                      className="w-full px-3 py-2 rounded-xl border border-amber-400 dark:border-amber-400 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                      required
+                    />
+                  </div>
+                )}
 
                 {/* 4b. Access */}
                 <div>

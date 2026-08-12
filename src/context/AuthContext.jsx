@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialProjects } from '../data/projectsData';
+import { getDefaultAvatarForRole } from '../../lib/roles';
 
 const AuthContext = createContext();
 
@@ -542,9 +543,7 @@ export const AuthProvider = ({ children }) => {
     const mappedRoster = res.members.map(r => {
       let resolvedAvatar = r.avatar;
       if (!resolvedAvatar || resolvedAvatar.includes('dicebear')) {
-        resolvedAvatar = r.role && r.role.includes('Director')
-          ? '/avatars/director_placeholder.jpg'
-          : '/avatars/active_member_icon.jpg';
+        resolvedAvatar = getDefaultAvatarForRole(r.role);
       }
 
       return {
