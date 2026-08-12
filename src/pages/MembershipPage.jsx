@@ -680,9 +680,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       });
     }
 
-    // 2. Merge live memberRoster records
+    // 2. Merge live memberRoster records. Official @progressiveoptimist.org
+    // accounts (admin@, treasurer@, etc.) are login/admin utility accounts for
+    // whoever holds that office, not separate members - each real
+    // office-holder already has their own personal-email record, so including
+    // both would show the same person twice in the directory.
     if (Array.isArray(memberRoster)) {
       memberRoster.forEach(m => {
+        if (m.email && m.email.toLowerCase().endsWith('@progressiveoptimist.org')) return;
         const key = m.id || (m.email ? m.email.toLowerCase().trim() : null);
         if (key) {
           const existing = map.get(key) || {};

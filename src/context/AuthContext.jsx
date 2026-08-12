@@ -575,6 +575,33 @@ export const AuthProvider = ({ children }) => {
 
     setMemberRoster(Array.from(new Map(mappedRoster.map(m => [m.id, m])).values()));
     setDbConnected(true);
+
+    // Keep the signed-in user's own display fields in sync with the roster.
+    // The session is cached in localStorage at login and never re-fetched on
+    // its own, so an admin editing this member's name/role/avatar elsewhere
+    // would otherwise stay invisible until the next login. access and
+    // isTreasurer are deliberately excluded: those are only ever set by
+    // login(), which applies the @progressiveoptimist.org domain rule and
+    // grant-expiry check - syncing the roster's raw access here would bypass
+    // that and could hand back elevated access a personal-email session
+    // shouldn't have.
+    setCurrentUser(prevUser => {
+      if (!prevUser) return prevUser;
+      const fresh = mappedRoster.find(m => m.id === prevUser.memberId);
+      if (!fresh) return prevUser;
+
+      const changed = fresh.name !== prevUser.name ||
+        fresh.avatar !== prevUser.avatar ||
+        fresh.role !== prevUser.role ||
+        fresh.duesStatus !== prevUser.duesStatus;
+      if (!changed) return prevUser;
+
+      const updated = { ...prevUser, name: fresh.name, avatar: fresh.avatar, role: fresh.role, duesStatus: fresh.duesStatus };
+      try {
+        localStorage.setItem('optimist_user', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
   };
 
   useEffect(() => {
