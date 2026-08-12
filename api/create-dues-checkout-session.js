@@ -34,8 +34,18 @@ export default async function handler(req, res) {
     ? Number(officialRate)
     : DEFAULT_DUES_BBD;
 
-  const usdAmount = Math.round(amount * BBD_TO_USD * 100) / 100;
-  const usdCents = Math.round(usdAmount * 100);
+  const baseAmount = amount;
+  const stripeFeeRate = 0.0375; // 3.75%
+  const feeBBD = Math.round(baseAmount * stripeFeeRate * 100) / 100;
+  const totalBBD = baseAmount + feeBBD;
+
+  const usdBase = Math.round(baseAmount * BBD_TO_USD * 100) / 100;
+  const usdBaseCents = Math.round(usdBase * 100);
+
+  const usdFee = Math.round(feeBBD * BBD_TO_USD * 100) / 100;
+  const usdFeeCents = Math.round(usdFee * 100);
+
+  const usdTotal = Math.round(totalBBD * BBD_TO_USD * 100) / 100;
 
   try {
     const origin = req.headers.origin || `https://${req.headers.host}`;
@@ -44,27 +54,42 @@ export default async function handler(req, res) {
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: memberEmail,
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Progressive Optimist Club of Barbados - Annual Dues (2025/2026)',
-            description: `$${amount.toFixed(2)} BBD (charged as $${usdAmount.toFixed(2)} USD)`
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Progressive Optimist Club of Barbados - Annual Dues (2025/2026)',
+              description: `Base dues credit applied to member ledger ($${baseAmount.toFixed(2)} BBD / $${usdBase.toFixed(2)} USD)`
+            },
+            unit_amount: usdBaseCents
           },
-          unit_amount: usdCents
+          quantity: 1
         },
-        quantity: 1
-      }],
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Credit Card Processing Fee (3.75%)',
+              description: `Stripe merchant card fee ($${feeBBD.toFixed(2)} BBD / $${usdFee.toFixed(2)} USD)`
+            },
+            unit_amount: usdFeeCents
+          },
+          quantity: 1
+        }
+      ],
       metadata: {
         type: 'dues_payment',
         memberId,
         memberName: memberName || '',
         fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
-        bbdAmount: amount.toFixed(2),
-        usdAmount: usdAmount.toFixed(2),
+        bbdAmount: baseAmount.toFixed(2),
+        feeBBD: feeBBD.toFixed(2),
+        totalBBD: totalBBD.toFixed(2),
+        usdAmount: usdTotal.toFixed(2),
         officialRate: rateAtPayment.toFixed(2)
       },
-      success_url: `${origin}/membership?duesPaid=true&amount=${amount.toFixed(2)}`,
+      success_url: `${origin}/membership?duesPaid=true&amount=${baseAmount.toFixed(2)}`,
       cancel_url: `${origin}/membership?duesCanceled=true`
     });
 

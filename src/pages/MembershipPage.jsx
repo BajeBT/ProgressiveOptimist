@@ -2111,6 +2111,45 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     </p>
                   </div>
 
+                  {/* Stripe Credit Card 3.75% Processing Fee Breakdown */}
+                  {(() => {
+                    const basePayAmount = Math.max(0, Number(customDuesAmount || officialDuesRateBBD));
+                    const stripeFeeBBD = Math.round(basePayAmount * 0.0375 * 100) / 100;
+                    const totalPayAmountBBD = basePayAmount + stripeFeeBBD;
+                    return (
+                      <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 space-y-3 text-xs">
+                        <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white border-b border-blue-200 dark:border-blue-800/60 pb-2">
+                          <span className="flex items-center gap-1.5 text-optimist-blue dark:text-blue-400">
+                            <CreditCard className="w-4 h-4" />
+                            <span>Credit Card Payment Breakdown</span>
+                          </span>
+                          <span className="text-[10px] font-extrabold uppercase font-mono px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-200">
+                            3.75% Card Fee
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5 font-mono text-[11px]">
+                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>Base Dues Credit Amount:</span>
+                            <span>BDS$ {basePayAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
+                            <span>Stripe Card Processing Fee (3.75%):</span>
+                            <span>+ BDS$ {stripeFeeBBD.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-white pt-2 border-t border-blue-200 dark:border-blue-800/60">
+                            <span>Total Charged to Credit Card:</span>
+                            <span className="text-optimist-blue dark:text-amber-400">BDS$ {totalPayAmountBBD.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-white/60 dark:bg-slate-900/60 p-2.5 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                          💳 <strong>Processing Fee Notice:</strong> A 3.75% processing fee (BDS$ {stripeFeeBBD.toFixed(2)}) is added to credit card transactions to cover Stripe merchant fees. Your official club member ledger will be credited for the full <strong>BDS$ {basePayAmount.toFixed(2)}</strong> base dues amount.
+                        </p>
+                      </div>
+                    );
+                  })()}
+
                   <div className="pt-2 flex flex-wrap items-center gap-3">
                     <button
                       onClick={handlePayDues}
@@ -2125,7 +2164,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       ) : (
                         <>
                           <CreditCard className="w-4 h-4" />
-                          <span>Pay Dues & Update Record (${Number(customDuesAmount || officialDuesRateBBD).toFixed(2)})</span>
+                          <span>
+                            Pay Dues via Credit Card (BDS$ {(Number(customDuesAmount || officialDuesRateBBD) + Math.round(Number(customDuesAmount || officialDuesRateBBD) * 0.0375 * 100) / 100).toFixed(2)})
+                          </span>
                         </>
                       )}
                     </button>
