@@ -3,8 +3,8 @@ import Stripe from 'stripe';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.
-const DUES_BBD = 250;
-const DUES_USD = 125;
+const BBD_TO_USD = 0.5;
+const DEFAULT_DUES_BBD = 250;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,11 +15,27 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, message: 'Dues payments are not configured yet.' });
   }
 
-  const { memberId, memberName, memberEmail } = req.body || {};
+  const { memberId, memberName, memberEmail, bbdAmount, officialRate } = req.body || {};
 
   if (!memberId || !memberEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(memberEmail)) {
     return res.status(400).json({ success: false, message: 'Member ID and a valid email are required.' });
   }
+
+  const amount = bbdAmount === undefined || bbdAmount === null || bbdAmount === ''
+    ? DEFAULT_DUES_BBD
+    : Number(bbdAmount);
+  if (!Number.isFinite(amount) || amount < 5) {
+    return res.status(400).json({ success: false, message: 'Dues amount must be at least $5 BBD.' });
+  }
+
+  // Captured now so the webhook computes the balance against the rate the
+  // member actually saw, unaffected by a rate change between now and payment.
+  const rateAtPayment = Number.isFinite(Number(officialRate)) && Number(officialRate) > 0
+    ? Number(officialRate)
+    : DEFAULT_DUES_BBD;
+
+  const usdAmount = Math.round(amount * BBD_TO_USD * 100) / 100;
+  const usdCents = Math.round(usdAmount * 100);
 
   try {
     const origin = req.headers.origin || `https://${req.headers.host}`;
@@ -33,9 +49,9 @@ export default async function handler(req, res) {
           currency: 'usd',
           product_data: {
             name: 'Progressive Optimist Club of Barbados - Annual Dues (2025/2026)',
-            description: `$${DUES_BBD.toFixed(2)} BBD (charged as $${DUES_USD.toFixed(2)} USD)`
+            description: `$${amount.toFixed(2)} BBD (charged as $${usdAmount.toFixed(2)} USD)`
           },
-          unit_amount: DUES_USD * 100
+          unit_amount: usdCents
         },
         quantity: 1
       }],
@@ -43,9 +59,12 @@ export default async function handler(req, res) {
         type: 'dues_payment',
         memberId,
         memberName: memberName || '',
-        fiscalYear: '2025/2026 (Oct 1 - Sep 30)'
+        fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
+        bbdAmount: amount.toFixed(2),
+        usdAmount: usdAmount.toFixed(2),
+        officialRate: rateAtPayment.toFixed(2)
       },
-      success_url: `${origin}/membership?duesPaid=true`,
+      success_url: `${origin}/membership?duesPaid=true&amount=${amount.toFixed(2)}`,
       cancel_url: `${origin}/membership?duesCanceled=true`
     });
 

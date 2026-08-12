@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { sql } from '../db/neon';
 import { activeRoster21 } from '../data/rosterData';
 import {
   User,
@@ -53,8 +54,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     logout,
     projects,
     memberGallery,
-    addGalleryPhoto
+    addGalleryPhoto,
+    siteSettings
   } = useAuth();
+
+  // The official club-wide dues rate, admin-editable in Admin Settings.
+  const officialDuesRateBBD = Number(String(siteSettings?.annualDuesRate || '250').replace(/[^0-9.]/g, '')) || 250;
   
   // Auth state tabs (when logged out)
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'apply'
@@ -119,6 +124,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     if (params.get('duesPaid') === 'true') {
       updateDuesStatus('Active Member in Good Standing (2025/2026)');
       setDuesPaymentMsg(true);
+      setPaidDuesAmount(params.get('amount'));
     } else if (params.get('duesCanceled') === 'true') {
       setDuesCanceled(true);
     }
@@ -408,6 +414,27 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [duesCanceled, setDuesCanceled] = useState(false);
   const [duesPaymentError, setDuesPaymentError] = useState('');
   const [isPayingDues, setIsPayingDues] = useState(false);
+  const [paidDuesAmount, setPaidDuesAmount] = useState(null);
+  const [customDuesAmount, setCustomDuesAmount] = useState('');
+  const [duesPaymentHistory, setDuesPaymentHistory] = useState([]);
+
+  // Real payment history for the logged-in member.
+  useEffect(() => {
+    if (!currentUser?.memberId) return;
+    (async () => {
+      try {
+        const rows = await sql`
+          SELECT fiscal_year, amount_bbd, payment_method, paid_at
+          FROM dues_payments
+          WHERE member_id = ${currentUser.memberId}
+          ORDER BY paid_at DESC;
+        `;
+        setDuesPaymentHistory(rows);
+      } catch (err) {
+        console.warn("Failed to load dues payment history:", err);
+      }
+    })();
+  }, [currentUser?.memberId, duesPaymentMsg]);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
   // Treasurer Search Filter & Checkbox selection state
@@ -463,6 +490,13 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
   const handlePayDues = async () => {
     setDuesPaymentError('');
+
+    const amount = Number(customDuesAmount || officialDuesRateBBD);
+    if (!Number.isFinite(amount) || amount < 5) {
+      setDuesPaymentError('Dues amount must be at least $5 BBD.');
+      return;
+    }
+
     setIsPayingDues(true);
     try {
       const res = await fetch('/api/create-dues-checkout-session', {
@@ -471,7 +505,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         body: JSON.stringify({
           memberId: currentUser.memberId,
           memberName: currentUser.name,
-          memberEmail: currentUser.email
+          memberEmail: currentUser.email,
+          bbdAmount: amount,
+          officialRate: officialDuesRateBBD
         })
       });
       const data = await res.json();
@@ -639,6 +675,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   // If user is LOGGED IN: Render Member Portal Dashboard
   if (currentUser) {
     const myProjects = projects.filter(p => p.authorId === currentUser.memberId || p.author === currentUser.name);
+
+    // Real balance from the roster, not assumed - a member mid-way through
+    // paying dues (or in credit) should see their actual standing.
+    const myRosterRecord = memberRoster.find(m => m.id === currentUser.memberId);
+    const realBalanceDueStr = myRosterRecord?.balanceDue || '$0.00';
+    const isDuesCredit = realBalanceDueStr.trim().startsWith('-');
+    const balanceDueDisplay = isDuesCredit
+      ? `$${realBalanceDueStr.replace('-', '').replace('$', '')} Credit`
+      : `${realBalanceDueStr} Outstanding`;
 
     const canAccessTreasurerConsole = currentUser && (
       currentUser.access === 'super admin' ||
@@ -1136,7 +1181,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                 <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-xs text-amber-900 dark:text-amber-300 font-bold flex items-center justify-between">
                   <span>Optimist Fiscal Year: Oct 1, 2025 – Sep 30, 2026</span>
-                  <strong className="text-sm text-optimist-blue dark:text-amber-400 font-heading">Dues: BDS$ 250.00 / Year</strong>
+                  <strong className="text-sm text-optimist-blue dark:text-amber-400 font-heading">Dues: BDS$ {officialDuesRateBBD.toFixed(2)} / Year</strong>
                 </div>
 
                 {duesCanceled && (
@@ -1160,26 +1205,50 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       <span>Dues Record Updated Successfully!</span>
                     </div>
                     <p className="font-normal text-slate-600 dark:text-slate-300">
-                      Your status is now <strong>Active Member in Good Standing (2025/2026)</strong>. A formal receipt for BDS$ 250.00 has been emailed to <strong>{currentUser.email}</strong>.
+                      Your status is now <strong>Active Member in Good Standing (2025/2026)</strong>. A formal receipt for BDS$ {paidDuesAmount || officialDuesRateBBD.toFixed(2)} has been emailed to <strong>{currentUser.email}</strong>.
                     </p>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                  <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-bold ${
+                    isDuesCredit || realBalanceDueStr === '$0.00'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
+                  }`}>
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      {currentUser.duesStatus}
+                      <CheckCircle2 className="w-5 h-5" />
+                      {myRosterRecord?.duesStatus || currentUser.duesStatus}
                     </span>
-                    <span>$0.00 Outstanding</span>
+                    <span>{balanceDueDisplay}</span>
                   </div>
                 )}
 
                 <div className="space-y-3 pt-2">
                   <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">
-                    Pay Annual Membership Dues ($250)
+                    Pay Annual Membership Dues (${officialDuesRateBBD.toFixed(2)})
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Annual dues ($250.00 / year) support club operations, Caribbean District registration, and primary school student projects in Barbados.
+                    Annual dues (${officialDuesRateBBD.toFixed(2)} / year) support club operations, Caribbean District registration, and primary school student projects in Barbados.
                   </p>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                      Amount to Pay (BBD)
+                    </label>
+                    <div className="flex items-center gap-2 max-w-[220px]">
+                      <input
+                        type="number"
+                        min="5"
+                        value={customDuesAmount || officialDuesRateBBD}
+                        onChange={e => setCustomDuesAmount(e.target.value)}
+                        disabled={isPayingDues}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold outline-none"
+                      />
+                      <span className="text-xs font-bold text-slate-500">BBD</span>
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      Official rate is ${officialDuesRateBBD.toFixed(2)} BBD - adjust if you're paying a different amount.
+                    </p>
+                  </div>
 
                   <div className="pt-2 flex flex-wrap items-center gap-3">
                     <button
@@ -1195,7 +1264,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       ) : (
                         <>
                           <CreditCard className="w-4 h-4" />
-                          <span>Pay Dues & Update Record ($250)</span>
+                          <span>Pay Dues & Update Record (${Number(customDuesAmount || officialDuesRateBBD).toFixed(2)})</span>
                         </>
                       )}
                     </button>
@@ -1226,20 +1295,21 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   Recent Dues Payment History
                 </h3>
                 <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">2025/2026 Optimist Year (Oct 1 - Sep 30)</strong>
-                      <span className="text-slate-400">Processed via Member Portal</span>
-                    </div>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 Paid</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">2024/2025 Optimist Year (Oct 1 - Sep 30)</strong>
-                      <span className="text-slate-400">Processed October 2024</span>
-                    </div>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">$250.00 Paid</span>
-                  </div>
+                  {duesPaymentHistory.length === 0 ? (
+                    <p className="text-slate-400">No payments recorded yet.</p>
+                  ) : (
+                    duesPaymentHistory.map((p, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <div>
+                          <strong className="block text-slate-900 dark:text-white">{p.fiscal_year}</strong>
+                          <span className="text-slate-400">
+                            {p.payment_method} • {new Date(p.paid_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(p.amount_bbd).toFixed(2)} Paid</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

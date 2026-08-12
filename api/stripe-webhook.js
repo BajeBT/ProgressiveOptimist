@@ -48,13 +48,43 @@ export default async function handler(req, res) {
     try {
       if (meta.type === 'dues_payment') {
         const today = new Date().toISOString().split('T')[0];
+        const fiscalYear = meta.fiscalYear || '2025/2026 (Oct 1 - Sep 30)';
+        const bbdPaid = Number(meta.bbdAmount) || (session.amount_total / 100) * 2;
+        const officialRate = Number(meta.officialRate) || 250;
+
+        // One row per payment, so multiple partial payments accumulate
+        // correctly instead of overwriting each other.
+        await sql`
+          INSERT INTO dues_payments (member_id, fiscal_year, amount_bbd, payment_method, stripe_session_id, paid_at)
+          VALUES (${meta.memberId}, ${fiscalYear}, ${bbdPaid}, 'Card (Stripe)', ${session.id}, CURRENT_TIMESTAMP)
+          ON CONFLICT (stripe_session_id) DO NOTHING;
+        `;
+
+        const totals = await sql`
+          SELECT COALESCE(SUM(amount_bbd), 0)::numeric AS total
+          FROM dues_payments
+          WHERE member_id = ${meta.memberId} AND fiscal_year = ${fiscalYear};
+        `;
+        const totalPaid = Number(totals[0].total);
+
+        // Not floored at zero - a negative balance is a real credit, not an
+        // error, and should stay visible as one rather than being hidden.
+        const balanceDue = officialRate - totalPaid;
+        const duesStatus = balanceDue <= 0
+          ? 'Active Member in Good Standing (2025/2026)'
+          : 'Partial Payment - Balance Due (2025/2026)';
+        const balanceDueStr = balanceDue < 0
+          ? `-$${Math.abs(balanceDue).toFixed(2)}`
+          : `$${balanceDue.toFixed(2)}`;
+
         const result = await sql`
           UPDATE dues_ledger
           SET
-            dues_status = 'Active Member in Good Standing (2025/2026)',
+            dues_status = ${duesStatus},
             last_payment_date = ${today},
-            amount_paid = '$250.00',
-            balance_due = '$0.00',
+            amount_paid = ${'$' + totalPaid.toFixed(2)},
+            balance_due = ${balanceDueStr},
+            dues_rate = ${'$' + officialRate.toFixed(2)},
             payment_method = 'Card (Stripe)',
             updated_at = CURRENT_TIMESTAMP
           WHERE member_id = ${meta.memberId}
