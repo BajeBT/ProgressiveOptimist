@@ -17,12 +17,70 @@ async function handleHistory(req, res) {
   }
 
   const rows = await sql`
-    SELECT fiscal_year, amount_bbd, payment_method, paid_at
+    SELECT id, fiscal_year, amount_bbd, payment_method, paid_at, stripe_session_id
     FROM dues_payments
     WHERE member_id = ${memberId}
     ORDER BY paid_at DESC;
   `;
   return res.status(200).json({ success: true, payments: rows });
+}
+
+// Replaces a member's manually-entered payments for one fiscal year (up to 4
+// date/amount/method rows from the Edit Record form) and recomputes the
+// dues_ledger aggregate from the full payment history. Real Stripe payments
+// (stripe_session_id set) are never touched here - only rows the Treasurer
+// entered by hand are replaced, so editing the manual list can never
+// overwrite an actual processor transaction.
+async function handleUpdatePayments(req, res) {
+  const { memberId, fiscalYear, duesRate, payments } = req.body || {};
+  if (!memberId || !fiscalYear) {
+    return res.status(400).json({ success: false, message: 'A member id and fiscal year are required.' });
+  }
+
+  const entries = (Array.isArray(payments) ? payments : [])
+    .filter(p => p && p.date && Number(p.amount) > 0)
+    .slice(0, 4);
+
+  await sql`
+    DELETE FROM dues_payments
+    WHERE member_id = ${memberId} AND fiscal_year = ${fiscalYear} AND stripe_session_id IS NULL;
+  `;
+
+  for (const p of entries) {
+    await sql`
+      INSERT INTO dues_payments (member_id, fiscal_year, amount_bbd, payment_method, paid_at)
+      VALUES (${memberId}, ${fiscalYear}, ${Number(p.amount)}, ${p.method || 'Bank Transfer'}, ${p.date});
+    `;
+  }
+
+  const totals = await sql`
+    SELECT COALESCE(SUM(amount_bbd), 0)::numeric AS total, MAX(paid_at)::date AS last_date
+    FROM dues_payments
+    WHERE member_id = ${memberId} AND fiscal_year = ${fiscalYear};
+  `;
+  const totalPaid = Number(totals[0].total);
+  const rate = Number(String(duesRate || '0').replace(/[^0-9.]/g, '')) || 0;
+  const balanceDue = rate - totalPaid;
+  const balanceDueStr = balanceDue < 0 ? `-$${Math.abs(balanceDue).toFixed(2)}` : `$${balanceDue.toFixed(2)}`;
+  const lastPaymentDate = totals[0].last_date
+    ? new Date(totals[0].last_date).toISOString().split('T')[0]
+    : null;
+
+  await sql`
+    UPDATE dues_ledger
+    SET amount_paid = ${'$' + totalPaid.toFixed(2)},
+        balance_due = ${balanceDueStr},
+        last_payment_date = COALESCE(${lastPaymentDate}, last_payment_date),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE member_id = ${memberId};
+  `;
+
+  return res.status(200).json({
+    success: true,
+    amountPaid: '$' + totalPaid.toFixed(2),
+    balanceDue: balanceDueStr,
+    lastPaymentDate
+  });
 }
 
 async function handleUpdateStatus(req, res) {
@@ -93,6 +151,8 @@ export default async function handler(req, res) {
     switch (action) {
       case 'update-status':
         return await handleUpdateStatus(req, res);
+      case 'update-payments':
+        return await handleUpdatePayments(req, res);
       case 'update-notes':
         return await handleUpdateNotes(req, res);
       case 'statement-sent':

@@ -50,6 +50,7 @@ export const AdminSettingsPage = () => {
     approveMemberRecord,
     resetMemberPassword,
     updateMemberDuesByTreasurer,
+    updateMemberPayments,
     updateMemberNotesByTreasurer,
     sendDuesStatementEmail,
     isSandboxMode,
@@ -71,9 +72,51 @@ export const AdminSettingsPage = () => {
   const [editingNotesId, setEditingNotesId] = useState(null);
   const [tempNotesText, setTempNotesText] = useState('');
   const [statementModalMember, setStatementModalMember] = useState(null);
+  const [statementPayments, setStatementPayments] = useState([]);
   const [treasurerMsg, setTreasurerMsg] = useState('');
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
   const [rosterSearch, setRosterSearch] = useState('');
+
+  // Up to 4 individually-dated payments per fiscal year, replacing the old
+  // single Amount Paid / Payment Date / Payment Method fields in Edit Record.
+  const emptyPaymentRow = { date: '', amount: '', method: 'Bank Transfer' };
+  const [paymentRows, setPaymentRows] = useState([{ ...emptyPaymentRow }, { ...emptyPaymentRow }, { ...emptyPaymentRow }, { ...emptyPaymentRow }]);
+  const [stripePaymentsForEdit, setStripePaymentsForEdit] = useState([]);
+  const [isSavingPayments, setIsSavingPayments] = useState(false);
+
+  const fetchMemberPayments = async (memberId) => {
+    try {
+      const token = localStorage.getItem('optimist_token') || '';
+      const res = await fetch(`/api/dues?memberId=${encodeURIComponent(memberId)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      return (res.ok && data.success && Array.isArray(data.payments)) ? data.payments : [];
+    } catch (err) {
+      console.warn('Failed to load payment history:', err);
+      return [];
+    }
+  };
+
+  const updatePaymentRow = (index, field, value) => {
+    setPaymentRows(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  };
+
+  const handleOpenStatement = async (member) => {
+    setStatementModalMember(member);
+    setStatementPayments([]);
+    const payments = await fetchMemberPayments(member.id);
+    const fiscalYear = member.fiscalYear || '2025/2026 (Oct 1 - Sep 30)';
+    setStatementPayments(
+      payments
+        .filter(p => p.fiscal_year === fiscalYear)
+        .sort((a, b) => new Date(a.paid_at) - new Date(b.paid_at))
+    );
+  };
+
+  // Live-computed from the 4 rows as the Treasurer types, purely for display
+  // before saving - the authoritative totals come back from the server.
+  const paymentRowsTotal = paymentRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
   const bankDetails = {
     bank: "Scotiabank (Barbados) Ltd.",
@@ -159,12 +202,10 @@ export const AdminSettingsPage = () => {
     duesRate: '',
     amountPaid: '',
     balanceDue: '',
-    paymentMethod: '',
-    duesStatus: '',
-    lastPaymentDate: ''
+    duesStatus: ''
   });
 
-  const handleStartEdit = (m) => {
+  const handleStartEdit = async (m) => {
     setSelectedMemberToEdit(m);
     setEditForm({
       name: m.name || '',
@@ -176,18 +217,39 @@ export const AdminSettingsPage = () => {
       duesRate: m.duesRate || siteSettings?.annualDuesRate || '$200.00',
       amountPaid: m.amountPaid || '$0.00',
       balanceDue: m.balanceDue || '$0.00',
-      paymentMethod: m.paymentMethod || 'Bank Transfer',
-      duesStatus: m.duesStatus || 'Active Member (Dues Paid)',
-      lastPaymentDate: m.lastPaymentDate || '2025-10-01'
+      duesStatus: m.duesStatus || 'Active Member (Dues Paid)'
     });
+
+    // Manual (Treasurer-entered) payments populate the 4 edit rows; real
+    // Stripe payments are shown separately as read-only context.
+    setPaymentRows([{ ...emptyPaymentRow }, { ...emptyPaymentRow }, { ...emptyPaymentRow }, { ...emptyPaymentRow }]);
+    setStripePaymentsForEdit([]);
+    const payments = await fetchMemberPayments(m.id);
+    const fiscalYear = m.fiscalYear || '2025/2026 (Oct 1 - Sep 30)';
+    const forThisYear = payments.filter(p => p.fiscal_year === fiscalYear);
+    const manual = forThisYear.filter(p => !p.stripe_session_id);
+    const stripe = forThisYear.filter(p => p.stripe_session_id);
+
+    if (manual.length > 0) {
+      setPaymentRows(prev => prev.map((row, i) => (
+        manual[i] ? { date: String(manual[i].paid_at).split('T')[0], amount: String(manual[i].amount_bbd), method: manual[i].payment_method } : row
+      )));
+    }
+    setStripePaymentsForEdit(stripe);
   };
 
-  const handleSaveMemberRecord = (e) => {
+  const handleSaveMemberRecord = async (e) => {
     e.preventDefault();
     if (!selectedMemberToEdit) return;
+    setIsSavingPayments(true);
+
     updateMemberRecord(selectedMemberToEdit.id, editForm);
+    const fiscalYear = selectedMemberToEdit.fiscalYear || '2025/2026 (Oct 1 - Sep 30)';
+    await updateMemberPayments(selectedMemberToEdit.id, fiscalYear, editForm.duesRate, paymentRows);
+
+    setIsSavingPayments(false);
     setSelectedMemberToEdit(null);
-    setStatusMsg(`Successfully updated member record details and dues for ${editForm.name}.`);
+    setStatusMsg(`Successfully updated member record, dues, and payments for ${editForm.name}.`);
     setTimeout(() => setStatusMsg(''), 4000);
   };
 
@@ -1119,7 +1181,7 @@ export const AdminSettingsPage = () => {
                         {/* Member Name Link -> Opens Member Statement Modal */}
                         <td className="p-4">
                           <button
-                            onClick={() => setStatementModalMember(member)}
+                            onClick={() => handleOpenStatement(member)}
                             className="font-bold text-optimist-blue dark:text-amber-400 hover:underline text-sm text-left flex items-center gap-1.5 group"
                             title="Click to view Official Dues Statement"
                           >
@@ -1188,7 +1250,7 @@ export const AdminSettingsPage = () => {
                         {/* Action Buttons */}
                         <td className="p-4 text-right space-y-1.5">
                           <button
-                            onClick={() => setStatementModalMember(member)}
+                            onClick={() => handleOpenStatement(member)}
                             className="w-full px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
                           >
                             <FileText className="w-3 h-3" /> View Statement
@@ -1296,12 +1358,23 @@ export const AdminSettingsPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    <tr>
-                      <td className="p-2.5 font-mono text-slate-500">{statementModalMember.lastPaymentDate}</td>
-                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">Annual Club Dues (2025/2026)</td>
-                      <td className="p-2.5 text-slate-500">{statementModalMember.paymentMethod}</td>
-                      <td className="p-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid}</td>
-                    </tr>
+                    {statementPayments.length > 0 ? (
+                      statementPayments.map(p => (
+                        <tr key={p.id}>
+                          <td className="p-2.5 font-mono text-slate-500">{String(p.paid_at).split('T')[0]}</td>
+                          <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                            Annual Club Dues ({statementModalMember.fiscalYear || '2025/2026'})
+                            {p.stripe_session_id && <span className="ml-1.5 text-[9px] font-bold uppercase text-blue-500">Card</span>}
+                          </td>
+                          <td className="p-2.5 text-slate-500">{p.payment_method}</td>
+                          <td className="p-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">${Number(p.amount_bbd).toFixed(2)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="p-3 text-center text-slate-400 italic">No payments recorded for this fiscal year yet.</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2009,8 +2082,8 @@ export const AdminSettingsPage = () => {
                   <DollarSign className="w-3.5 h-3.5" /> Dues Ledger & Payment Details
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {/* 6. Yearly Dues Amount */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Yearly Dues Rate */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                       Yearly Dues Rate *
@@ -2024,83 +2097,7 @@ export const AdminSettingsPage = () => {
                     />
                   </div>
 
-                  {/* 7. Amount Paid */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                      Amount Paid *
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.amountPaid}
-                      onChange={e => setEditForm({ ...editForm, amountPaid: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                      required
-                    />
-                  </div>
-
-                  {/* 8. Balance Due */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                      Balance Due *
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.balanceDue}
-                      onChange={e => setEditForm({ ...editForm, balanceDue: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                      required
-                    />
-                  </div>
-
-                  {/* 9. Payment Method */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                      Payment Method
-                    </label>
-                    <select
-                      value={['Bank Transfer', 'Credit Card', 'Cheque', 'Cash', 'In-kind', 'Pending'].includes(editForm.paymentMethod) ? editForm.paymentMethod : 'Other'}
-                      onChange={e => {
-                        const val = e.target.value;
-                        if (val === 'Other') {
-                          setEditForm({ ...editForm, paymentMethod: 'Other' });
-                        } else {
-                          setEditForm({ ...editForm, paymentMethod: val });
-                        }
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                    >
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Credit Card">Credit Card</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Cash">Cash</option>
-                      <option value="In-kind">In-kind</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  {/* Show text input if "Other" is chosen */}
-                  {!['Bank Transfer', 'Credit Card', 'Cheque', 'Cash', 'In-kind', 'Pending'].includes(editForm.paymentMethod) && (
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                          Specify Other Method *
-                        </label>
-                        <span className="text-[9px] text-slate-400 font-mono">Max 15 chars</span>
-                      </div>
-                      <input
-                        type="text"
-                        maxLength={15}
-                        value={editForm.paymentMethod === 'Other' ? '' : editForm.paymentMethod}
-                        onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
-                        placeholder="e.g. Card, Draft"
-                        className="w-full px-3 py-2 rounded-xl border border-amber-400 dark:border-amber-400 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                        required
-                      />
-                    </div>
-                  )}
-
-                  {/* 10. Dues Status */}
+                  {/* Dues Status */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                       Dues Status
@@ -2117,18 +2114,85 @@ export const AdminSettingsPage = () => {
                     </select>
                   </div>
 
-                  {/* 11. Last Payment Date */}
+                  {/* Amount Paid - computed from the payment rows below, not typed */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                      Payment Date
+                      Amount Paid (computed)
                     </label>
-                    <input
-                      type="date"
-                      value={editForm.lastPaymentDate}
-                      onChange={e => setEditForm({ ...editForm, lastPaymentDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                    />
+                    <div className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      ${paymentRowsTotal.toFixed(2)}
+                    </div>
                   </div>
+
+                  {/* Balance Due - computed from Dues Rate minus payments */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                      Balance Due (computed)
+                    </label>
+                    <div className={`w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-xs font-bold ${
+                      (Number(String(editForm.duesRate).replace(/[^0-9.]/g, '')) || 0) - paymentRowsTotal > 0
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {(() => {
+                        const balance = (Number(String(editForm.duesRate).replace(/[^0-9.]/g, '')) || 0) - paymentRowsTotal;
+                        return balance < 0 ? `-$${Math.abs(balance).toFixed(2)}` : `$${balance.toFixed(2)}`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Itemized Payments - up to 4 per fiscal year */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Payments This Fiscal Year (up to 4)
+                  </label>
+                  <div className="space-y-2">
+                    {paymentRows.map((row, index) => (
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                        <input
+                          type="date"
+                          value={row.date}
+                          onChange={e => updatePaymentRow(index, 'date', e.target.value)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                        />
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Amount"
+                          value={row.amount}
+                          onChange={e => updatePaymentRow(index, 'amount', e.target.value)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                        />
+                        <select
+                          value={row.method}
+                          onChange={e => updatePaymentRow(index, 'method', e.target.value)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                        >
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="Cash">Cash</option>
+                          <option value="In-kind">In-kind</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+
+                  {stripePaymentsForEdit.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-bold uppercase text-slate-500">
+                        Also on file (paid by card via Stripe - not editable here)
+                      </span>
+                      {stripePaymentsForEdit.map(p => (
+                        <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-[11px] text-slate-600 dark:text-slate-300">
+                          <span>{String(p.paid_at).split('T')[0]} • {p.payment_method}</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(p.amount_bbd).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2143,10 +2207,11 @@ export const AdminSettingsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl gold-gradient hover:brightness-110 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                  disabled={isSavingPayments}
+                  className="px-5 py-2 rounded-xl gold-gradient hover:brightness-110 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-60"
                 >
                   <Save className="w-4 h-4 text-slate-950" />
-                  <span>Save Record Changes</span>
+                  <span>{isSavingPayments ? 'Saving...' : 'Save Record Changes'}</span>
                 </button>
               </div>
             </form>

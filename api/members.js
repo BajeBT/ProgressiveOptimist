@@ -269,14 +269,14 @@ async function handleUpdateRecord(req, res) {
         admin_granted_at = ${adminGrantedAt}
     WHERE id = ${memberId};
   `;
+  // amount_paid, balance_due, payment_method, and last_payment_date are
+  // deliberately not written here - they're owned exclusively by the
+  // update-payments action, computed from the itemized dues_payments rows,
+  // so this can't overwrite them with stale form values.
   await sql`
     UPDATE dues_ledger
     SET dues_rate = ${fields.duesRate},
-        amount_paid = ${fields.amountPaid},
-        balance_due = ${fields.balanceDue},
-        payment_method = ${fields.paymentMethod},
         dues_status = ${fields.duesStatus},
-        last_payment_date = ${fields.lastPaymentDate},
         updated_at = CURRENT_TIMESTAMP
     WHERE member_id = ${memberId};
   `;
