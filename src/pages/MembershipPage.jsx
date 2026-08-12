@@ -35,7 +35,8 @@ import {
   Users,
   Eye,
   Loader2,
-  MapPin
+  MapPin,
+  XCircle
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -107,6 +108,22 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       setVerifyEmail(email);
       setVerifyToken(token);
       setAuthTab('verify');
+    }
+  }, []);
+
+  // Stripe redirects back here after a dues checkout - read the outcome
+  // from the URL. The real dues record update happens via the webhook;
+  // this is just for showing the right message on return.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('duesPaid') === 'true') {
+      updateDuesStatus('Active Member in Good Standing (2025/2026)');
+      setDuesPaymentMsg(true);
+    } else if (params.get('duesCanceled') === 'true') {
+      setDuesCanceled(true);
+    }
+    if (params.has('duesPaid') || params.has('duesCanceled')) {
+      window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
@@ -388,6 +405,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
   // Dues payment status message state
   const [duesPaymentMsg, setDuesPaymentMsg] = useState(false);
+  const [duesCanceled, setDuesCanceled] = useState(false);
+  const [duesPaymentError, setDuesPaymentError] = useState('');
+  const [isPayingDues, setIsPayingDues] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
   // Treasurer Search Filter & Checkbox selection state
@@ -441,9 +461,31 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     }
   };
 
-  const handlePayDues = () => {
-    updateDuesStatus('Active Member in Good Standing (2025/2026)');
-    setDuesPaymentMsg(true);
+  const handlePayDues = async () => {
+    setDuesPaymentError('');
+    setIsPayingDues(true);
+    try {
+      const res = await fetch('/api/create-dues-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: currentUser.memberId,
+          memberName: currentUser.name,
+          memberEmail: currentUser.email
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setDuesPaymentError(data.message || 'Failed to start checkout. Please try again.');
+        setIsPayingDues(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('Dues checkout error:', err);
+      setDuesPaymentError('Network error. Please try again.');
+      setIsPayingDues(false);
+    }
   };
 
   const handleTreasurerUpdateStatus = (memberId, memberName, newStatus) => {
@@ -1097,6 +1139,20 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   <strong className="text-sm text-optimist-blue dark:text-amber-400 font-heading">Dues: BDS$ 250.00 / Year</strong>
                 </div>
 
+                {duesCanceled && (
+                  <div className="p-3 rounded-xl bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold flex items-start gap-2">
+                    <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Checkout was canceled. No charge was made - feel free to try again whenever you're ready.</span>
+                  </div>
+                )}
+
+                {duesPaymentError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{duesPaymentError}</span>
+                  </div>
+                )}
+
                 {duesPaymentMsg ? (
                   <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-xs font-bold text-emerald-900 dark:text-emerald-200 space-y-1">
                     <div className="flex items-center gap-2">
@@ -1128,10 +1184,20 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   <div className="pt-2 flex flex-wrap items-center gap-3">
                     <button
                       onClick={handlePayDues}
-                      className="px-5 py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow hover:brightness-110 transition-all flex items-center gap-2"
+                      disabled={isPayingDues}
+                      className="px-5 py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-60"
                     >
-                      <CreditCard className="w-4 h-4" />
-                      <span>Pay Dues & Update Record ($250)</span>
+                      {isPayingDues ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Redirecting to secure checkout…</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          <span>Pay Dues & Update Record ($250)</span>
+                        </>
+                      )}
                     </button>
 
                     {canAccessTreasurerConsole && (

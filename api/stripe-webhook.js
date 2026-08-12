@@ -39,27 +39,47 @@ export default async function handler(req, res) {
   }
 
   // Only checkout.session.completed is treated as proof of payment - never
-  // the client-side redirect back to /donate, which anyone could fake.
+  // the client-side redirect back to /donate or /membership, which anyone
+  // could fake by just visiting the URL with the right query string.
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const meta = session.metadata || {};
 
     try {
-      await sql`
-        INSERT INTO donations (stripe_session_id, donor_name, donor_email, bbd_amount, usd_amount, status, paid_at)
-        VALUES (
-          ${session.id},
-          ${meta.donorName || null},
-          ${session.customer_details?.email || session.customer_email || null},
-          ${Number(meta.bbdAmount) || 0},
-          ${Number(meta.usdAmount) || (session.amount_total / 100)},
-          'paid',
-          CURRENT_TIMESTAMP
-        )
-        ON CONFLICT (stripe_session_id) DO NOTHING;
-      `;
+      if (meta.type === 'dues_payment') {
+        const today = new Date().toISOString().split('T')[0];
+        const result = await sql`
+          UPDATE dues_ledger
+          SET
+            dues_status = 'Active Member in Good Standing (2025/2026)',
+            last_payment_date = ${today},
+            amount_paid = '$250.00',
+            balance_due = '$0.00',
+            payment_method = 'Card (Stripe)',
+            updated_at = CURRENT_TIMESTAMP
+          WHERE member_id = ${meta.memberId}
+          RETURNING member_id;
+        `;
+        if (result.length === 0) {
+          console.warn('Dues webhook: no dues_ledger row for member_id', meta.memberId);
+        }
+      } else {
+        await sql`
+          INSERT INTO donations (stripe_session_id, donor_name, donor_email, bbd_amount, usd_amount, status, paid_at)
+          VALUES (
+            ${session.id},
+            ${meta.donorName || null},
+            ${session.customer_details?.email || session.customer_email || null},
+            ${Number(meta.bbdAmount) || 0},
+            ${Number(meta.usdAmount) || (session.amount_total / 100)},
+            'paid',
+            CURRENT_TIMESTAMP
+          )
+          ON CONFLICT (stripe_session_id) DO NOTHING;
+        `;
+      }
     } catch (err) {
-      console.error('Failed to record donation:', err);
+      console.error('Failed to record payment:', err);
       return res.status(500).send('Database error');
     }
   }
