@@ -37,7 +37,10 @@ import {
   EyeOff,
   Loader2,
   MapPin,
-  XCircle
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 
 export const MembershipPage = ({ onOpenPostModal }) => {
@@ -56,6 +59,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     projects,
     memberGallery,
     addGalleryPhoto,
+    deleteGalleryPhoto,
     siteSettings
   } = useAuth();
 
@@ -218,7 +222,156 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     }
   };
 
+  // Predefined Google Photos Shared Albums
+  const PREDEFINED_ALBUMS = useMemo(() => [
+    { id: 'highlights', title: 'Highlights4Website', url: 'https://photos.app.goo.gl/sbLWaXTv6uEHsFtS8' },
+    { id: 'cibc-2026', title: '2026 CIBC', url: 'https://photos.app.goo.gl/wRpDe4Li5XqTW16V6' },
+    { id: 'rise-2025', title: 'RISE 2025 Closing Ceremony', url: 'https://photos.app.goo.gl/SJFzS37o9MxsHSri9' }
+  ], []);
+
+  const [albumsList, setAlbumsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('optimist_shared_albums');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to parse optimist_shared_albums", e);
+    }
+    return [
+      { id: 'highlights', title: 'Highlights4Website', url: 'https://photos.app.goo.gl/sbLWaXTv6uEHsFtS8' },
+      { id: 'cibc-2026', title: '2026 CIBC', url: 'https://photos.app.goo.gl/wRpDe4Li5XqTW16V6' },
+      { id: 'rise-2025', title: 'RISE 2025 Closing Ceremony', url: 'https://photos.app.goo.gl/SJFzS37o9MxsHSri9' }
+    ];
+  });
+
+  const [selectedAlbumUrl, setSelectedAlbumUrl] = useState(PREDEFINED_ALBUMS[0].url);
+  const [activeAlbumPhotos, setActiveAlbumPhotos] = useState([]);
+  const [isLoadingAlbum, setIsLoadingAlbum] = useState(false);
+
+  // Admin Add Album Modal state
+  const [showAddAlbumModal, setShowAddAlbumModal] = useState(false);
+  const [newAlbumTitle, setNewAlbumTitle] = useState('');
+  const [newAlbumUrl, setNewAlbumUrl] = useState('');
+  const [addAlbumError, setAddAlbumError] = useState('');
+
+  // Fetch photos for the currently selected album
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAlbumPhotos() {
+      if (!selectedAlbumUrl) return;
+      setIsLoadingAlbum(true);
+      try {
+        const res = await fetch(`/api/gallery-list?albumUrl=${encodeURIComponent(selectedAlbumUrl)}`);
+        const data = await res.json();
+        if (isMounted && data.success && Array.isArray(data.albumPhotos)) {
+          setActiveAlbumPhotos(data.albumPhotos);
+        }
+      } catch (err) {
+        console.warn("Error fetching album photos:", err);
+      } finally {
+        if (isMounted) setIsLoadingAlbum(false);
+      }
+    }
+    loadAlbumPhotos();
+    return () => { isMounted = false; };
+  }, [selectedAlbumUrl]);
+
+  const currentSelectedAlbum = useMemo(() => {
+    return albumsList.find(a => a.url === selectedAlbumUrl) || albumsList[0] || { title: 'Highlights4Website' };
+  }, [albumsList, selectedAlbumUrl]);
+
+  const handleAddAlbumSubmit = (e) => {
+    e.preventDefault();
+    setAddAlbumError('');
+    if (!newAlbumTitle.trim() || !newAlbumUrl.trim()) {
+      setAddAlbumError('Album title and shared album link are required.');
+      return;
+    }
+    if (!newAlbumUrl.startsWith('http')) {
+      setAddAlbumError('Please enter a valid Google Photos shared link (e.g. https://photos.app.goo.gl/...).');
+      return;
+    }
+    const newAlbum = {
+      id: 'custom-' + Date.now(),
+      title: newAlbumTitle.trim(),
+      url: newAlbumUrl.trim()
+    };
+    const updatedList = [...albumsList, newAlbum];
+    setAlbumsList(updatedList);
+    try {
+      localStorage.setItem('optimist_shared_albums', JSON.stringify(updatedList));
+    } catch (err) {
+      console.warn("Failed to save shared albums to localStorage", err);
+    }
+    setSelectedAlbumUrl(newAlbum.url);
+    setNewAlbumTitle('');
+    setNewAlbumUrl('');
+    setShowAddAlbumModal(false);
+  };
+
   // Gallery photo upload state
+  const websitePhotos = useMemo(() => (memberGallery || []).filter(g => g.source !== 'google_album'), [memberGallery]);
+  const googleAlbumPhotos = useMemo(() => {
+    if (activeAlbumPhotos.length > 0) return activeAlbumPhotos;
+    return (memberGallery || []).filter(g => g.source === 'google_album');
+  }, [activeAlbumPhotos, memberGallery]);
+  const allGalleryPhotos = useMemo(() => [...websitePhotos, ...googleAlbumPhotos], [websitePhotos, googleAlbumPhotos]);
+
+  const [selectedLightboxIndex, setSelectedLightboxIndex] = useState(null);
+  const [photoToDelete, setPhotoToDelete] = useState(null);
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false);
+
+  const canManageAlbums = useMemo(() => {
+    if (!currentUser) return false;
+    const role = (currentUser.role || '').toLowerCase();
+    const access = (currentUser.access || '').toLowerCase();
+    return ['super admin', 'admin', 'finance', 'executive', 'officer', 'president', 'treasurer'].includes(role) ||
+           ['super admin', 'admin', 'finance'].includes(access) ||
+           currentUser.isAdmin === true;
+  }, [currentUser]);
+
+  const canDeletePhoto = (photo) => {
+    if (!currentUser || !photo || photo.source === 'google_album') return false;
+    const role = (currentUser.role || '').toLowerCase();
+    const access = (currentUser.access || '').toLowerCase();
+    const isAdminOrFinance = ['super admin', 'admin', 'finance', 'executive', 'officer', 'president', 'treasurer'].includes(role) ||
+                             ['super admin', 'admin', 'finance'].includes(access) ||
+                             currentUser.isAdmin === true;
+    const isUploader = (photo.uploader_id && currentUser.memberId && photo.uploader_id === currentUser.memberId) ||
+                       (photo.uploader && currentUser.name && photo.uploader.toLowerCase() === currentUser.name.toLowerCase());
+    return isAdminOrFinance || isUploader;
+  };
+
+  const confirmDeletePhoto = async () => {
+    if (!photoToDelete) return;
+    setIsDeletingPhoto(true);
+    const res = await deleteGalleryPhoto(photoToDelete.id);
+    setIsDeletingPhoto(false);
+    if (res.success) {
+      setPhotoToDelete(null);
+      if (selectedLightboxIndex !== null) setSelectedLightboxIndex(null);
+    } else {
+      alert(res.message || 'Failed to delete photo.');
+    }
+  };
+
+  useEffect(() => {
+    if (selectedLightboxIndex === null) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        setSelectedLightboxIndex(prev => (prev > 0 ? prev - 1 : allGalleryPhotos.length - 1));
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        setSelectedLightboxIndex(prev => (prev < allGalleryPhotos.length - 1 ? prev + 1 : 0));
+      } else if (e.key === 'Escape') {
+        setSelectedLightboxIndex(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedLightboxIndex, allGalleryPhotos.length]);
+
   const [photoUploadModal, setPhotoUploadModal] = useState(false);
   const [photoTitle, setPhotoTitle] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
@@ -926,35 +1079,347 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
         {/* Tab 2: Member Photo Gallery */}
         {dashboardTab === 'gallery' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
-                Optimist Activity Photo Album
-              </h2>
+          <div className="space-y-10">
+            {/* Section 1: Website Uploaded Photos */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+                    Website Uploaded Photos ({websitePhotos.length})
+                  </h2>
+                  <p className="text-xs text-slate-500">Photos uploaded directly by members through the portal</p>
+                </div>
+                <button
+                  onClick={() => setPhotoUploadModal(true)}
+                  className="text-xs font-bold text-optimist-blue dark:text-amber-400 flex items-center gap-1 hover:underline"
+                >
+                  <Upload className="w-4 h-4" /> Upload New Photo
+                </button>
+              </div>
+
+              {websitePhotos.length === 0 ? (
+                <div className="p-8 text-center glass-card rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-slate-500 text-sm">
+                  No direct website uploads yet. Click "Upload New Photo" above to add one!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {websitePhotos.map((g, idx) => (
+                    <div 
+                      key={g.id} 
+                      onClick={() => setSelectedLightboxIndex(idx)}
+                      className="rounded-2xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 group cursor-pointer hover:shadow-lg transition-all relative"
+                    >
+                      <div className="h-48 bg-slate-900 overflow-hidden relative">
+                        <img src={g.image} alt={g.title} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                          <Eye className="w-4 h-4" /> View Full Image
+                        </div>
+                        {canDeletePhoto(g) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPhotoToDelete(g);
+                            }}
+                            className="absolute top-3 right-3 p-2 rounded-xl bg-rose-500/80 hover:bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
+                            title="Delete Photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="p-4 space-y-1">
+                        <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{g.title}</h3>
+                        <p className="text-xs text-slate-500">{g.caption}</p>
+                        <div className="text-[10px] text-slate-400 pt-2 flex justify-between">
+                          <span>Uploaded by {g.uploader}</span>
+                          <span>{g.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Section 2: Photos from the Selected Google Photos Shared Album */}
+            <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">
+                    Photos from the {currentSelectedAlbum.title} Album of ProgressiveOC@gmail.com ({googleAlbumPhotos.length})
+                  </h3>
+                  <p className="text-xs text-slate-500">Live sync from the Google Photos Shared Album</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedAlbumUrl}
+                    onChange={(e) => setSelectedAlbumUrl(e.target.value)}
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-optimist-blue cursor-pointer shadow-sm hover:border-slate-400"
+                  >
+                    {albumsList.map((album) => (
+                      <option key={album.url} value={album.url}>
+                        📷 {album.title}
+                      </option>
+                    ))}
+                  </select>
+
+                  {canManageAlbums && (
+                    <button
+                      onClick={() => setShowAddAlbumModal(true)}
+                      className="text-xs font-bold px-3 py-2 rounded-xl bg-slate-900 text-white dark:bg-amber-400 dark:text-slate-950 flex items-center gap-1 hover:opacity-90 shadow-sm transition-all whitespace-nowrap"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> Add Album
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isLoadingAlbum ? (
+                <div className="p-8 text-center glass-card rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-sm flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-optimist-blue" /> Loading photos from {currentSelectedAlbum.title}...
+                </div>
+              ) : googleAlbumPhotos.length === 0 ? (
+                <div className="p-8 text-center glass-card rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-slate-500 text-sm">
+                  No photos found in {currentSelectedAlbum.title}.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {googleAlbumPhotos.map((g, idx) => (
+                    <div 
+                      key={g.id} 
+                      onClick={() => setSelectedLightboxIndex(websitePhotos.length + idx)}
+                      className="rounded-2xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 group cursor-pointer hover:shadow-lg transition-all"
+                    >
+                      <div className="h-48 bg-slate-900 overflow-hidden relative">
+                        <img src={g.image} alt={g.title} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                          <Eye className="w-4 h-4" /> View Full Image
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-1">
+                        <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{currentSelectedAlbum.title}</h3>
+                        <div className="text-[10px] text-slate-400 pt-2 flex justify-between">
+                          <span>Google Photos Album</span>
+                          <span>{g.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Full-Screen Image Lightbox Modal with Next / Prev Navigation */}
+        {selectedLightboxIndex !== null && allGalleryPhotos[selectedLightboxIndex] && (
+          <div 
+            className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-fadeIn select-none"
+            onClick={() => setSelectedLightboxIndex(null)}
+          >
+            {/* Top Bar */}
+            <div className="w-full flex items-center justify-between z-20 px-2 sm:px-6 py-2" onClick={(e) => e.stopPropagation()}>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-300 bg-slate-800/80 backdrop-blur px-3 py-1.5 rounded-full border border-slate-700">
+                Photo {selectedLightboxIndex + 1} of {allGalleryPhotos.length}
+              </div>
               <button
-                onClick={() => setPhotoUploadModal(true)}
-                className="text-xs font-bold text-optimist-blue dark:text-amber-400 flex items-center gap-1 hover:underline"
+                onClick={() => setSelectedLightboxIndex(null)}
+                className="text-white/80 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2.5 rounded-full transition-all border border-slate-700"
+                title="Close (Esc)"
               >
-                <Upload className="w-4 h-4" /> Upload New Photo
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {memberGallery.map((g) => (
-                <div key={g.id} className="rounded-2xl overflow-hidden glass-card border border-slate-200 dark:border-slate-800 group">
-                  <div className="h-48 bg-slate-900 overflow-hidden relative">
-                    <img src={g.image} alt={g.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            {/* Main Center Image Display with Floating Left / Right Navigation */}
+            <div className="relative w-full flex-1 flex items-center justify-center my-2" onClick={(e) => e.stopPropagation()}>
+              {/* Previous Button */}
+              <button
+                onClick={() => setSelectedLightboxIndex(prev => (prev > 0 ? prev - 1 : allGalleryPhotos.length - 1))}
+                className="absolute left-2 sm:left-6 z-20 p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white shadow-2xl border border-slate-700/80 transition-transform hover:scale-110"
+                title="Previous Photo (Left Arrow)"
+              >
+                <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+              </button>
+
+              {/* High Res Image */}
+              <div className="max-w-5xl max-h-[78vh] flex items-center justify-center overflow-hidden rounded-2xl border border-slate-800 shadow-2xl bg-black">
+                <img 
+                  key={allGalleryPhotos[selectedLightboxIndex].id}
+                  src={allGalleryPhotos[selectedLightboxIndex].image.replace(/=(w\d+-h\d+-no|w\d+-h\d+-c|s\d+)/, '=w1600-h1600')} 
+                  alt={allGalleryPhotos[selectedLightboxIndex].title}
+                  referrerPolicy="no-referrer"
+                  className="max-h-[76vh] max-w-full object-contain transition-opacity duration-200"
+                />
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setSelectedLightboxIndex(prev => (prev < allGalleryPhotos.length - 1 ? prev + 1 : 0))}
+                className="absolute right-2 sm:right-6 z-20 p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white shadow-2xl border border-slate-700/80 transition-transform hover:scale-110"
+                title="Next Photo (Right Arrow)"
+              >
+                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+              </button>
+            </div>
+
+            {/* Bottom Metadata Info Card */}
+            <div className="z-20 w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl px-6 py-3 text-center text-white space-y-1 shadow-2xl">
+                <h3 className="font-heading font-bold text-sm sm:text-base">{allGalleryPhotos[selectedLightboxIndex].title}</h3>
+                {allGalleryPhotos[selectedLightboxIndex].caption && (
+                  <p className="text-xs text-slate-300">{allGalleryPhotos[selectedLightboxIndex].caption}</p>
+                )}
+                <div className="text-[11px] text-slate-400 flex items-center justify-center gap-3 pt-1">
+                  <span>Uploaded by {allGalleryPhotos[selectedLightboxIndex].uploader}</span>
+                  <span>•</span>
+                  <span>{allGalleryPhotos[selectedLightboxIndex].date}</span>
+                </div>
+
+                {canDeletePhoto(allGalleryPhotos[selectedLightboxIndex]) && (
+                  <button
+                    onClick={() => setPhotoToDelete(allGalleryPhotos[selectedLightboxIndex])}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors pt-1"
+                    title="Delete this website photo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete Photo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Photo Confirmation Modal */}
+        {photoToDelete && (
+          <div 
+            className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+            onClick={() => setPhotoToDelete(null)}
+          >
+            <div 
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="p-2.5 rounded-2xl bg-rose-500/10">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">Delete Website Photo</h3>
+                  <p className="text-xs text-slate-500">This action cannot be undone.</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to delete <span className="font-bold">"{photoToDelete.title}"</span>? This will permanently remove it from the website gallery database.
+              </p>
+
+              <div className="pt-3 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPhotoToDelete(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  disabled={isDeletingPhoto}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeletePhoto}
+                  disabled={isDeletingPhoto}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-md flex items-center gap-1.5"
+                >
+                  {isDeletingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete Permanently
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Add New Shared Album Modal */}
+        {showAddAlbumModal && (
+          <div 
+            className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+            onClick={() => setShowAddAlbumModal(false)}
+          >
+            <div 
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-optimist-blue/10 text-optimist-blue dark:bg-amber-400/10 dark:text-amber-400">
+                    <PlusCircle className="w-5 h-5" />
                   </div>
-                  <div className="p-4 space-y-1">
-                    <h3 className="font-heading font-bold text-sm text-slate-900 dark:text-white">{g.title}</h3>
-                    <p className="text-xs text-slate-500">{g.caption}</p>
-                    <div className="text-[10px] text-slate-400 pt-2 flex justify-between">
-                      <span>Uploaded by {g.uploader}</span>
-                      <span>{g.date}</span>
-                    </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">Add Google Shared Album</h3>
+                    <p className="text-xs text-slate-500">Link an event album from photos.google.com</p>
                   </div>
                 </div>
-              ))}
+                <button
+                  onClick={() => setShowAddAlbumModal(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {addAlbumError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {addAlbumError}
+                </div>
+              )}
+
+              <form onSubmit={handleAddAlbumSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Album Title <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. RISE 2025 Closing Ceremony"
+                    value={newAlbumTitle}
+                    onChange={(e) => setNewAlbumTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-optimist-blue focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Google Photos Shared Link <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://photos.app.goo.gl/..."
+                    value={newAlbumUrl}
+                    onChange={(e) => setNewAlbumUrl(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-optimist-blue focus:outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 pt-0.5">
+                    Open the album on <span className="font-semibold">photos.google.com</span>, click <span className="font-semibold">Share</span> → <span className="font-semibold">Create link</span>, and paste it here.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAlbumModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-optimist-blue text-white hover:bg-optimist-blue/90 shadow-md"
+                  >
+                    Add & Load Album
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -1453,6 +1918,100 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 {copiedBankInfo ? 'Copied!' : 'Copy Bank Details'}
               </button>
             </div>
+
+            {/* Google Photos Shared Albums Management Console */}
+            {canManageAlbums && (
+              <div className="p-6 sm:p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-6 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-optimist-blue/20 text-optimist-blue dark:bg-amber-400/20 dark:text-amber-400 border border-optimist-blue/30">
+                        Admin System Variables
+                      </span>
+                    </div>
+                    <h3 className="font-heading text-xl font-bold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 text-amber-500" />
+                      Google Photos Shared Albums Manager
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Manage the active Google Photos shared albums displayed in the gallery dropdown menu across the website portal.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowAddAlbumModal(true)}
+                    className="px-4 py-2.5 rounded-xl bg-optimist-blue text-white font-bold text-xs shadow hover:bg-blue-800 transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <PlusCircle className="w-4 h-4" /> Add New Shared Album
+                  </button>
+                </div>
+
+                {/* Active Albums Grid */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Configured Shared Albums ({albumsList.length})
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {albumsList.map((album, idx) => (
+                      <div 
+                        key={album.url} 
+                        className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                          selectedAlbumUrl === album.url 
+                            ? 'bg-amber-500/10 border-amber-400 dark:bg-amber-400/10' 
+                            : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                              Album #{idx + 1}
+                            </span>
+                            {selectedAlbumUrl === album.url && (
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                Currently Active
+                              </span>
+                            )}
+                          </div>
+                          <h5 className="font-heading font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{album.title}</h5>
+                          <p className="text-[11px] font-mono text-slate-500 truncate" title={album.url}>{album.url}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+                          <button
+                            onClick={() => setSelectedAlbumUrl(album.url)}
+                            className="font-bold text-optimist-blue dark:text-amber-400 hover:underline text-[11px]"
+                          >
+                            {selectedAlbumUrl === album.url ? 'Viewing Now' : 'Select to View'}
+                          </button>
+
+                          {albumsList.length > 1 && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Remove "${album.title}" from the shared album dropdown?`)) {
+                                  const updated = albumsList.filter(a => a.url !== album.url);
+                                  setAlbumsList(updated);
+                                  try {
+                                    localStorage.setItem('optimist_shared_albums', JSON.stringify(updated));
+                                  } catch (e) {}
+                                  if (selectedAlbumUrl === album.url && updated.length > 0) {
+                                    setSelectedAlbumUrl(updated[0].url);
+                                  }
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                              title="Remove Album"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Controls Bar: Search, Select All, Bulk Email & Export */}
             <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">

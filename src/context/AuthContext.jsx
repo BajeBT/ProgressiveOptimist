@@ -1301,6 +1301,32 @@ Progressive Optimist Club of Barbados
     }
   };
 
+  const deleteGalleryPhoto = async (photoId) => {
+    if (!currentUser) return { success: false, message: 'Must be logged in to delete photos.' };
+    try {
+      const res = await fetch('/api/gallery-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: photoId,
+          userMemberId: currentUser.memberId,
+          userName: currentUser.name,
+          userRole: currentUser.role,
+          userAccess: currentUser.access
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.message || 'Failed to delete photo.' };
+      }
+      setMemberGallery(prev => prev.filter(p => p.id !== photoId));
+      return { success: true };
+    } catch (err) {
+      console.error("Gallery delete error:", err);
+      return { success: false, message: 'Network error while deleting photo. Please try again.' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -1336,6 +1362,7 @@ Progressive Optimist Club of Barbados
         deleteProject,
         memberGallery,
         addGalleryPhoto,
+        deleteGalleryPhoto,
         contactSubjects,
         addContactSubject,
         removeContactSubject,
