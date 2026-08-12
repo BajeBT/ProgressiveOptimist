@@ -1340,6 +1340,17 @@ export const AdminSettingsPage = () => {
                 >
                   <Send className="w-4 h-4 text-amber-300" /> Email Statement
                 </button>
+
+                <button
+                  onClick={() => {
+                    handleStartEdit(statementModalMember);
+                    setStatementModalMember(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl gold-gradient hover:brightness-110 text-slate-950 text-xs font-bold shadow transition-all flex items-center gap-1.5"
+                  title="Edit this member's roster record"
+                >
+                  <Edit3 className="w-4 h-4" /> Edit Roster Record
+                </button>
               </div>
 
               <button
