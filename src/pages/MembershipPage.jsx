@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sql } from '../db/neon';
 import { activeRoster21 } from '../data/rosterData';
 import {
   User,
@@ -45,7 +44,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     currentUser,
     login,
     registerMember,
-    verifyMemberEmailAndPassword,
+    setMemberPassword,
+    changeMyPassword,
     updateDuesStatus,
     memberRoster,
     updateMemberDuesByTreasurer,
@@ -73,6 +73,52 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Change Password modal state (for a logged-in member changing their own)
+  const [changePasswordModal, setChangePasswordModal] = useState(false);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const closeChangePasswordModal = () => {
+    setChangePasswordModal(false);
+    setCurrentPasswordInput('');
+    setNewPasswordInput('');
+    setConfirmPasswordInput('');
+    setChangePasswordError('');
+    setChangePasswordSuccess(false);
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setChangePasswordError('');
+
+    if (newPasswordInput.length < 8) {
+      setChangePasswordError('New password must be at least 8 characters long.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setChangePasswordError('New passwords do not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    const res = await changeMyPassword(currentPasswordInput, newPasswordInput);
+    setIsChangingPassword(false);
+
+    if (res.success) {
+      setChangePasswordSuccess(true);
+      setCurrentPasswordInput('');
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+    } else {
+      setChangePasswordError(res.message || 'Could not change your password.');
+    }
+  };
 
   // Application form state (Structured using the ProgressiveOCB Membership Application template)
   const [appForm, setAppForm] = useState({
@@ -87,13 +133,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     country: 'Barbados',
     dob: '',
     gender: 'Male',
-    hearAboutUs: 'Website',
+    hearAboutUs: '',
     referrerName: '',
     occupation: '',
     employer: '',
     comments: ''
   });
   const [appSuccess, setAppSuccess] = useState(false);
+  const [appError, setAppError] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
 
   // Email verification state variables
   const [verifyEmail, setVerifyEmail] = useState('');
@@ -109,7 +157,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     const email = params.get('email');
     const token = params.get('token');
 
-    if (action === 'verify-email' && email && token) {
+    // 'set-password' is the link emailed to both new applicants verifying their
+    // address and existing members who have never set a password.
+    if ((action === 'set-password' || action === 'verify-email') && email && token) {
       setVerifyEmail(email);
       setVerifyToken(token);
       setAuthTab('verify');
@@ -136,12 +186,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const handleVerifySubmit = async (e) => {
     e.preventDefault();
     setVerifyError('');
-    if (verifyPassword.length < 6) {
-      setVerifyError('Password must be at least 6 characters long.');
+    if (verifyPassword.length < 8) {
+      setVerifyError('Password must be at least 8 characters long.');
       return;
     }
 
-    const res = await verifyMemberEmailAndPassword(verifyEmail, verifyPassword);
+    const res = await setMemberPassword(verifyEmail, verifyToken, verifyPassword);
     if (res.success) {
       setVerifySuccess(true);
       setTimeout(() => {
@@ -423,13 +473,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     if (!currentUser?.memberId) return;
     (async () => {
       try {
-        const rows = await sql`
-          SELECT fiscal_year, amount_bbd, payment_method, paid_at
-          FROM dues_payments
-          WHERE member_id = ${currentUser.memberId}
-          ORDER BY paid_at DESC;
-        `;
-        setDuesPaymentHistory(rows);
+        const token = localStorage.getItem('optimist_token') || '';
+        const res = await fetch(`/api/dues?memberId=${encodeURIComponent(currentUser.memberId)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        const data = await res.json();
+        if (res.ok && data.success) setDuesPaymentHistory(data.payments);
       } catch (err) {
         console.warn("Failed to load dues payment history:", err);
       }
@@ -459,32 +508,27 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     setTimeout(() => setCopiedBankInfo(false), 3000);
   };
 
-  // Handle Demo Member Login
-  const handleDemoLogin = () => {
-    login('member@progressiveoptimist.org', 'optimist2025');
-  };
-
-  // Handle Demo Treasurer Login with specified credentials
-  const handleTreasurerLogin = () => {
-    setLoginEmail('treasurer@progressiveoptimist.org');
-    setLoginPassword('Temp@1234');
-    login('treasurer@progressiveoptimist.org', 'Temp@1234');
-  };
-
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
-    const res = login(loginEmail, loginPassword);
+    setIsLoggingIn(true);
+    const res = await login(loginEmail, loginPassword);
+    setIsLoggingIn(false);
     if (!res.success) {
       setLoginError(res.message);
     }
   };
 
-  const handleAppSubmit = (e) => {
+  const handleAppSubmit = async (e) => {
     e.preventDefault();
-    const res = registerMember(appForm);
+    setAppError('');
+    setIsApplying(true);
+    const res = await registerMember(appForm);
+    setIsApplying(false);
     if (res.success) {
       setAppSuccess(true);
+    } else {
+      setAppError(res.message);
     }
   };
 
@@ -745,6 +789,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             >
               <Upload className="w-4 h-4 text-amber-400" />
               <span>Upload Photo</span>
+            </button>
+
+            <button
+              onClick={() => setChangePasswordModal(true)}
+              className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition-all text-xs flex items-center gap-2"
+              title="Change Password"
+            >
+              <Lock className="w-4 h-4 text-amber-400" />
+              <span>Change Password</span>
             </button>
 
             <button
@@ -1714,6 +1767,96 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           </div>
         )}
 
+        {/* CHANGE PASSWORD MODAL */}
+        {changePasswordModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-optimist-blue" />
+                <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">Change Password</h3>
+              </div>
+
+              {changePasswordSuccess ? (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Your password has been changed successfully.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeChangePasswordModal}
+                    className="w-full py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
+                  {changePasswordError && (
+                    <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{changePasswordError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Current Password *</label>
+                    <input
+                      type="password"
+                      value={currentPasswordInput}
+                      onChange={e => setCurrentPasswordInput(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                      autoComplete="current-password"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">New Password (min. 8 characters) *</label>
+                    <input
+                      type="password"
+                      value={newPasswordInput}
+                      onChange={e => setNewPasswordInput(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Confirm New Password *</label>
+                    <input
+                      type="password"
+                      value={confirmPasswordInput}
+                      onChange={e => setConfirmPasswordInput(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={closeChangePasswordModal}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isChangingPassword}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition-colors disabled:opacity-60"
+                    >
+                      {isChangingPassword ? 'Changing...' : 'Change Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* PHOTO UPLOAD MODAL */}
         {photoUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
@@ -2041,22 +2184,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               Log In To Your Account
             </h2>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                onClick={handleTreasurerLogin}
-                className="text-[11px] font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 transition-all"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>★ Auto-Fill & Login as Treasurer (Sharon Mohammed)</span>
-              </button>
-
-              <button
-                onClick={handleDemoLogin}
-                className="text-[11px] font-bold text-optimist-blue dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 hover:underline"
-              >
-                Member Demo Login
-              </button>
-            </div>
           </div>
 
           {loginError && (
@@ -2077,7 +2204,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   type="email"
                   value={loginEmail}
                   onChange={e => setLoginEmail(e.target.value)}
-                  placeholder="treasurer@progressiveoptimist.org"
+                  placeholder="you@example.com"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                   required
                 />
@@ -2103,9 +2230,11 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow-md transition-colors"
+              disabled={isLoggingIn}
+              className="w-full py-3 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
             >
-              Sign In As Member
+              {isLoggingIn && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {isLoggingIn ? 'Signing In…' : 'Sign In As Member'}
             </button>
           </form>
         </div>
@@ -2136,7 +2265,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             </div>
           ) : (
             <form onSubmit={handleAppSubmit} className="space-y-5">
-              
+
+              {appError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{appError}</span>
+                </div>
+              )}
+
               {/* Section 1: Contact Information */}
               <div className="space-y-4">
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1.5 w-fit">
@@ -2323,14 +2459,16 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">How did you hear about us?</label>
+                    <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">How did you hear about us? *</label>
                     <select
                       value={appForm.hearAboutUs}
                       onChange={e => setAppForm({ ...appForm, hearAboutUs: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none font-semibold text-slate-800 dark:text-slate-200"
+                      required
                     >
-                      <option value="Social Media">Social Media</option>
+                      <option value="" disabled>Please select...</option>
                       <option value="Referral">Referral</option>
+                      <option value="Social Media">Social Media</option>
                       <option value="Website">Website</option>
                       <option value="Flyer/Poster">Flyer/Poster</option>
                       <option value="Other">Other</option>
@@ -2366,9 +2504,11 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-semibold text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                disabled={isApplying}
+                className="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-semibold text-xs shadow hover:brightness-110 transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
-                <span>Submit Membership Application</span>
+                {isApplying && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isApplying ? 'Submitting…' : 'Submit Membership Application'}</span>
               </button>
             </form>
           )}

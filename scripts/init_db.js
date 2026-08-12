@@ -1,8 +1,8 @@
+import 'dotenv/config';
 import { neon } from '@neondatabase/serverless';
 import { initialProjects } from '../src/data/projectsData.js';
 
-const NEON_DB_URL = "postgresql://neondb_owner:npg_g3Y2MVzbDSrn@ep-cold-bird-axj0in93-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require";
-const sql = neon(NEON_DB_URL);
+const sql = neon(process.env.NEON_DATABASE_URL);
 
 const all21Members = [
   {

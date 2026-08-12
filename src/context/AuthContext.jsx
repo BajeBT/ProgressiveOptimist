@@ -1,8 +1,40 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialProjects } from '../data/projectsData';
-import { sql } from '../db/neon';
 
 const AuthContext = createContext();
+
+// Every database call now goes through the serverless routes under /api. The
+// browser no longer holds database credentials, and the session token issued at
+// login is what the routes use to decide what the caller may do.
+const SESSION_TOKEN_KEY = 'optimist_token';
+
+function readToken() {
+  try {
+    return localStorage.getItem(SESSION_TOKEN_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+async function api(path, { method = 'GET', body } = {}) {
+  const token = readToken();
+  const res = await fetch(`/api/${path}`, {
+    method,
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    // A non-JSON body means the route failed before it could respond properly.
+  }
+  return { ok: res.ok, status: res.status, ...data };
+}
 
 const initialRoster = [
   {
@@ -370,7 +402,6 @@ const initialRoster = [
     "name": "Edwin Workman",
     "email": "edwin@jillandee.com",
     "role": "System Administrator, Club Foundation Representative & Charter Member",
-    "password": "Eww!POCB2010",
     "fiscalYear": "2025/2026 (Oct 1 - Sep 30)",
     "duesRate": "$250.00 BBD",
     "amountPaid": "$250.00 BBD",
@@ -501,80 +532,64 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // Load live data from Neon Serverless PostgreSQL on mount
+  // Load live data through the API routes on mount. Signed-out visitors get a
+  // reduced member record (no email, phone, address or dues figures) - the
+  // route decides that, not the client.
+  const loadRoster = async () => {
+    const res = await api('members');
+    if (!res.ok || !Array.isArray(res.members) || res.members.length === 0) return;
+
+    const mappedRoster = res.members.map(r => {
+      let resolvedAvatar = r.avatar;
+      if (!resolvedAvatar || resolvedAvatar.includes('dicebear')) {
+        resolvedAvatar = r.role && r.role.includes('Director')
+          ? '/avatars/director_placeholder.jpg'
+          : '/avatars/active_member_icon.jpg';
+      }
+
+      return {
+        id: r.id,
+        name: r.name,
+        email: r.email || '',
+        role: r.role,
+        phone: r.phone || '',
+        address: r.address || '',
+        avatar: resolvedAvatar,
+        access: r.access || 'member',
+        approvalStatus: r.approval_status || 'approved',
+        adminGrantedAt: r.admin_granted_at || null,
+        addedBy: r.added_by || null,
+        fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
+        duesRate: r.dues_rate || '$250.00',
+        amountPaid: r.amount_paid || '$250.00',
+        balanceDue: r.balance_due || '$0.00',
+        paymentMethod: r.payment_method || 'Bank Transfer',
+        duesStatus: r.dues_status || 'Active Member (2025/2026)',
+        lastPaymentDate: r.last_payment_date || '2025-10-01',
+        notes: r.notes || '',
+        emailLastSent: r.email_last_sent || '',
+        hasTreasurerConsoleAccess: Boolean(r.is_treasurer),
+        hasInitiativeAccess: Boolean(r.is_president),
+        hasSecretaryAccess: Boolean(r.is_secretary)
+      };
+    });
+
+    setMemberRoster(Array.from(new Map(mappedRoster.map(m => [m.id, m])).values()));
+    setDbConnected(true);
+  };
+
   useEffect(() => {
-    async function loadNeonData() {
+    async function loadData() {
       try {
-        // Fetch Members & Dues Ledgers from Neon PostgreSQL
-        const rows = await sql`
-          SELECT 
-            m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access, m.password,
-            m.is_treasurer, m.is_president,
-            d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due, 
-            d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
-          FROM members m
-          LEFT JOIN dues_ledger d ON m.id = d.member_id
-          ORDER BY m.name ASC;
-        `;
+        await loadRoster();
+      } catch (err) {
+        console.warn("Member roster fetch fallback to local cache:", err);
+      }
 
-        if (rows && rows.length > 0) {
-          const mappedRoster = rows.map(r => {
-            const emailLower = r.email.toLowerCase().trim();
-            let defaultAccess = 'member';
-            if (emailLower === 'richelle.lucas16@gmail.com' || emailLower === 'edwin@jillandee.com') {
-              defaultAccess = 'super admin';
-            } else if (emailLower === 'sharon@topaz-bb.com') {
-              defaultAccess = 'finance';
-            } else if (emailLower === 'londoncharms@hotmail.com') {
-              defaultAccess = 'admin';
-            }
-
-            const resolvedAccess = r.access || defaultAccess;
-            const isSuperAdmin = resolvedAccess === 'super admin';
-            const isTreasurerUser = emailLower === 'sharon@topaz-bb.com' || r.id === '78008-0152';
-            const isPresidentUser = emailLower === 'richelle.lucas16@gmail.com' || r.id === '78008-0150' || isSuperAdmin;
-            let resolvedAvatar = r.avatar;
-            if (!resolvedAvatar || resolvedAvatar.includes('dicebear')) {
-              if (emailLower === 'edwin@jillandee.com') resolvedAvatar = '/avatars/oirep_placeholder.jpg';
-              else if (emailLower === 'richelle.lucas16@gmail.com') resolvedAvatar = '/avatars/president_placeholder.jpg';
-              else if (emailLower === 'londoncharms@hotmail.com') resolvedAvatar = '/avatars/secretary_placeholder.jpg';
-              else if (emailLower === 'sharon@topaz-bb.com') resolvedAvatar = '/avatars/treasurer_placeholder.jpg';
-              else if (r.role && r.role.includes('Director')) resolvedAvatar = '/avatars/director_placeholder.jpg';
-              else resolvedAvatar = '/avatars/active_member_icon.jpg';
-            }
-
-            return {
-              id: r.id,
-              name: r.name,
-              email: r.email,
-              role: r.role,
-              phone: r.phone,
-              address: r.address,
-              avatar: resolvedAvatar,
-              access: resolvedAccess,
-              password: r.password || '',
-              fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
-              duesRate: r.dues_rate || '$250.00',
-              amountPaid: r.amount_paid || '$250.00',
-              balanceDue: r.balance_due || '$0.00',
-              paymentMethod: r.payment_method || 'Bank Transfer',
-              duesStatus: r.dues_status || 'Active Member (2025/2026)',
-              lastPaymentDate: r.last_payment_date || '2025-10-01',
-              notes: r.notes || '',
-              emailLastSent: r.email_last_sent || '',
-              hasTreasurerConsoleAccess: isSuperAdmin || isTreasurerUser || isPresidentUser || Boolean(r.is_treasurer),
-              hasInitiativeAccess: isSuperAdmin || isTreasurerUser || isPresidentUser || Boolean(r.is_president)
-            };
-          });
-          const deduplicatedRoster = Array.from(new Map(mappedRoster.map(m => [m.id, m])).values());
-          setMemberRoster(deduplicatedRoster);
-          setDbConnected(true);
-        }
-
-        // Fetch Projects from Neon
-        const projRows = await sql`SELECT * FROM projects ORDER BY posted_at DESC;`;
-        if (projRows && projRows.length > 0) {
-          const mappedProjects = projRows.map(p => ({
+      try {
+        const res = await api('projects');
+        if (res.ok && Array.isArray(res.projects) && res.projects.length > 0) {
+          setProjects(res.projects.map(p => ({
             id: p.id,
             title: p.title,
             category: p.category,
@@ -590,16 +605,15 @@ export const AuthProvider = ({ children }) => {
             postedAt: p.posted_at,
             childrenServed: Number(p.children_served) || 0,
             approved: p.approved
-          }));
-          setProjects(mappedProjects);
+          })));
         }
       } catch (err) {
-        console.warn("Neon Database query fallback to local cache:", err);
+        console.warn("Projects fetch fallback to local cache:", err);
       }
     }
 
-    loadNeonData();
-  }, []);
+    loadData();
+  }, [currentUser?.memberId]);
 
   // Load the shared photo gallery (Google Photos, via api/gallery-list.js).
   // Kept independent of loadNeonData above so a gallery failure can never
@@ -624,8 +638,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     async function loadContactSubjects() {
       try {
-        const rows = await sql`SELECT id, label, sort_order FROM contact_subjects ORDER BY sort_order ASC;`;
-        if (rows.length > 0) setContactSubjects(rows);
+        const res = await api('contact-subjects');
+        if (res.ok && Array.isArray(res.subjects) && res.subjects.length > 0) {
+          setContactSubjects(res.subjects);
+        }
       } catch (err) {
         console.warn("Contact subjects fetch fallback to default list:", err);
       }
@@ -703,36 +719,14 @@ export const AuthProvider = ({ children }) => {
       return m;
     }));
 
-    // Async sync to Neon DB
     (async () => {
       try {
-        if (permissionKey === 'access') {
-          await sql`
-            UPDATE members
-            SET access = ${val}
-            WHERE id = ${memberId};
-          `;
-        } else if (permissionKey === 'role') {
-          await sql`
-            UPDATE members
-            SET role = ${val}
-            WHERE id = ${memberId};
-          `;
-        } else if (permissionKey === 'hasTreasurerConsoleAccess') {
-          await sql`
-            UPDATE members
-            SET is_treasurer = ${val}
-            WHERE id = ${memberId};
-          `;
-        } else if (permissionKey === 'hasInitiativeAccess') {
-          await sql`
-            UPDATE members
-            SET is_president = ${val}
-            WHERE id = ${memberId};
-          `;
-        }
+        await api('members', {
+          method: 'POST',
+          body: { action: 'update-permission', memberId, key: permissionKey, value: val }
+        });
       } catch (err) {
-        console.warn("Neon DB permissions sync error:", err);
+        console.warn("Permission sync error:", err);
       }
     })();
   };
@@ -749,242 +743,154 @@ export const AuthProvider = ({ children }) => {
       return m;
     }));
 
-    // Async sync to Neon DB
     (async () => {
       try {
-        // 1. Update members table
-        await sql`
-          UPDATE members
-          SET 
-            name = ${updatedFields.name},
-            email = ${updatedFields.email},
-            phone = ${updatedFields.phone},
-            address = ${updatedFields.address},
-            role = ${updatedFields.role},
-            access = ${updatedFields.access}
-          WHERE id = ${memberId};
-        `;
-
-        // 2. Update dues_ledger table
-        await sql`
-          UPDATE dues_ledger
-          SET 
-            dues_rate = ${updatedFields.duesRate},
-            amount_paid = ${updatedFields.amountPaid},
-            balance_due = ${updatedFields.balanceDue},
-            payment_method = ${updatedFields.paymentMethod},
-            dues_status = ${updatedFields.duesStatus},
-            last_payment_date = ${updatedFields.lastPaymentDate}
-          WHERE member_id = ${memberId};
-        `;
+        await api('members', {
+          method: 'POST',
+          body: { action: 'update-record', memberId, fields: updatedFields }
+        });
       } catch (err) {
-        console.warn("Neon DB member update sync error:", err);
+        console.warn("Member update sync error:", err);
       }
     })();
   };
 
-  // Login handler
-  const login = (email, password) => {
+  // Login handler. All checks happen server-side in api/auth.js - the account
+  // must exist in the members table, the password is compared against a bcrypt
+  // hash, and the access tier comes back resolved for the address used.
+  const login = async (email, password) => {
     if (!email || !password) {
       return { success: false, message: 'Please provide both email and password.' };
     }
 
-    const cleanEmail = email.toLowerCase().trim();
-    let name = 'Optimist Member';
-    let role = 'Member';
-    let avatar = '/avatars/active_member_icon.jpg';
-    let isTreasurer = false;
-    let memberId = '78008-' + Math.floor(1000 + Math.random() * 9000);
-
-    // Look up in roster first if available
-    const matchedRosterItem = memberRoster.find(m => m.email.toLowerCase().trim() === cleanEmail);
-
-    if (matchedRosterItem && matchedRosterItem.access === 'pending_verification') {
-      return { success: false, message: 'Please check your email and verify your email address to set your password before logging in.' };
-    }
-
-    if (matchedRosterItem && matchedRosterItem.access === 'pending') {
-      return { success: false, message: 'Your membership application is currently pending review by the Membership Review Committee.' };
-    }
-
-    if (matchedRosterItem && matchedRosterItem.password && password !== matchedRosterItem.password) {
-      return { success: false, message: 'Invalid password. Please check your credentials.' };
-    }
-
-    if (cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail === 'sharon@topaz-bb.com' || cleanEmail.includes('treasurer')) {
-      name = 'Sharon Mohammed';
-      role = 'Club Treasurer & Admin';
-      avatar = '/avatars/treasurer_placeholder.jpg';
-      isTreasurer = true;
-      memberId = '78008-0152';
-    } else if (cleanEmail === 'president@progressiveoptimist.org' || cleanEmail === 'richelle.lucas16@gmail.com' || cleanEmail.includes('president')) {
-      name = 'Richelle Lucas';
-      role = 'Club President & Admin';
-      avatar = '/avatars/president_placeholder.jpg';
-      isTreasurer = true;
-      memberId = '78008-0150';
-    } else if (cleanEmail === 'edwin@jillandee.com') {
-      name = 'Edwin Workman';
-      role = 'System Administrator, Club Foundation Representative & Charter Member';
-      avatar = '/avatars/oirep_placeholder.jpg';
-      isTreasurer = true;
-      memberId = '78008-0021';
-    } else if (matchedRosterItem) {
-      name = matchedRosterItem.name;
-      role = matchedRosterItem.role;
-      memberId = matchedRosterItem.id;
-      avatar = matchedRosterItem.avatar || avatar;
-      isTreasurer = Boolean(matchedRosterItem.is_treasurer || matchedRosterItem.is_president || role.includes('Treasurer') || role.includes('President') || role.includes('Admin'));
-    } else {
-      const nameFromEmail = cleanEmail.split('@')[0].replace('.', ' ');
-      name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-    }
-
-    let access = 'member';
-    if (cleanEmail === 'richelle.lucas16@gmail.com' || cleanEmail === 'edwin@jillandee.com' || cleanEmail === 'president@progressiveoptimist.org' || cleanEmail.includes('president')) {
-      access = 'super admin';
-    } else if (cleanEmail === 'sharon@topaz-bb.com' || cleanEmail === 'treasurer@progressiveoptimist.org' || cleanEmail.includes('treasurer')) {
-      access = 'finance';
-    } else if (cleanEmail === 'londoncharms@hotmail.com' || cleanEmail === 'secretary@progressiveoptimist.org' || cleanEmail.includes('secretary')) {
-      access = 'admin';
-    } else if (matchedRosterItem && matchedRosterItem.access) {
-      access = matchedRosterItem.access;
-    }
-
-    const userObj = {
-      email: cleanEmail,
-      name,
-      role,
-      isTreasurer,
-      memberId,
-      duesStatus: 'Active Member in Good Standing (2025/2026)',
-      joinedDate: '2022',
-      avatar,
-      access
-    };
-
-    setCurrentUser(userObj);
+    let res;
     try {
-      localStorage.setItem('optimist_user', JSON.stringify(userObj));
-    } catch (e) {}
-    return { success: true, user: userObj };
-  };
-
-  // Signup / Application handler with Neon sync
-  const registerMember = (formData) => {
-    const memberId = '78008-' + Math.floor(1000 + Math.random() * 9000);
-    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.email)}`;
-    const name = `${formData.firstName} ${formData.lastName}`;
-
-    const notesString = `DOB: ${formData.dob || 'N/A'} | Gender: ${formData.gender || 'N/A'} | Occupation: ${formData.occupation || 'N/A'} | Employer: ${formData.employer || 'N/A'} | Hear About Us: ${formData.hearAboutUs || 'N/A'} ${formData.referrerName ? `(Referrer: ${formData.referrerName})` : ''} | Comments: ${formData.comments || 'None'}`;
-
-    const addressString = `${formData.addressLine1 || ''}${formData.addressLine2 ? `, ${formData.addressLine2}` : ''}${formData.village ? `, ${formData.village}` : ''}, ${formData.parish || ''}, ${formData.country || 'Barbados'}`;
-
-    const newMemberRecord = {
-      id: memberId,
-      name: name,
-      email: formData.email,
-      phone: formData.phone || '',
-      address: addressString,
-      role: 'Pending Member',
-      access: 'pending_verification',
-      fiscalYear: '2025/2026 (Oct 1 - Sep 30)',
-      duesRate: '$250.00',
-      amountPaid: '$0.00',
-      balanceDue: '$250.00',
-      paymentMethod: 'Pending',
-      duesStatus: 'Pending Verification',
-      lastPaymentDate: 'None',
-      notes: notesString,
-      emailLastSent: 'None',
-      hasTreasurerConsoleAccess: false,
-      hasInitiativeAccess: false,
-      avatar: avatar
-    };
-
-    setMemberRoster(prev => [newMemberRecord, ...prev]);
-
-    // Send email verification link (Simulated and rerouted strictly to dev@bajanthings.biz per user rules)
-    const verifyToken = 'tok-' + Math.floor(100000 + Math.random() * 900000);
-    const verifyLink = `http://localhost:3000/membership?action=verify-email&email=${encodeURIComponent(formData.email)}&token=${verifyToken}`;
-
-    const verifyEmailBody = `
-======================================================================
-TO: dev@bajanthings.biz (Simulated Rerouting from: ${formData.email})
-FROM: registration@progressiveoptimist.org
-SUBJECT: [Action Required] Verify Your Email Address & Set Password
-======================================================================
-
-Dear ${name},
-
-Thank you for applying to the Progressive Optimist Club of Barbados.
-
-To complete your application process, please click the secure link below to verify your email address and set your portal login password:
-
-Verify Email & Set Password:
-${verifyLink}
-
-Once verified, your application will be reviewed by the Membership Review Committee.
-
-Regards,
-Progressive Optimist Club of Barbados Membership Review Committee
-======================================================================
-`;
-    console.log("%c[SIMULATED EMAIL VERIFICATION SENT]", "color: #3b82f6; font-weight: bold;", verifyEmailBody);
-
-    // Async sync to Neon DB
-    (async () => {
-      try {
-        await sql`
-          INSERT INTO members (id, name, email, phone, role, avatar, address, access)
-          VALUES (${memberId}, ${name}, ${formData.email}, ${formData.phone || ''}, 'Pending Member', ${avatar}, ${addressString}, 'pending_verification')
-          ON CONFLICT (id) DO NOTHING;
-        `;
-        await sql`
-          INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
-          VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$0.00', '$250.00', 'Pending', 'Pending Verification', ${notesString});
-        `;
-      } catch (err) {
-        console.warn("Neon DB member insert sync error:", err);
-      }
-    })();
-
-    return { success: true, user: newMemberRecord };
-  };
-
-  // Verify email and set password for pending applicant
-  const verifyMemberEmailAndPassword = async (email, password) => {
-    const cleanEmail = email.toLowerCase().trim();
-
-    // Update local state roster
-    setMemberRoster(prev => prev.map(m => {
-      if (m.email.toLowerCase().trim() === cleanEmail) {
-        return {
-          ...m,
-          access: 'pending', // Awaiting committee approval now
-          duesStatus: 'Pending Approval',
-          password: password
-        };
-      }
-      return m;
-    }));
-
-    // Update Neon DB
-    try {
-      await sql`
-        UPDATE members
-        SET access = 'pending', password = ${password}
-        WHERE LOWER(TRIM(email)) = ${cleanEmail};
-      `;
-      await sql`
-        UPDATE dues_ledger
-        SET dues_status = 'Pending Approval'
-        WHERE member_id = (SELECT id FROM members WHERE LOWER(TRIM(email)) = ${cleanEmail});
-      `;
-      return { success: true, message: 'Email verified and password created successfully!' };
+      res = await api('auth', { method: 'POST', body: { action: 'login', email, password } });
     } catch (err) {
-      console.warn("Neon DB verification update error:", err);
-      return { success: false, message: 'Database sync failed.' };
+      console.error("Login request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+
+    if (!res.ok || !res.success) {
+      return {
+        success: false,
+        message: res.message || 'Unable to sign in. Please try again.',
+        needsPasswordSetup: Boolean(res.needsPasswordSetup)
+      };
+    }
+
+    setCurrentUser(res.user);
+    try {
+      localStorage.setItem('optimist_user', JSON.stringify(res.user));
+      localStorage.setItem(SESSION_TOKEN_KEY, res.token);
+    } catch (e) {}
+
+    return { success: true, user: res.user };
+  };
+
+  // Public membership application. The record is created server-side as
+  // pending_verification and a single-use link is emailed to the applicant.
+  const registerMember = async (formData) => {
+    try {
+      const res = await api('auth', { method: 'POST', body: { action: 'register', form: formData } });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Unable to submit your application. Please try again.' };
+      }
+      return { success: true, message: res.message };
+    } catch (err) {
+      console.error("Registration request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Sets a password from an emailed single-use link. Serves both a new
+  // applicant verifying their address and an existing member who never had one.
+  const setMemberPassword = async (email, token, password) => {
+    try {
+      const res = await api('auth', {
+        method: 'POST',
+        body: { action: 'set-password', email, token, password }
+      });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Unable to set your password.' };
+      }
+      return { success: true, message: res.message };
+    } catch (err) {
+      console.error("Set password request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Emails a fresh set-password link on request.
+  const requestPasswordSetup = async (email) => {
+    try {
+      const res = await api('auth', { method: 'POST', body: { action: 'request-password-setup', email } });
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Password setup request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Self-service: the signed-in member changing their own password.
+  const changeMyPassword = async (currentPassword, newPassword) => {
+    try {
+      const res = await api('auth', {
+        method: 'POST',
+        body: { action: 'change-password', currentPassword, newPassword }
+      });
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Change password request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Admin-entered members, one at a time or several at once. The server decides
+  // whether they are active immediately (added by the Treasurer) or need an
+  // officer's approval first.
+  const addMembers = async (entries) => {
+    const list = Array.isArray(entries) ? entries : [entries];
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: list.length === 1
+          ? { action: 'add', member: list[0] }
+          : { action: 'bulk-add', members: list }
+      });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Add member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // President, Treasurer, Secretary, or the super admin account approving a
+  // member record added by someone else.
+  const approveMemberRecord = async (memberId) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'approve', memberId } });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Approve member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Super admin only. Generates (or, if newPassword is given, sets) a new
+  // password for the member, returning it once in plaintext so it can be
+  // handed to that member directly.
+  const resetMemberPassword = async (memberId, newPassword) => {
+    try {
+      return await api('members', {
+        method: 'POST',
+        body: { action: 'reset-password', memberId, ...(newPassword ? { newPassword } : {}) }
+      });
+    } catch (err) {
+      console.error("Reset password request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
     }
   };
 
@@ -998,110 +904,91 @@ Progressive Optimist Club of Barbados Membership Review Committee
     } catch (e) {}
   };
 
-  // Treasurer updates member dues status in central roster and Neon DB
-  const updateMemberDuesByTreasurer = (memberId, newStatus, amountPaid = "$250.00", paymentMethod = "Bank Transfer") => {
+  // Treasurer updates member dues status
+  const updateMemberDuesByTreasurer = async (memberId, newStatus, amountPaid = "$250.00", paymentMethod = "Bank Transfer") => {
     const today = new Date().toISOString().split('T')[0];
     const isPaid = newStatus.includes('Active');
+    const paid = isPaid ? "$250.00" : "$0.00";
+    const balance = isPaid ? "$0.00" : "$250.00";
 
-    setMemberRoster(prev => prev.map(m => {
-      if (m.id === memberId) {
-        return {
-          ...m,
-          duesStatus: newStatus,
-          lastPaymentDate: today,
-          amountPaid: isPaid ? "$250.00" : "$0.00",
-          balanceDue: isPaid ? "$0.00" : "$250.00",
+    setMemberRoster(prev => prev.map(m => (
+      m.id === memberId
+        ? { ...m, duesStatus: newStatus, lastPaymentDate: today, amountPaid: paid, balanceDue: balance, paymentMethod }
+        : m
+    )));
+
+    try {
+      return await api('dues', {
+        method: 'POST',
+        body: {
+          action: 'update-status',
+          memberId,
+          status: newStatus,
+          amountPaid: paid,
+          balanceDue: balance,
           paymentMethod
-        };
-      }
-      return m;
-    }));
-
-    // Async sync to Neon DB
-    (async () => {
-      try {
-        await sql`
-          UPDATE dues_ledger
-          SET 
-            dues_status = ${newStatus},
-            last_payment_date = ${today},
-            amount_paid = ${isPaid ? '$250.00' : '$0.00'},
-            balance_due = ${isPaid ? '$0.00' : '$250.00'},
-            payment_method = ${paymentMethod},
-            updated_at = CURRENT_TIMESTAMP
-          WHERE member_id = ${memberId};
-        `;
-      } catch (err) {
-        console.warn("Neon DB dues update error:", err);
-      }
-    })();
+        }
+      });
+    } catch (err) {
+      console.warn("Dues update error:", err);
+      return { success: false, message: 'Network error while saving the dues record.' };
+    }
   };
 
-  // Treasurer updates member notes in central roster and Neon DB
-  const updateMemberNotesByTreasurer = (memberId, newNotes) => {
-    setMemberRoster(prev => prev.map(m => {
-      if (m.id === memberId) {
-        return { ...m, notes: newNotes };
-      }
-      return m;
-    }));
+  // Treasurer updates member notes
+  const updateMemberNotesByTreasurer = async (memberId, newNotes) => {
+    setMemberRoster(prev => prev.map(m => (
+      m.id === memberId ? { ...m, notes: newNotes } : m
+    )));
 
-    // Async sync to Neon DB
-    (async () => {
-      try {
-        await sql`
-          UPDATE dues_ledger
-          SET notes = ${newNotes}, updated_at = CURRENT_TIMESTAMP
-          WHERE member_id = ${memberId};
-        `;
-      } catch (err) {
-        console.warn("Neon DB notes update error:", err);
-      }
-    })();
+    try {
+      return await api('dues', {
+        method: 'POST',
+        body: { action: 'update-notes', memberId, notes: newNotes }
+      });
+    } catch (err) {
+      console.warn("Notes update error:", err);
+      return { success: false, message: 'Network error while saving the notes.' };
+    }
   };
 
-  // Treasurer sends Email Statement
-  const sendDuesStatementEmail = (memberIds) => {
+  // Treasurer marks dues statements as sent
+  const sendDuesStatementEmail = async (memberIds) => {
     const today = new Date().toISOString().split('T')[0];
     const ids = Array.isArray(memberIds) ? memberIds : [memberIds];
-    
-    setMemberRoster(prev => prev.map(m => {
-      if (ids.includes(m.id)) {
-        return { ...m, emailLastSent: today };
-      }
-      return m;
-    }));
 
-    // Async sync to Neon DB
-    (async () => {
-      try {
-        for (const mid of ids) {
-          await sql`
-            UPDATE dues_ledger
-            SET email_last_sent = ${today}, updated_at = CURRENT_TIMESTAMP
-            WHERE member_id = ${mid};
-          `;
-        }
-      } catch (err) {
-        console.warn("Neon DB email_last_sent update error:", err);
-      }
-    })();
+    setMemberRoster(prev => prev.map(m => (
+      ids.includes(m.id) ? { ...m, emailLastSent: today } : m
+    )));
 
-    return {
-      success: true,
-      message: `[SANDBOX ACTIVE] Dues statement email(s) for ${ids.length} member(s) generated and rerouted strictly to ${testEmailTarget}.`
-    };
+    try {
+      const res = await api('dues', {
+        method: 'POST',
+        body: { action: 'statement-sent', memberIds: ids }
+      });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Failed to record the statements.' };
+      }
+      return {
+        success: true,
+        message: `[SANDBOX ACTIVE] Dues statement email(s) for ${ids.length} member(s) generated and rerouted strictly to ${testEmailTarget}.`
+      };
+    } catch (err) {
+      console.warn("Statement update error:", err);
+      return { success: false, message: 'Network error while recording the statements.' };
+    }
   };
 
   const logout = () => {
     setCurrentUser(null);
     try {
       localStorage.removeItem('optimist_user');
+      localStorage.removeItem(SESSION_TOKEN_KEY);
     } catch (e) {}
   };
 
-  // Add new project post (by logged in member) with Neon DB sync
-  const addProject = (projectData) => {
+  // Add new project post (by logged in member)
+  const addProject = async (projectData) => {
     if (!currentUser) {
       return { success: false, message: 'You must be logged in as a member to post a project.' };
     }
@@ -1133,8 +1020,6 @@ Progressive Optimist Club of Barbados Membership Review Committee
       childrenServed,
       approved: isApproved
     };
-
-    setProjects(prev => [newProject, ...prev]);
 
     // Send email to moderators (Simulated and rerouted strictly to dev@bajanthings.biz per user rules)
     const moderators = memberRoster.filter(m => ['super admin', 'finance', 'admin', 'moderator'].includes(m.access));
@@ -1178,25 +1063,28 @@ Progressive Optimist Club of Barbados
 `;
     console.log("%c[SIMULATED MODERATOR EMAIL SENT]", "color: #10b981; font-weight: bold;", emailBody);
 
-    // Async sync to Neon DB
-    (async () => {
-      try {
-        await sql`
-          INSERT INTO projects (id, title, category, date_str, image, excerpt, content, impact, is_featured, author, author_id, posted_at, children_served, approved)
-          VALUES (${newProject.id}, ${newProject.title}, ${newProject.category}, ${newProject.date}, ${newProject.image}, ${newProject.excerpt}, ${newProject.content}, ${newProject.impact}, ${newProject.isFeatured}, ${newProject.author}, ${newProject.authorId}, ${newProject.postedAt}, ${newProject.childrenServed}, ${newProject.approved});
-        `;
-      } catch (err) {
-        console.warn("Neon DB project insert error:", err);
+    try {
+      const res = await api('projects', {
+        method: 'POST',
+        body: { action: 'create', project: newProject }
+      });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Failed to save the project. Please try again.' };
       }
-    })();
 
-    return {
-      success: true,
-      project: newProject,
-      message: isApproved 
-        ? "Project published immediately. Notification email logged." 
-        : "Project submitted successfully. A moderation email containing details and photo has been simulated and sent to dev@bajanthings.biz."
-    };
+      setProjects(prev => [newProject, ...prev]);
+
+      return {
+        success: true,
+        project: newProject,
+        message: res.approved
+          ? "Project published immediately. Notification email logged."
+          : "Project submitted successfully. A moderation email containing details and photo has been simulated and sent to dev@bajanthings.biz."
+      };
+    } catch (err) {
+      console.error("Project insert error:", err);
+      return { success: false, message: 'Network error while saving the project.' };
+    }
   };
 
   // Moderator approves a project
@@ -1210,13 +1098,9 @@ Progressive Optimist Club of Barbados
 
     (async () => {
       try {
-        await sql`
-          UPDATE projects
-          SET approved = TRUE
-          WHERE id = ${projectId};
-        `;
+        await api('projects', { method: 'POST', body: { action: 'approve', projectId } });
       } catch (err) {
-        console.warn("Neon DB project approve error:", err);
+        console.warn("Project approve error:", err);
       }
     })();
   };
@@ -1227,18 +1111,16 @@ Progressive Optimist Club of Barbados
 
     (async () => {
       try {
-        await sql`
-          DELETE FROM projects
-          WHERE id = ${projectId};
-        `;
+        await api('projects', { method: 'POST', body: { action: 'delete', projectId } });
       } catch (err) {
-        console.warn("Neon DB project delete error:", err);
+        console.warn("Project delete error:", err);
       }
     })();
   };
 
   // Contact page "Subject" dropdown options - admin add/remove/reorder,
-  // optimistic local update synced to Neon so every visitor sees the same list.
+  // optimistic local update synced through the API so every visitor sees the
+  // same list.
   const addContactSubject = (label) => {
     const trimmed = (label || '').trim();
     if (!trimmed) return;
@@ -1250,15 +1132,15 @@ Progressive Optimist Club of Barbados
 
     (async () => {
       try {
-        const result = await sql`
-          INSERT INTO contact_subjects (label, sort_order)
-          VALUES (${trimmed}, ${nextOrder})
-          RETURNING id;
-        `;
-        const realId = result[0].id;
-        setContactSubjects(prev => prev.map(s => s.id === tempId ? { ...s, id: realId } : s));
+        const res = await api('contact-subjects', { method: 'POST', body: { action: 'add', label: trimmed } });
+        if (res.ok && res.subject) {
+          setContactSubjects(prev => prev.map(s => s.id === tempId ? res.subject : s));
+        } else {
+          setContactSubjects(prev => prev.filter(s => s.id !== tempId));
+        }
       } catch (err) {
-        console.warn("Neon DB contact subject insert error:", err);
+        console.warn("Contact subject insert error:", err);
+        setContactSubjects(prev => prev.filter(s => s.id !== tempId));
       }
     })();
   };
@@ -1267,9 +1149,9 @@ Progressive Optimist Club of Barbados
     setContactSubjects(prev => prev.filter(s => s.id !== id));
     (async () => {
       try {
-        await sql`DELETE FROM contact_subjects WHERE id = ${id};`;
+        await api('contact-subjects', { method: 'POST', body: { action: 'remove', id } });
       } catch (err) {
-        console.warn("Neon DB contact subject delete error:", err);
+        console.warn("Contact subject delete error:", err);
       }
     })();
   };
@@ -1293,10 +1175,15 @@ Progressive Optimist Club of Barbados
 
     (async () => {
       try {
-        await sql`UPDATE contact_subjects SET sort_order = ${newSortA} WHERE id = ${a.id};`;
-        await sql`UPDATE contact_subjects SET sort_order = ${newSortB} WHERE id = ${b.id};`;
+        await api('contact-subjects', {
+          method: 'POST',
+          body: {
+            action: 'reorder',
+            updates: [{ id: a.id, sortOrder: newSortA }, { id: b.id, sortOrder: newSortB }]
+          }
+        });
       } catch (err) {
-        console.warn("Neon DB contact subject reorder error:", err);
+        console.warn("Contact subject reorder error:", err);
       }
     })();
   };
@@ -1347,7 +1234,12 @@ Progressive Optimist Club of Barbados
         currentUser,
         login,
         registerMember,
-        verifyMemberEmailAndPassword,
+        setMemberPassword,
+        requestPasswordSetup,
+        changeMyPassword,
+        addMembers,
+        approveMemberRecord,
+        resetMemberPassword,
         updateDuesStatus,
         memberRoster,
         updateMemberDuesByTreasurer,

@@ -1,7 +1,4 @@
-import { neon } from '@neondatabase/serverless';
-
-const NEON_DB_URL = "postgresql://neondb_owner:npg_g3Y2MVzbDSrn@ep-cold-bird-axj0in93-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require";
-const sql = neon(NEON_DB_URL);
+import { sql } from '../lib/db.js';
 
 async function getAccessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {

@@ -1,8 +1,7 @@
 import Stripe from 'stripe';
-import { neon } from '@neondatabase/serverless';
+import { sql } from '../lib/db.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const sql = neon("postgresql://neondb_owner:npg_g3Y2MVzbDSrn@ep-cold-bird-axj0in93-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require");
 
 // Stripe signature verification needs the exact raw request bytes - Vercel's
 // default JSON body parsing would re-serialize the payload and break the
