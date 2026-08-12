@@ -802,7 +802,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
             <button
               onClick={logout}
-              className="p-2 rounded-xl bg-red-600/90 hover:bg-red-600 text-white shadow-md transition-all shrink-0 flex items-center justify-center opacity-90 hover:opacity-100"
+              className="ml-auto p-2 rounded-xl bg-red-600/90 hover:bg-red-600 text-white shadow-md transition-all shrink-0 flex items-center justify-center opacity-90 hover:opacity-100"
               title="Logout"
             >
               <LogOut className="w-2.5 h-2.5 text-white opacity-90" />
