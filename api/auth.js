@@ -27,7 +27,7 @@ function toSessionUser(member, effectiveAccess) {
     access: effectiveAccess,
     storedAccess: member.access || 'member',
     isTreasurer: Boolean(member.is_treasurer),
-    duesStatus: member.dues_status || 'Active Member (2025/2026)'
+    duesStatus: member.dues_status || 'Active Member (Dues Paid)'
   };
 }
 

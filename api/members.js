@@ -126,7 +126,7 @@ async function insertOneMember(entry, actor, approvalStatus, currentDuesRate) {
     VALUES (
       ${memberId}, ${FISCAL_YEAR}, ${entry.duesRate || currentDuesRate},
       ${entry.amountPaid || '$0.00'}, ${entry.balanceDue || currentDuesRate},
-      ${entry.paymentMethod || 'Pending'}, ${entry.duesStatus || 'Pending Dues Payment'},
+      ${entry.paymentMethod || 'Pending'}, ${entry.duesStatus || 'Unpaid (Dues Owed)'},
       ${entry.notes || ''}
     );
   `;

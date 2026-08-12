@@ -177,7 +177,7 @@ export const AdminSettingsPage = () => {
       amountPaid: m.amountPaid || '$0.00',
       balanceDue: m.balanceDue || '$0.00',
       paymentMethod: m.paymentMethod || 'Bank Transfer',
-      duesStatus: m.duesStatus || 'Active Member (2025/2026)',
+      duesStatus: m.duesStatus || 'Active Member (Dues Paid)',
       lastPaymentDate: m.lastPaymentDate || '2025-10-01'
     });
   };
@@ -203,7 +203,7 @@ export const AdminSettingsPage = () => {
     amountPaid: '$0.00',
     balanceDue: siteSettings?.annualDuesRate || '$200.00',
     paymentMethod: 'Pending',
-    duesStatus: 'Pending Dues Payment'
+    duesStatus: 'Unpaid (Dues Owed)'
   };
   const [showAddMember, setShowAddMember] = useState(false);
   const [addForm, setAddForm] = useState(emptyAddForm);
@@ -1195,7 +1195,7 @@ export const AdminSettingsPage = () => {
                           </button>
 
                           <button
-                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
+                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (Dues Paid)')}
                             className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
                             title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
                           >
@@ -2110,9 +2110,9 @@ export const AdminSettingsPage = () => {
                       onChange={e => setEditForm({ ...editForm, duesStatus: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
                     >
-                      <option value="Active Member (2025/2026)">Active Member (2025/2026)</option>
-                      <option value="Active Member in Good Standing">Active Member in Good Standing</option>
-                      <option value="Pending Dues Payment">Pending Dues Payment</option>
+                      <option value="Active Member (Dues Paid)">Active Member (Dues Paid)</option>
+                      <option value="Unpaid (Dues Owed)">Unpaid (Dues Owed)</option>
+                      <option value="Partially Paid (Balance Due)">Partially Paid (Balance Due)</option>
                       <option value="Exempt / Honorary">Exempt / Honorary</option>
                     </select>
                   </div>

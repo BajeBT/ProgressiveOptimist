@@ -70,8 +70,8 @@ export default async function handler(req, res) {
         // error, and should stay visible as one rather than being hidden.
         const balanceDue = officialRate - totalPaid;
         const duesStatus = balanceDue <= 0
-          ? 'Active Member in Good Standing (2025/2026)'
-          : 'Partial Payment - Balance Due (2025/2026)';
+          ? 'Active Member (Dues Paid)'
+          : 'Partially Paid (Balance Due)';
         const balanceDueStr = balanceDue < 0
           ? `-$${Math.abs(balanceDue).toFixed(2)}`
           : `$${balanceDue.toFixed(2)}`;

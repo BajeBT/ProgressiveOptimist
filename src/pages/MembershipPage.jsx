@@ -172,7 +172,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('duesPaid') === 'true') {
-      updateDuesStatus('Active Member in Good Standing (2025/2026)');
+      updateDuesStatus('Active Member (Dues Paid)');
       setDuesPaymentMsg(true);
       setPaidDuesAmount(params.get('amount'));
     } else if (params.get('duesCanceled') === 'true') {
@@ -1263,7 +1263,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       <span>Dues Record Updated Successfully!</span>
                     </div>
                     <p className="font-normal text-slate-600 dark:text-slate-300">
-                      Your status is now <strong>Active Member in Good Standing (2025/2026)</strong>. A formal receipt for BDS$ {paidDuesAmount || officialDuesRateBBD.toFixed(2)} has been emailed to <strong>{currentUser.email}</strong>.
+                      Your status is now <strong>Active Member (Dues Paid)</strong>. A formal receipt for BDS$ {paidDuesAmount || officialDuesRateBBD.toFixed(2)} has been emailed to <strong>{currentUser.email}</strong>.
                     </p>
                   </div>
                 ) : (
@@ -1338,7 +1338,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     )}
 
                     <button
-                      onClick={() => updateDuesStatus('Pending Dues Payment')}
+                      onClick={() => updateDuesStatus('Unpaid (Dues Owed)')}
                       className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors"
                     >
                       Set Dues Pending (Testing)
@@ -1613,7 +1613,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                             </button>
 
                             <button
-                              onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
+                              onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (Dues Paid)')}
                               className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
                               title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
                             >
