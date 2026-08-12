@@ -1,22 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award, BookOpen } from 'lucide-react';
 
 export const Footer = () => {
+  const { siteSettings } = useAuth();
   return (
     <footer className="bg-slate-900 text-white border-t border-slate-800 pt-16 pb-12 transition-colors duration-300">
       
       {/* 1. TOP CREED & IMPACT BANNER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 border-b border-slate-800">
-        <div className="p-8 rounded-3xl bg-gradient-to-r from-optimist-blue via-optimist-royal to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-800">
+        <div className="p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-300">
           <div className="space-y-2 text-center md:text-left">
-            <span className="text-xs uppercase font-bold text-amber-300 tracking-widest">
+            <span className="text-xs uppercase font-bold text-amber-700 tracking-widest">
               The Optimist Motto
             </span>
-            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-white">
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900">
               "Bringing Out The Best In Children"
             </h3>
-            <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-600 max-w-xl">
               By providing hope and positive vision, Optimists bring out the best in youth, our communities, and ourselves.
             </p>
           </div>
@@ -51,8 +53,8 @@ export const Footer = () => {
             A premier non-profit service organization in Barbados dedicated to empowering youth through education, mentorship, and community cheer.
           </p>
           <div className="text-xs text-slate-400 space-y-1 pt-1">
-            <p><strong>Meeting Time:</strong> 1st Working Monday of Month • 6:00 PM for Guests</p>
-            <p><strong>Location:</strong> Ross University, LESC, St. Michael</p>
+            <p><strong>Meeting Time:</strong> {siteSettings?.meetingSchedule || '1st Monday of every month at 5:30 PM (6:00 PM for Guests)'}</p>
+            <p><strong>Location:</strong> {siteSettings?.meetingVenue || 'Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados'}</p>
           </div>
         </div>
 
@@ -144,12 +146,12 @@ export const Footer = () => {
           <div className="space-y-2 text-xs text-slate-300">
             <div className="flex items-start space-x-2">
               <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span>Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados</span>
+              <span>{siteSettings?.meetingVenue || 'Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-              <a href="mailto:info@ProgressiveOptimist.org" className="hover:underline">
-                info@ProgressiveOptimist.org
+              <a href={`mailto:${siteSettings?.contactEmail || 'info@progressiveoptimist.org'}`} className="hover:underline">
+                {siteSettings?.contactEmail || 'info@progressiveoptimist.org'}
               </a>
             </div>
           </div>

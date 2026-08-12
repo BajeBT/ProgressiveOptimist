@@ -1,12 +1,13 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { getContactEmail, requireDatabase } from '../lib/db.js';
 
-const RECIPIENT = 'info@progressiveoptimist.org';
 const SENDER = '"Progressive Optimist Club Website" <noreply@progressiveoptimist.org>';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed.' });
   }
+  if (!requireDatabase(res)) return;
 
   if (!process.env.SES_ACCESS_KEY_ID || process.env.SES_ACCESS_KEY_ID.startsWith('REPLACE_ME')) {
     return res.status(500).json({ success: false, message: 'Contact form is not configured yet.' });
@@ -31,9 +32,10 @@ export default async function handler(req, res) {
   const textBody = `New message from the club website contact form.\n\nName: ${name}\nEmail: ${email}\nSubject: ${safeSubject}\n\nMessage:\n${message}`;
 
   try {
+    const recipient = await getContactEmail();
     await ses.send(new SendEmailCommand({
       Source: SENDER,
-      Destination: { ToAddresses: [RECIPIENT] },
+      Destination: { ToAddresses: [recipient] },
       ReplyToAddresses: [email],
       Message: {
         Subject: { Data: emailSubject, Charset: 'UTF-8' },

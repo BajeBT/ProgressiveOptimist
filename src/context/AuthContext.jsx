@@ -427,10 +427,9 @@ const defaultPrimaryInitiatives = [
 ];
 
 const defaultSiteSettings = {
-  meetingSchedule: "1st Monday of every month at 5:30 PM",
+  meetingSchedule: "1st Monday of every month at 5:30 PM (6:00 PM for Guests)",
   meetingVenue: "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",
-  supportEmail: "info@progressiveoptimist.org",
-  contactPhone: "+1 (246) 836-6185",
+  contactEmail: "info@progressiveoptimist.org",
   annualDuesRate: "$200.00",
   themeTitle: "C.A.R.E – Championing Authentic & Reinvigorating Engagement"
 };

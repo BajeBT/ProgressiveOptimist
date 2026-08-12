@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export const HomePage = ({ onOpenPostModal }) => {
-  const { projects, memberRoster, currentUser } = useAuth();
+  const { projects, memberRoster, currentUser, siteSettings } = useAuth();
   const [selectedProject, setSelectedProject] = useState(null);
 
   const approvedProjects = projects.filter(p => p.approved !== false);
@@ -96,11 +96,11 @@ export const HomePage = ({ onOpenPostModal }) => {
             <div className="pt-6 border-t border-slate-800/80 flex flex-wrap items-center gap-6 text-xs text-slate-300">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-optimist-gold shrink-0" />
-                <span>1st Working Monday @ 6:00 PM (Guests)</span>
+                <span>{siteSettings?.meetingSchedule || '1st Monday of every month at 5:30 PM (6:00 PM for Guests)'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4 text-optimist-gold shrink-0" />
-                <span>Ross University, Lloyd Erskine Sandiford Centre (LESC)</span>
+                <span>{siteSettings?.meetingVenue || 'Ross University, Lloyd Erskine Sandiford Centre (LESC)'}</span>
               </div>
             </div>
           </div>

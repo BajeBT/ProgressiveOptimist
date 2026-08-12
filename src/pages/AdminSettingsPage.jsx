@@ -131,10 +131,9 @@ export const AdminSettingsPage = () => {
   };
   
   // Site Variables Form State
-  const [meetingSchedule, setMeetingSchedule] = useState(siteSettings?.meetingSchedule || "1st Monday of every month at 5:30 PM");
+  const [meetingSchedule, setMeetingSchedule] = useState(siteSettings?.meetingSchedule || "1st Monday of every month at 5:30 PM (6:00 PM for Guests)");
   const [meetingVenue, setMeetingVenue] = useState(siteSettings?.meetingVenue || "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados");
-  const [supportEmail, setSupportEmail] = useState(siteSettings?.supportEmail || "info@progressiveoptimist.org");
-  const [contactPhone, setContactPhone] = useState(siteSettings?.contactPhone || "+1 (246) 836-6185");
+  const [contactEmail, setContactEmail] = useState(siteSettings?.contactEmail || "info@progressiveoptimist.org");
   const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$200.00");
   const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
   
@@ -411,8 +410,7 @@ export const AdminSettingsPage = () => {
     updateSiteSettings({
       meetingSchedule,
       meetingVenue,
-      supportEmail,
-      contactPhone,
+      contactEmail,
       annualDuesRate,
       themeTitle
     });
@@ -618,27 +616,14 @@ export const AdminSettingsPage = () => {
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
-                  Official Support Email *
+                  Official Contact Email *
                 </label>
                 <input
                   type="email"
-                  value={supportEmail}
-                  onChange={e => setSupportEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
-                  Official Contact Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  value={contactPhone}
-                  onChange={e => setContactPhone(e.target.value)}
+                  value={contactEmail}
+                  onChange={e => setContactEmail(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                   required
                 />

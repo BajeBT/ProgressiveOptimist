@@ -329,8 +329,8 @@ export const AboutPage = () => {
             Meetings Held Monthly in St. Michael
           </h3>
           <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
-            <strong>Schedule:</strong> 1st Working Monday of every month at 6:00 PM for Guests.<br />
-            <strong>Location:</strong> Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados.
+            <strong>Schedule:</strong> {siteSettings?.meetingSchedule || '1st Monday of every month at 5:30 PM (6:00 PM for Guests)'}.<br />
+            <strong>Location:</strong> {siteSettings?.meetingVenue || 'Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados'}.
           </p>
         </div>
 

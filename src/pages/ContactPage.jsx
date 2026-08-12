@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const DEFAULT_SUBJECTS = ['General Inquiry', 'Membership Application', 'Volunteering Opportunities', 'Laptop & Tablet Drive'];
 
 export const ContactPage = () => {
-  const { contactSubjects } = useAuth();
+  const { contactSubjects, siteSettings } = useAuth();
   const subjectOptions = contactSubjects.length > 0 ? contactSubjects.map(s => s.label) : DEFAULT_SUBJECTS;
 
   const [form, setForm] = useState({
@@ -92,13 +92,13 @@ export const ContactPage = () => {
             <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
               <div className="flex items-start space-x-3">
                 <Calendar className="w-4 h-4 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
-                <span><strong>Schedule:</strong> 1st Working Monday of every month @ 6:00 PM for Guests</span>
+                <span><strong>Schedule:</strong> {siteSettings?.meetingSchedule || '1st Monday of every month at 5:30 PM (6:00 PM for Guests)'}</span>
               </div>
 
               <div className="flex items-start space-x-3">
                 <MapPin className="w-4 h-4 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
                 <span>
-                  <strong>Venue:</strong> Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados
+                  <strong>Venue:</strong> {siteSettings?.meetingVenue || 'Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados'}
                 </span>
               </div>
 
@@ -138,7 +138,7 @@ export const ContactPage = () => {
             <div className="space-y-3 text-xs text-blue-100">
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-optimist-gold shrink-0" />
-                <span><strong>Email:</strong> <a href="mailto:info@ProgressiveOptimist.org" className="hover:underline">info@ProgressiveOptimist.org</a></span>
+                <span><strong>Email:</strong> <a href={`mailto:${siteSettings?.contactEmail || 'info@progressiveoptimist.org'}`} className="hover:underline">{siteSettings?.contactEmail || 'info@progressiveoptimist.org'}</a></span>
               </div>
             </div>
 
