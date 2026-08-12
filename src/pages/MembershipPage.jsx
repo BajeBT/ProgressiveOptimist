@@ -43,6 +43,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const {
     currentUser,
     login,
+    requestPasswordSetup,
     registerMember,
     setMemberPassword,
     changeMyPassword,
@@ -73,6 +74,12 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Forgot Password / first-time login form state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [isSendingForgot, setIsSendingForgot] = useState(false);
 
   // Change Password modal state (for a logged-in member changing their own)
   const [changePasswordModal, setChangePasswordModal] = useState(false);
@@ -508,6 +515,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     if (!res.success) {
       setLoginError(res.message);
     }
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setForgotMsg('');
+    setIsSendingForgot(true);
+    const res = await requestPasswordSetup(forgotEmail);
+    setIsSendingForgot(false);
+    setForgotMsg(res.message);
   };
 
   const handleAppSubmit = async (e) => {
@@ -2158,14 +2174,23 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       </div>
 
       {/* LOGIN FORM */}
-      {authTab === 'login' && (
+      {authTab === 'login' && !showForgotPassword && (
         <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 shadow-xl max-w-lg mx-auto space-y-6">
-          
+
           <div className="flex flex-col gap-2">
             <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
               Log In To Your Account
             </h2>
 
+          </div>
+
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              First time logging in, or your password is blank or incorrect? If your email is already on the club roster,
+              use <button type="button" onClick={() => { setForgotEmail(loginEmail); setForgotMsg(''); setShowForgotPassword(true); }} className="font-bold underline hover:no-underline">Forgot Password</button> below
+              to get a secure link to set one.
+            </span>
           </div>
 
           {loginError && (
@@ -2194,9 +2219,18 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(loginEmail); setForgotMsg(''); setShowForgotPassword(true); }}
+                  className="text-[11px] font-bold text-optimist-blue dark:text-optimist-gold hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
@@ -2219,6 +2253,64 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               {isLoggingIn ? 'Signing In…' : 'Sign In As Member'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* FORGOT PASSWORD / FIRST-TIME LOGIN FORM */}
+      {authTab === 'login' && showForgotPassword && (
+        <div className="p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 shadow-xl max-w-lg mx-auto space-y-6">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+              Set or Reset Your Password
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Enter the email address on your club membership record. If it's found, we'll send a secure, single-use
+              link to set your password - this covers both first-time logins and forgotten passwords.
+            </p>
+          </div>
+
+          {forgotMsg ? (
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{forgotMsg}</span>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  Member Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSendingForgot}
+                className="w-full py-3 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
+              >
+                {isSendingForgot && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isSendingForgot ? 'Sending…' : 'Send Me a Login Link'}
+              </button>
+            </form>
+          )}
+
+          <button
+            type="button"
+            onClick={() => { setShowForgotPassword(false); setForgotMsg(''); }}
+            className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1"
+          >
+            ← Back to Login
+          </button>
         </div>
       )}
 
