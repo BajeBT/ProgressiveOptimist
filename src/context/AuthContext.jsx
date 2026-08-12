@@ -431,7 +431,7 @@ const defaultSiteSettings = {
   meetingVenue: "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",
   supportEmail: "info@progressiveoptimist.org",
   contactPhone: "+1 (246) 836-6185",
-  annualDuesRate: "$250.00",
+  annualDuesRate: "$200.00",
   themeTitle: "C.A.R.E – Championing Authentic & Reinvigorating Engagement"
 };
 
@@ -491,16 +491,16 @@ export const AuthProvider = ({ children }) => {
       const unique = Array.from(new Map(roster.map(m => [m.id, m])).values());
       return unique.map(m => ({
         ...m,
-        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$250.00',
-        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$250.00',
+        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$200.00',
+        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$0.00',
         balanceDue: m.balanceDue ? m.balanceDue.replace(' BBD', '') : '$0.00'
       }));
     } catch (e) {
       const uniqueInit = Array.from(new Map(initialRoster.map(m => [m.id, m])).values());
       return uniqueInit.map(m => ({
         ...m,
-        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$250.00',
-        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$250.00',
+        duesRate: m.duesRate ? m.duesRate.replace(' BBD', '') : '$200.00',
+        amountPaid: m.amountPaid ? m.amountPaid.replace(' BBD', '') : '$0.00',
         balanceDue: m.balanceDue ? m.balanceDue.replace(' BBD', '') : '$0.00'
       }));
     }
@@ -559,8 +559,8 @@ export const AuthProvider = ({ children }) => {
         adminGrantedAt: r.admin_granted_at || null,
         addedBy: r.added_by || null,
         fiscalYear: r.fiscal_year || '2025/2026 (Oct 1 - Sep 30)',
-        duesRate: r.dues_rate || '$250.00',
-        amountPaid: r.amount_paid || '$250.00',
+        duesRate: r.dues_rate || '$200.00',
+        amountPaid: r.amount_paid || '$0.00',
         balanceDue: r.balance_due || '$0.00',
         paymentMethod: r.payment_method || 'Bank Transfer',
         duesStatus: r.dues_status || 'Active Member (2025/2026)',
@@ -675,6 +675,22 @@ export const AuthProvider = ({ children }) => {
     loadContactSubjects();
   }, []);
 
+  // Site Variables (Annual Dues Rate, meeting info, etc.) - shared across every
+  // visitor via the database, not just cached in this browser's localStorage.
+  useEffect(() => {
+    async function loadSiteSettings() {
+      try {
+        const res = await api('site-settings');
+        if (res.ok && res.settings) {
+          setSiteSettings(res.settings);
+        }
+      } catch (err) {
+        console.warn("Site settings fetch fallback to cached/default values:", err);
+      }
+    }
+    loadSiteSettings();
+  }, []);
+
   useEffect(() => {
     try {
       if (isDarkMode) {
@@ -733,7 +749,19 @@ export const AuthProvider = ({ children }) => {
 
   // Update Site Settings
   const updateSiteSettings = (newSettings) => {
-    setSiteSettings(prev => ({ ...prev, ...newSettings }));
+    const merged = { ...siteSettings, ...newSettings };
+    setSiteSettings(merged);
+
+    (async () => {
+      try {
+        const res = await api('site-settings', { method: 'POST', body: { settings: merged } });
+        if (!res.ok || !res.success) {
+          console.warn("Site settings save error:", res.message);
+        }
+      } catch (err) {
+        console.warn("Site settings save error:", err);
+      }
+    })();
   };
 
   // Update Member Permissions Matrix
@@ -931,11 +959,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Treasurer updates member dues status
-  const updateMemberDuesByTreasurer = async (memberId, newStatus, amountPaid = "$250.00", paymentMethod = "Bank Transfer") => {
+  const updateMemberDuesByTreasurer = async (memberId, newStatus, duesRate = "$200.00", paymentMethod = "Bank Transfer") => {
     const today = new Date().toISOString().split('T')[0];
     const isPaid = newStatus.includes('Active');
-    const paid = isPaid ? "$250.00" : "$0.00";
-    const balance = isPaid ? "$0.00" : "$250.00";
+    const paid = isPaid ? duesRate : "$0.00";
+    const balance = isPaid ? "$0.00" : duesRate;
 
     setMemberRoster(prev => prev.map(m => (
       m.id === memberId

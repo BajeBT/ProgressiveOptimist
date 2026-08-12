@@ -105,7 +105,7 @@ export const AdminSettingsPage = () => {
   };
 
   const handleTreasurerUpdateStatus = async (memberId, memberName, newStatus) => {
-    const res = await updateMemberDuesByTreasurer(memberId, newStatus);
+    const res = await updateMemberDuesByTreasurer(memberId, newStatus, siteSettings?.annualDuesRate || '$200.00');
     if (res.success) {
       setTreasurerMsg(`Updated dues record for ${memberName} to ${newStatus}. Formal receipt emailed.`);
       setTimeout(() => setTreasurerMsg(''), 5000);
@@ -135,7 +135,7 @@ export const AdminSettingsPage = () => {
   const [meetingVenue, setMeetingVenue] = useState(siteSettings?.meetingVenue || "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados");
   const [supportEmail, setSupportEmail] = useState(siteSettings?.supportEmail || "info@progressiveoptimist.org");
   const [contactPhone, setContactPhone] = useState(siteSettings?.contactPhone || "+1 (246) 836-6185");
-  const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$250.00");
+  const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$200.00");
   const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
   
   // Primary Initiatives State
@@ -174,8 +174,8 @@ export const AdminSettingsPage = () => {
       address: m.address || '',
       role: m.role || 'Active Member',
       access: m.access || 'member',
-      duesRate: m.duesRate || '$250.00',
-      amountPaid: m.amountPaid || '$250.00',
+      duesRate: m.duesRate || siteSettings?.annualDuesRate || '$200.00',
+      amountPaid: m.amountPaid || '$0.00',
       balanceDue: m.balanceDue || '$0.00',
       paymentMethod: m.paymentMethod || 'Bank Transfer',
       duesStatus: m.duesStatus || 'Active Member (2025/2026)',
@@ -200,9 +200,9 @@ export const AdminSettingsPage = () => {
     address: '',
     role: 'Active Member',
     access: 'member',
-    duesRate: '$250.00',
+    duesRate: siteSettings?.annualDuesRate || '$200.00',
     amountPaid: '$0.00',
-    balanceDue: '$250.00',
+    balanceDue: siteSettings?.annualDuesRate || '$200.00',
     paymentMethod: 'Pending',
     duesStatus: 'Pending Dues Payment'
   };
@@ -804,7 +804,9 @@ export const AdminSettingsPage = () => {
                     return (
                       <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4">
-                          <strong className="block text-slate-900 dark:text-white text-sm">{m.name}</strong>
+                          <strong className="block text-slate-900 dark:text-white text-sm">
+                            {isOfficialAccount(m) ? m.role : m.name}
+                          </strong>
                           <span className="text-slate-400 font-mono text-[10px]">{m.id} • {m.email}</span>
                         </td>
 
@@ -1145,7 +1147,7 @@ export const AdminSettingsPage = () => {
 
                         <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
                           <strong className="block text-slate-900 dark:text-white">2025/2026</strong>
-                          <span className="text-amber-600 dark:text-amber-400 font-bold">$250.00 Rate</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">{member.duesRate ? member.duesRate.replace(' BBD', '') : ''} Rate</span>
                         </td>
                         <td className="p-4">
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Paid: {member.amountPaid ? member.amountPaid.replace(' BBD', '') : ''}</span>
@@ -1210,9 +1212,9 @@ export const AdminSettingsPage = () => {
                           <button
                             onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
                             className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
-                            title="Mark $250 Dues Paid"
+                            title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
                           >
-                            <Check className="w-3 h-3" /> Mark $250 Paid
+                            <Check className="w-3 h-3" /> Mark {siteSettings?.annualDuesRate || '$200.00'} Paid
                           </button>
 
                           <button
@@ -1287,7 +1289,7 @@ export const AdminSettingsPage = () => {
               <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
                 <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
                 <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
-                <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
+                <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>{statementModalMember.duesRate ? statementModalMember.duesRate.replace(' BBD', '') : (siteSettings?.annualDuesRate || '$200.00')}</strong></p>
                 <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
                 <p className="text-slate-800 dark:text-slate-200">Current Balance Due: <strong className={(!statementModalMember.balanceDue || statementModalMember.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{statementModalMember.balanceDue ? statementModalMember.balanceDue.replace(' BBD', '') : ''}</strong></p>
               </div>

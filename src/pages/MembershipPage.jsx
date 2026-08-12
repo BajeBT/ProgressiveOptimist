@@ -59,7 +59,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   } = useAuth();
 
   // The official club-wide dues rate, admin-editable in Admin Settings.
-  const officialDuesRateBBD = Number(String(siteSettings?.annualDuesRate || '250').replace(/[^0-9.]/g, '')) || 250;
+  const officialDuesRateBBD = Number(String(siteSettings?.annualDuesRate || '200').replace(/[^0-9.]/g, '')) || 200;
   
   // Auth state tabs (when logged out)
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'apply'
@@ -277,7 +277,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         "",
         "   B. TREASURER'S FINANCIAL REPORT (Sharon Mohammed):",
         "      - Operating Account Balance (as of June 30, 2025): BDS$ 14,850.00",
-        "      - Dues Ledger Update: 100% of the 21 active members have settled their annual dues of BDS$ 250.00. Total Dues Collected: BDS$ 5,250.00.",
+        "      - Dues Ledger Update: 100% of the 21 active members have settled their annual dues of BDS$ 200.00. Total Dues Collected: BDS$ 4,200.00.",
         "      - Approved Disbursements:",
         "        * RISE 2025 Youth Experience Facility & Materials: BDS$ 3,500.00",
         "        * District Convention Registration Deposit: BDS$ 850.00",
@@ -354,7 +354,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         "Members who were inducted on or before the charter charter date of May 27, 2010 shall be designated as Charter Members.",
         "",
         "Section 3: Dues & Fiscal Year",
-        "The fiscal year of the Club shall extend from October 1st of each calendar year through September 30th of the following calendar year. Annual membership dues shall be fixed at BDS$ 250.00, payable on or before October 1st.",
+        "The fiscal year of the Club shall extend from October 1st of each calendar year through September 30th of the following calendar year. Annual membership dues shall be fixed at BDS$ 200.00, payable on or before October 1st.",
         "",
         "ARTICLE IV - EXECUTIVE OFFICERS & BOARD OF DIRECTORS",
         "Section 1: Executive Officers",
@@ -569,7 +569,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   };
 
   const handleTreasurerUpdateStatus = (memberId, memberName, newStatus) => {
-    updateMemberDuesByTreasurer(memberId, newStatus, "$250.00", "Bank Transfer");
+    updateMemberDuesByTreasurer(memberId, newStatus, siteSettings?.annualDuesRate || "$200.00", "Bank Transfer");
     setTreasurerMsg(`Updated ${memberName}'s dues record to: ${newStatus}`);
     setTimeout(() => setTreasurerMsg(''), 4000);
   };
@@ -870,7 +870,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            My Dues Record ($250)
+            My Dues Record ({siteSettings?.annualDuesRate || '$200.00'})
           </button>
         </div>
 
@@ -1550,7 +1550,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                           <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
                             <strong className="block text-slate-900 dark:text-white">2025/2026</strong>
-                            <span className="text-amber-600 dark:text-amber-400 font-bold">$250.00 Rate</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">{member.duesRate ? member.duesRate.replace(' BBD', '') : ''} Rate</span>
                           </td>
                           <td className="p-4">
                             <span className="font-bold text-emerald-600 dark:text-emerald-400 block">Paid: {member.amountPaid ? member.amountPaid.replace(' BBD', '') : ''}</span>
@@ -1615,9 +1615,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                             <button
                               onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (2025/2026)')}
                               className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
-                              title="Mark $250 Dues Paid"
+                              title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
                             >
-                              <Check className="w-3 h-3" /> Mark $250 Paid
+                              <Check className="w-3 h-3" /> Mark {siteSettings?.annualDuesRate || '$200.00'} Paid
                             </button>
 
                             <button
@@ -1692,7 +1692,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-1">
                   <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-300 block">Dues Status & Balance</span>
                   <p className="text-slate-800 dark:text-slate-200">Fiscal Year: <strong>2025/2026 (Oct 1 - Sep 30)</strong></p>
-                  <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>$250.00</strong></p>
+                  <p className="text-slate-800 dark:text-slate-200">Annual Dues Rate: <strong>{statementModalMember.duesRate ? statementModalMember.duesRate.replace(' BBD', '') : (siteSettings?.annualDuesRate || '$200.00')}</strong></p>
                   <p className="text-slate-800 dark:text-slate-200">Amount Paid: <strong className="text-emerald-600 dark:text-emerald-400">{statementModalMember.amountPaid ? statementModalMember.amountPaid.replace(' BBD', '') : ''}</strong></p>
                   <p className="text-slate-800 dark:text-slate-200">Current Balance Due: <strong className={(!statementModalMember.balanceDue || statementModalMember.balanceDue.replace(' BBD', '') === '$0.00') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{statementModalMember.balanceDue ? statementModalMember.balanceDue.replace(' BBD', '') : ''}</strong></p>
                 </div>
@@ -2150,7 +2150,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           Progressive Optimist Member Portal
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          Log in to publish new project posts, manage annual dues ($250 / year), and upload activity photos to the website, or apply for new membership with the Barbados club.
+          Log in to publish new project posts, manage annual dues (${officialDuesRateBBD} / year), and upload activity photos to the website, or apply for new membership with the Barbados club.
         </p>
       </div>
 

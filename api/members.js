@@ -6,7 +6,8 @@ import {
   isValidEmail,
   isOfficialEmail,
   ELEVATED_ACCESS,
-  canApproveMembers
+  canApproveMembers,
+  getAnnualDuesRate
 } from '../lib/db.js';
 import { getSession, requireAccess } from '../lib/session.js';
 import { generateRandomPassword } from '../lib/password.js';
@@ -61,7 +62,7 @@ async function handleList(req, res) {
 }
 
 // Shared by both the single and bulk paths so they cannot drift apart.
-async function insertOneMember(entry, actor, approvalStatus) {
+async function insertOneMember(entry, actor, approvalStatus, currentDuesRate) {
   const email = normalizeEmail(entry.email);
   const name = String(entry.name || '').trim();
 
@@ -123,8 +124,8 @@ async function insertOneMember(entry, actor, approvalStatus) {
       payment_method, dues_status, notes
     )
     VALUES (
-      ${memberId}, ${FISCAL_YEAR}, ${entry.duesRate || '$250.00'},
-      ${entry.amountPaid || '$0.00'}, ${entry.balanceDue || '$250.00'},
+      ${memberId}, ${FISCAL_YEAR}, ${entry.duesRate || currentDuesRate},
+      ${entry.amountPaid || '$0.00'}, ${entry.balanceDue || currentDuesRate},
       ${entry.paymentMethod || 'Pending'}, ${entry.duesStatus || 'Pending Dues Payment'},
       ${entry.notes || ''}
     );
@@ -141,10 +142,11 @@ async function handleAdd(req, res, session, entries) {
   // The Treasurer's own additions are trusted immediately; everyone else's wait
   // for an officer to approve them.
   const approvalStatus = actor.is_treasurer ? 'approved' : 'pending_approval';
+  const currentDuesRate = await getAnnualDuesRate();
 
   const results = [];
   for (const entry of entries) {
-    results.push(await insertOneMember(entry, actor, approvalStatus));
+    results.push(await insertOneMember(entry, actor, approvalStatus, currentDuesRate));
   }
 
   const added = results.filter(r => r.status === 'added').length;

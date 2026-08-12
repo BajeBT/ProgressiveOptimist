@@ -4,7 +4,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.
 const BBD_TO_USD = 0.5;
-const DEFAULT_DUES_BBD = 250;
+const DEFAULT_DUES_BBD = 200;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

@@ -5,7 +5,8 @@ import {
   requireDatabase,
   normalizeEmail,
   isValidEmail,
-  resolveEffectiveAccess
+  resolveEffectiveAccess,
+  getAnnualDuesRate
 } from '../lib/db.js';
 import { sendEmail } from '../lib/email.js';
 import { createSession, getSession } from '../lib/session.js';
@@ -283,9 +284,10 @@ async function handleRegister(req, res) {
       ${getDefaultAvatarForRole('Pending')}, ${addressString}, 'pending_verification', 'pending_approval'
     );
   `;
+  const currentDuesRate = await getAnnualDuesRate();
   await sql`
     INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
-    VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', '$250.00', '$0.00', '$250.00', 'Pending', 'Pending Verification', ${notesString});
+    VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', ${currentDuesRate}, '$0.00', ${currentDuesRate}, 'Pending', 'Pending Verification', ${notesString});
   `;
 
   const origin = req.headers.origin || `https://${req.headers.host}`;
