@@ -53,7 +53,7 @@ export const Navbar = ({ onOpenPostModal }) => {
           
           {/* Left: District Theme & DB Status */}
           <div className="flex items-center space-x-3 shrink-0">
-            <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               District 78 (CAR) • Club # 78008
             </span>
@@ -66,12 +66,12 @@ export const Navbar = ({ onOpenPostModal }) => {
             )}
 
             <span className="hidden md:inline text-blue-100 font-medium">
-              2025-26 Theme: <strong className="text-amber-300 font-bold">{siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement"}</strong>
+              2025-26 Theme: <strong className="text-amber-300 font-medium">{siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement"}</strong>
             </span>
           </div>
 
           {/* Right: Global Network Links */}
-          <div className="flex items-center space-x-4 font-semibold text-[11px] shrink-0">
+          <div className="flex items-center space-x-4 font-medium text-[11px] shrink-0">
             <Link to="/directory" className="hover:text-amber-300 transition-colors flex items-center gap-1">
               <BookOpen className="w-3.5 h-3.5 text-amber-300" />
               <span>Official Roster Directory</span>

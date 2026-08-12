@@ -487,6 +487,11 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  // Contact page "Subject" dropdown options, admin-editable, Neon-backed
+  // (not localStorage - needs to be the same for every visitor, not just
+  // whichever browser an admin last edited it from).
+  const [contactSubjects, setContactSubjects] = useState([]);
+
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -612,6 +617,20 @@ export const AuthProvider = ({ children }) => {
       }
     }
     loadGallery();
+  }, []);
+
+  // Load the Contact page's admin-editable subject options. Independent of
+  // loadNeonData for the same reason as the gallery fetch above.
+  useEffect(() => {
+    async function loadContactSubjects() {
+      try {
+        const rows = await sql`SELECT id, label, sort_order FROM contact_subjects ORDER BY sort_order ASC;`;
+        if (rows.length > 0) setContactSubjects(rows);
+      } catch (err) {
+        console.warn("Contact subjects fetch fallback to default list:", err);
+      }
+    }
+    loadContactSubjects();
   }, []);
 
   useEffect(() => {
@@ -1218,6 +1237,70 @@ Progressive Optimist Club of Barbados
     })();
   };
 
+  // Contact page "Subject" dropdown options - admin add/remove/reorder,
+  // optimistic local update synced to Neon so every visitor sees the same list.
+  const addContactSubject = (label) => {
+    const trimmed = (label || '').trim();
+    if (!trimmed) return;
+    const nextOrder = contactSubjects.length > 0
+      ? Math.max(...contactSubjects.map(s => s.sort_order)) + 1
+      : 0;
+    const tempId = 'temp-' + Date.now();
+    setContactSubjects(prev => [...prev, { id: tempId, label: trimmed, sort_order: nextOrder }]);
+
+    (async () => {
+      try {
+        const result = await sql`
+          INSERT INTO contact_subjects (label, sort_order)
+          VALUES (${trimmed}, ${nextOrder})
+          RETURNING id;
+        `;
+        const realId = result[0].id;
+        setContactSubjects(prev => prev.map(s => s.id === tempId ? { ...s, id: realId } : s));
+      } catch (err) {
+        console.warn("Neon DB contact subject insert error:", err);
+      }
+    })();
+  };
+
+  const removeContactSubject = (id) => {
+    setContactSubjects(prev => prev.filter(s => s.id !== id));
+    (async () => {
+      try {
+        await sql`DELETE FROM contact_subjects WHERE id = ${id};`;
+      } catch (err) {
+        console.warn("Neon DB contact subject delete error:", err);
+      }
+    })();
+  };
+
+  const reorderContactSubject = (id, direction) => {
+    const sorted = [...contactSubjects].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex(s => s.id === id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= sorted.length) return;
+
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    const newSortA = b.sort_order;
+    const newSortB = a.sort_order;
+
+    setContactSubjects(prev => prev.map(s => {
+      if (s.id === a.id) return { ...s, sort_order: newSortA };
+      if (s.id === b.id) return { ...s, sort_order: newSortB };
+      return s;
+    }));
+
+    (async () => {
+      try {
+        await sql`UPDATE contact_subjects SET sort_order = ${newSortA} WHERE id = ${a.id};`;
+        await sql`UPDATE contact_subjects SET sort_order = ${newSortB} WHERE id = ${b.id};`;
+      } catch (err) {
+        console.warn("Neon DB contact subject reorder error:", err);
+      }
+    })();
+  };
+
   // Add photo to the shared gallery. Uploads through api/gallery-upload.js,
   // which pushes the image into the club's Google Photos account and only
   // stores metadata (title/caption/uploader/Google media item id) in Neon.
@@ -1277,6 +1360,10 @@ Progressive Optimist Club of Barbados
         deleteProject,
         memberGallery,
         addGalleryPhoto,
+        contactSubjects,
+        addContactSubject,
+        removeContactSubject,
+        reorderContactSubject,
         isDarkMode,
         toggleDarkMode
       }}

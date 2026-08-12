@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+const DEFAULT_SUBJECTS = ['General Inquiry', 'Membership Application', 'Volunteering Opportunities', 'Laptop & Tablet Drive'];
 
 export const ContactPage = () => {
+  const { contactSubjects } = useAuth();
+  const subjectOptions = contactSubjects.length > 0 ? contactSubjects.map(s => s.label) : DEFAULT_SUBJECTS;
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -207,10 +213,9 @@ export const ContactPage = () => {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                     disabled={isSubmitting}
                   >
-                    <option value="General Inquiry">General Inquiry</option>
-                    <option value="Membership Application">Membership Application</option>
-                    <option value="Volunteering">Volunteering Opportunities</option>
-                    <option value="Laptop Drive Donation">Laptop & Tablet Drive</option>
+                    {subjectOptions.map(label => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
                   </select>
                 </div>
 

@@ -29,7 +29,10 @@ import {
   CreditCard,
   Eye,
   Download,
-  Printer
+  Printer,
+  MessageSquare,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 
 export const AdminSettingsPage = () => {
@@ -49,7 +52,11 @@ export const AdminSettingsPage = () => {
     testEmailTarget,
     projects,
     approveProject,
-    deleteProject
+    deleteProject,
+    contactSubjects,
+    addContactSubject,
+    removeContactSubject,
+    reorderContactSubject
   } = useAuth();
 
   const userAccess = currentUser?.access || 'member';
@@ -135,6 +142,7 @@ export const AdminSettingsPage = () => {
     "Mini Millionaires in the Making Mentorship"
   ]);
   const [newInitiativeText, setNewInitiativeText] = useState('');
+  const [newSubjectText, setNewSubjectText] = useState('');
 
   // Roster Editor Modal State
   const [selectedMemberToEdit, setSelectedMemberToEdit] = useState(null);
@@ -365,6 +373,7 @@ export const AdminSettingsPage = () => {
 
       {/* TAB 1: SITE VARIABLES */}
       {activeTab === 'variables' && (
+        <div className="space-y-8">
         <form onSubmit={handleSaveVariables} className="space-y-8">
 
           {/* Section 2: Club Details & Variable Information */}
@@ -487,6 +496,74 @@ export const AdminSettingsPage = () => {
           </div>
 
         </form>
+
+        {/* Contact Page Subject Options Manager */}
+        <div className="p-6 sm:p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-4 shadow-xl">
+          <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <MessageSquare className="w-5 h-5 text-optimist-blue" />
+            Contact Page "Subject" Dropdown Options
+          </h2>
+          <p className="text-xs text-slate-500 -mt-2">
+            Changes here apply immediately for every visitor to the Contact page - there's no separate save step.
+          </p>
+
+          <div className="space-y-2">
+            {[...contactSubjects].sort((a, b) => a.sort_order - b.sort_order).map((subject, idx) => (
+              <div key={subject.id} className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                <span className="flex-1 text-xs font-semibold text-slate-800 dark:text-slate-200">{subject.label}</span>
+                <button
+                  type="button"
+                  onClick={() => reorderContactSubject(subject.id, 'up')}
+                  disabled={idx === 0}
+                  className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move up"
+                >
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => reorderContactSubject(subject.id, 'down')}
+                  disabled={idx === contactSubjects.length - 1}
+                  className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Move down"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeContactSubject(subject.id)}
+                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-100 dark:hover:bg-red-950/40"
+                  title="Remove"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            {contactSubjects.length === 0 && (
+              <p className="text-xs text-slate-400 italic">No custom options yet - the Contact page is using its built-in defaults.</p>
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <input
+              type="text"
+              value={newSubjectText}
+              onChange={e => setNewSubjectText(e.target.value)}
+              placeholder="e.g. Sponsorship Inquiry"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+            />
+            <button
+              type="button"
+              onClick={() => { addContactSubject(newSubjectText); setNewSubjectText(''); }}
+              className="px-4 py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition-colors flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
+          </div>
+        </div>
+
+        </div>
       )}
 
       {/* TAB 2: MEMBER ACCESS LEVELS & PERMISSIONS MATRIX */}
