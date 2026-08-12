@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock, Building2, Copy } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
 
 export const ContactPage = () => {
   const [form, setForm] = useState({
@@ -9,6 +9,8 @@ export const ContactPage = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
   const bankDetails = {
@@ -26,9 +28,29 @@ export const ContactPage = () => {
     setTimeout(() => setCopiedBankInfo(false), 3000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/send-contact-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setSubmitError(data.message || 'Failed to send message. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+      setSubmitted(true);
+      setIsSubmitting(false);
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setSubmitError('Network error. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   const handleWhatsApp = () => {
@@ -142,6 +164,13 @@ export const ContactPage = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {submitError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{submitError}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Your Name *</label>
@@ -151,6 +180,7 @@ export const ContactPage = () => {
                       onChange={e => setForm({ ...form, name: e.target.value })}
                       placeholder="e.g. Maria Walcott"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -161,8 +191,9 @@ export const ContactPage = () => {
                       type="email"
                       value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
-                      placeholder="info@ProgressiveOptimist.org"
+                      placeholder="e.g. maria.walcott@example.com"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -174,6 +205,7 @@ export const ContactPage = () => {
                     value={form.subject}
                     onChange={e => setForm({ ...form, subject: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                    disabled={isSubmitting}
                   >
                     <option value="General Inquiry">General Inquiry</option>
                     <option value="Membership Application">Membership Application</option>
@@ -190,16 +222,27 @@ export const ContactPage = () => {
                     onChange={e => setForm({ ...form, message: e.target.value })}
                     placeholder="How can we assist you or collaborate?"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                    disabled={isSubmitting}
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <Send className="w-4 h-4 text-optimist-gold" />
-                  <span>Send Message</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 text-optimist-gold" />
+                      <span>Send Message</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}
