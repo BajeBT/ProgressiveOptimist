@@ -49,7 +49,6 @@ export const AdminSettingsPage = () => {
     addMembers,
     approveMemberRecord,
     resetMemberPassword,
-    updateMemberDuesByTreasurer,
     updateMemberPayments,
     updateMemberNotesByTreasurer,
     sendDuesStatementEmail,
@@ -118,16 +117,8 @@ export const AdminSettingsPage = () => {
   // before saving - the authoritative totals come back from the server.
   const paymentRowsTotal = paymentRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
-  const bankDetails = {
-    bank: "Scotiabank (Barbados) Ltd.",
-    accountName: "Progressive Optimist Club of Barbados",
-    accountNum: "000451801",
-    branch: "Haggatt Hall Branch, St. Michael",
-    routing: "66555"
-  };
-
   const copyBankInfo = () => {
-    const infoText = `Bank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nRouting/Transit: ${bankDetails.routing}`;
+    const infoText = `Bank: ${siteSettings?.bankName}\nAccount Name: ${siteSettings?.bankAccountName}\nAccount #: ${siteSettings?.bankAccountNumber}\nBranch: ${siteSettings?.bankBranch}\nRouting/Transit: ${siteSettings?.bankRoutingNumber}`;
     navigator.clipboard.writeText(infoText);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 3000);
@@ -144,14 +135,6 @@ export const AdminSettingsPage = () => {
       setSelectedMemberIds([]);
     } else {
       setSelectedMemberIds(treasurerRoster.map(m => m.id));
-    }
-  };
-
-  const handleTreasurerUpdateStatus = async (memberId, memberName, newStatus) => {
-    const res = await updateMemberDuesByTreasurer(memberId, newStatus, siteSettings?.annualDuesRate || '$200.00');
-    if (res.success) {
-      setTreasurerMsg(`Updated dues record for ${memberName} to ${newStatus}. Formal receipt emailed.`);
-      setTimeout(() => setTreasurerMsg(''), 5000);
     }
   };
 
@@ -179,6 +162,11 @@ export const AdminSettingsPage = () => {
   const [contactEmail, setContactEmail] = useState(siteSettings?.contactEmail || "info@progressiveoptimist.org");
   const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$200.00");
   const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
+  const [bankName, setBankName] = useState(siteSettings?.bankName || "Scotiabank");
+  const [bankAccountName, setBankAccountName] = useState(siteSettings?.bankAccountName || "Progressive Optimist");
+  const [bankAccountNumber, setBankAccountNumber] = useState(siteSettings?.bankAccountNumber || "000451801");
+  const [bankBranch, setBankBranch] = useState(siteSettings?.bankBranch || "Haggatt Hall");
+  const [bankRoutingNumber, setBankRoutingNumber] = useState(siteSettings?.bankRoutingNumber || "66555");
   
   // Primary Initiatives State
   const [initiativesList, setInitiativesList] = useState(primaryInitiatives || [
@@ -474,7 +462,12 @@ export const AdminSettingsPage = () => {
       meetingVenue,
       contactEmail,
       annualDuesRate,
-      themeTitle
+      themeTitle,
+      bankName,
+      bankAccountName,
+      bankAccountNumber,
+      bankBranch,
+      bankRoutingNumber
     });
     setStatusMsg("Site variables updated successfully!");
     setTimeout(() => setStatusMsg(''), 4000);
@@ -686,6 +679,77 @@ export const AdminSettingsPage = () => {
                   type="email"
                   value={contactEmail}
                   onChange={e => setContactEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mt-4 mb-1">
+                  Official Bank Deposit Account
+                </h3>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Bank Name *
+                </label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={e => setBankName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Account Name *
+                </label>
+                <input
+                  type="text"
+                  value={bankAccountName}
+                  onChange={e => setBankAccountName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Account # *
+                </label>
+                <input
+                  type="text"
+                  value={bankAccountNumber}
+                  onChange={e => setBankAccountNumber(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Branch *
+                </label>
+                <input
+                  type="text"
+                  value={bankBranch}
+                  onChange={e => setBankBranch(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Transit/Routing # *
+                </label>
+                <input
+                  type="text"
+                  value={bankRoutingNumber}
+                  onChange={e => setBankRoutingNumber(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                   required
                 />
@@ -993,9 +1057,9 @@ export const AdminSettingsPage = () => {
           {/* Scotiabank Bank Transfer Info Box */}
           <div className="p-4 rounded-2xl bg-[#c1c4c7] text-slate-900 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="text-xs space-y-0.5">
-              <strong className="text-amber-700 font-bold block">Official Scotiabank Dues Deposit Account:</strong>
+              <strong className="text-amber-700 font-bold block">Official {siteSettings?.bankName} Dues Deposit Account:</strong>
               <p className="text-slate-600 font-mono">
-                Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong> • Account #: <strong className="text-emerald-600">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit/Routing #: <strong className="text-amber-700">66555</strong>
+                Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong> • Account #: <strong className="text-emerald-600">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit/Routing #: <strong className="text-amber-700">{siteSettings?.bankRoutingNumber}</strong>
               </p>
             </div>
             <button onClick={copyBankInfo} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shrink-0">
@@ -1257,14 +1321,6 @@ export const AdminSettingsPage = () => {
                           </button>
 
                           <button
-                            onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (Dues Paid)')}
-                            className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
-                            title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
-                          >
-                            <Check className="w-3 h-3" /> Mark {siteSettings?.annualDuesRate || '$200.00'} Paid
-                          </button>
-
-                          <button
                             onClick={() => handleSendEmailStatement(member.id)}
                             className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-optimist-blue hover:text-white text-slate-700 dark:text-slate-300 font-bold text-[10px] transition-colors flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700"
                             title="Send Email Statement"
@@ -1382,9 +1438,9 @@ export const AdminSettingsPage = () => {
 
             {/* Bank Transfer Instructions */}
             <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-1 text-xs font-mono">
-              <span className="text-[10px] font-bold text-amber-400 uppercase block font-sans">Payment Instructions: Scotiabank Bank Transfer</span>
-              <p>Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong></p>
-              <p>Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit #: <strong className="text-amber-300">66555</strong></p>
+              <span className="text-[10px] font-bold text-amber-400 uppercase block font-sans">Payment Instructions: {siteSettings?.bankName} Bank Transfer</span>
+              <p>Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong></p>
+              <p>Account #: <strong className="text-emerald-400">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit #: <strong className="text-amber-300">{siteSettings?.bankRoutingNumber}</strong></p>
             </div>
 
             {/* Remarks & Notes */}

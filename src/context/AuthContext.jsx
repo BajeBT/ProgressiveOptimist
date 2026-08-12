@@ -431,7 +431,12 @@ const defaultSiteSettings = {
   meetingVenue: "Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados",
   contactEmail: "info@progressiveoptimist.org",
   annualDuesRate: "$200.00",
-  themeTitle: "C.A.R.E – Championing Authentic & Reinvigorating Engagement"
+  themeTitle: "C.A.R.E – Championing Authentic & Reinvigorating Engagement",
+  bankName: "Scotiabank",
+  bankAccountName: "Progressive Optimist",
+  bankAccountNumber: "000451801",
+  bankBranch: "Haggatt Hall",
+  bankRoutingNumber: "66555"
 };
 
 export const AuthProvider = ({ children }) => {

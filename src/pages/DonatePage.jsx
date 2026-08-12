@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 // Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.
 const BBD_TO_USD = 0.5;
 
 export const DonatePage = () => {
+  const { siteSettings } = useAuth();
   const [selectedTier, setSelectedTier] = useState(50);
   const [customAmount, setCustomAmount] = useState('');
   const [donorName, setDonorName] = useState('');
@@ -30,16 +32,8 @@ export const DonatePage = () => {
     }
   }, []);
 
-  const bankDetails = {
-    bank: "Scotiabank",
-    accountName: "Progressive Optimist",
-    accountNum: "000451801",
-    branch: "Haggatt Hall",
-    routing: "66555"
-  };
-
   const copyBankInfo = () => {
-    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nTransit/Routing #: ${bankDetails.routing}`;
+    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${siteSettings?.bankName}\nAccount Name: ${siteSettings?.bankAccountName}\nAccount #: ${siteSettings?.bankAccountNumber}\nBranch: ${siteSettings?.bankBranch}\nTransit/Routing #: ${siteSettings?.bankRoutingNumber}`;
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 3000);
@@ -112,7 +106,7 @@ export const DonatePage = () => {
               Pay Dues or Donate via Bank Transfer / Deposit
             </h2>
             <p className="text-xs text-slate-600">
-              Direct bank transfers can be sent to our official Scotiabank Barbados account details below:
+              Direct bank transfers can be sent to our official {siteSettings?.bankName} Barbados account details below:
             </p>
           </div>
 
@@ -128,27 +122,27 @@ export const DonatePage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
           <div className="p-4 rounded-2xl bg-white border border-slate-300">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Bank Name</span>
-            <strong className="text-sm font-heading font-semibold text-slate-900">{bankDetails.bank}</strong>
+            <strong className="text-sm font-heading font-semibold text-slate-900">{siteSettings?.bankName}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-white border border-slate-300">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Account Name</span>
-            <strong className="text-sm font-heading font-semibold text-amber-700">{bankDetails.accountName}</strong>
+            <strong className="text-sm font-heading font-semibold text-amber-700">{siteSettings?.bankAccountName}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-white border border-slate-300">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Account Number</span>
-            <strong className="text-sm font-mono font-semibold text-emerald-600">{bankDetails.accountNum}</strong>
+            <strong className="text-sm font-mono font-semibold text-emerald-600">{siteSettings?.bankAccountNumber}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-white border border-slate-300">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Branch Name</span>
-            <strong className="text-sm font-heading font-semibold text-slate-900">{bankDetails.branch}</strong>
+            <strong className="text-sm font-heading font-semibold text-slate-900">{siteSettings?.bankBranch}</strong>
           </div>
 
           <div className="p-4 rounded-2xl bg-white border border-slate-300">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Transit / Routing #</span>
-            <strong className="text-sm font-mono font-semibold text-amber-700">{bankDetails.routing}</strong>
+            <strong className="text-sm font-mono font-semibold text-amber-700">{siteSettings?.bankRoutingNumber}</strong>
           </div>
         </div>
       </div>

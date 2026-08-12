@@ -8,7 +8,12 @@ const DEFAULTS = {
   meetingVenue: 'Ross University, Lloyd Erskine Sandiford Centre (LESC), Two Mile Hill, St. Michael, Barbados',
   contactEmail: 'info@progressiveoptimist.org',
   annualDuesRate: '$200.00',
-  themeTitle: 'C.A.R.E – Championing Authentic & Reinvigorating Engagement'
+  themeTitle: 'C.A.R.E – Championing Authentic & Reinvigorating Engagement',
+  bankName: 'Scotiabank',
+  bankAccountName: 'Progressive Optimist',
+  bankAccountNumber: '000451801',
+  bankBranch: 'Haggatt Hall',
+  bankRoutingNumber: '66555'
 };
 
 function toClientShape(row) {
@@ -18,7 +23,12 @@ function toClientShape(row) {
     meetingVenue: row.meeting_venue || DEFAULTS.meetingVenue,
     contactEmail: row.contact_email || DEFAULTS.contactEmail,
     annualDuesRate: row.annual_dues_rate || DEFAULTS.annualDuesRate,
-    themeTitle: row.theme_title || DEFAULTS.themeTitle
+    themeTitle: row.theme_title || DEFAULTS.themeTitle,
+    bankName: row.bank_name || DEFAULTS.bankName,
+    bankAccountName: row.bank_account_name || DEFAULTS.bankAccountName,
+    bankAccountNumber: row.bank_account_number || DEFAULTS.bankAccountNumber,
+    bankBranch: row.bank_branch || DEFAULTS.bankBranch,
+    bankRoutingNumber: row.bank_routing_number || DEFAULTS.bankRoutingNumber
   };
 }
 
@@ -42,11 +52,17 @@ export default async function handler(req, res) {
 
     const s = req.body?.settings || {};
     await sql`
-      INSERT INTO site_settings (id, meeting_schedule, meeting_venue, contact_email, annual_dues_rate, theme_title)
+      INSERT INTO site_settings (
+        id, meeting_schedule, meeting_venue, contact_email, annual_dues_rate, theme_title,
+        bank_name, bank_account_name, bank_account_number, bank_branch, bank_routing_number
+      )
       VALUES (
         1, ${s.meetingSchedule || DEFAULTS.meetingSchedule}, ${s.meetingVenue || DEFAULTS.meetingVenue},
         ${s.contactEmail || DEFAULTS.contactEmail},
-        ${s.annualDuesRate || DEFAULTS.annualDuesRate}, ${s.themeTitle || DEFAULTS.themeTitle}
+        ${s.annualDuesRate || DEFAULTS.annualDuesRate}, ${s.themeTitle || DEFAULTS.themeTitle},
+        ${s.bankName || DEFAULTS.bankName}, ${s.bankAccountName || DEFAULTS.bankAccountName},
+        ${s.bankAccountNumber || DEFAULTS.bankAccountNumber}, ${s.bankBranch || DEFAULTS.bankBranch},
+        ${s.bankRoutingNumber || DEFAULTS.bankRoutingNumber}
       )
       ON CONFLICT (id) DO UPDATE SET
         meeting_schedule = EXCLUDED.meeting_schedule,
@@ -54,6 +70,11 @@ export default async function handler(req, res) {
         contact_email = EXCLUDED.contact_email,
         annual_dues_rate = EXCLUDED.annual_dues_rate,
         theme_title = EXCLUDED.theme_title,
+        bank_name = EXCLUDED.bank_name,
+        bank_account_name = EXCLUDED.bank_account_name,
+        bank_account_number = EXCLUDED.bank_account_number,
+        bank_branch = EXCLUDED.bank_branch,
+        bank_routing_number = EXCLUDED.bank_routing_number,
         updated_at = CURRENT_TIMESTAMP;
     `;
 

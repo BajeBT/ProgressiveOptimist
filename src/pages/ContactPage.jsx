@@ -19,16 +19,8 @@ export const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
-  const bankDetails = {
-    bank: "Scotiabank",
-    accountName: "Progressive Optimist",
-    accountNum: "000451801",
-    branch: "Haggatt Hall",
-    routing: "66555"
-  };
-
   const copyBankInfo = () => {
-    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nTransit/Routing #: ${bankDetails.routing}`;
+    const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${siteSettings?.bankName}\nAccount Name: ${siteSettings?.bankAccountName}\nAccount #: ${siteSettings?.bankAccountNumber}\nBranch: ${siteSettings?.bankBranch}\nTransit/Routing #: ${siteSettings?.bankRoutingNumber}`;
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 3000);
@@ -122,11 +114,11 @@ export const ContactPage = () => {
             </div>
 
             <div className="text-xs space-y-1.5 font-mono text-slate-300 bg-slate-800/90 p-4 rounded-2xl border border-slate-700">
-              <p><strong>Bank:</strong> {bankDetails.bank}</p>
-              <p><strong>Account Name:</strong> {bankDetails.accountName}</p>
-              <p><strong>Account #:</strong> <span className="text-emerald-400 font-bold">{bankDetails.accountNum}</span></p>
-              <p><strong>Branch:</strong> {bankDetails.branch}</p>
-              <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{bankDetails.routing}</span></p>
+              <p><strong>Bank:</strong> {siteSettings?.bankName}</p>
+              <p><strong>Account Name:</strong> {siteSettings?.bankAccountName}</p>
+              <p><strong>Account #:</strong> <span className="text-emerald-400 font-bold">{siteSettings?.bankAccountNumber}</span></p>
+              <p><strong>Branch:</strong> {siteSettings?.bankBranch}</p>
+              <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{siteSettings?.bankRoutingNumber}</span></p>
             </div>
           </div>
 

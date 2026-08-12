@@ -48,7 +48,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     changeMyPassword,
     updateDuesStatus,
     memberRoster,
-    updateMemberDuesByTreasurer,
     updateMemberNotesByTreasurer,
     sendDuesStatementEmail,
     logout,
@@ -493,16 +492,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [tempNotesText, setTempNotesText] = useState('');
   const [treasurerMsg, setTreasurerMsg] = useState('');
 
-  const bankDetails = {
-    bank: "Scotiabank",
-    accountName: "Progressive Optimist",
-    accountNum: "000451801",
-    branch: "Haggatt Hall",
-    routing: "66555"
-  };
-
   const copyBankInfo = () => {
-    const text = `To pay your Dues via Bank Deposit/Transfer:\nBank: ${bankDetails.bank}\nAccount Name: ${bankDetails.accountName}\nAccount #: ${bankDetails.accountNum}\nBranch: ${bankDetails.branch}\nTransit/Routing #: ${bankDetails.routing}`;
+    const text = `To pay your Dues via Bank Deposit/Transfer:\nBank: ${siteSettings?.bankName}\nAccount Name: ${siteSettings?.bankAccountName}\nAccount #: ${siteSettings?.bankAccountNumber}\nBranch: ${siteSettings?.bankBranch}\nTransit/Routing #: ${siteSettings?.bankRoutingNumber}`;
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 3000);
@@ -566,12 +557,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       setDuesPaymentError('Network error. Please try again.');
       setIsPayingDues(false);
     }
-  };
-
-  const handleTreasurerUpdateStatus = (memberId, memberName, newStatus) => {
-    updateMemberDuesByTreasurer(memberId, newStatus, siteSettings?.annualDuesRate || "$200.00", "Bank Transfer");
-    setTreasurerMsg(`Updated ${memberName}'s dues record to: ${newStatus}`);
-    setTimeout(() => setTreasurerMsg(''), 4000);
   };
 
   const handleSaveNotes = (memberId) => {
@@ -1388,11 +1373,11 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 </div>
 
                 <div className="space-y-2 text-xs bg-slate-800/90 p-4 rounded-2xl border border-slate-700 font-mono">
-                  <p><strong>Bank:</strong> {bankDetails.bank}</p>
-                  <p><strong>Account Name:</strong> {bankDetails.accountName}</p>
-                  <p><strong>Account #:</strong> <span className="text-emerald-400 font-bold">{bankDetails.accountNum}</span></p>
-                  <p><strong>Branch:</strong> {bankDetails.branch}</p>
-                  <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{bankDetails.routing}</span></p>
+                  <p><strong>Bank:</strong> {siteSettings?.bankName}</p>
+                  <p><strong>Account Name:</strong> {siteSettings?.bankAccountName}</p>
+                  <p><strong>Account #:</strong> <span className="text-emerald-400 font-bold">{siteSettings?.bankAccountNumber}</span></p>
+                  <p><strong>Branch:</strong> {siteSettings?.bankBranch}</p>
+                  <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{siteSettings?.bankRoutingNumber}</span></p>
                 </div>
               </div>
             </div>
@@ -1437,9 +1422,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             {/* Scotiabank Bank Transfer Info Box for Treasurer */}
             <div className="p-4 rounded-2xl bg-slate-900 text-white border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="text-xs space-y-0.5">
-                <strong className="text-amber-400 font-bold block">Official Scotiabank Dues Deposit Account:</strong>
+                <strong className="text-amber-400 font-bold block">Official {siteSettings?.bankName} Dues Deposit Account:</strong>
                 <p className="text-slate-300 font-mono">
-                  Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong> • Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit/Routing #: <strong className="text-amber-300">66555</strong>
+                  Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong> • Account #: <strong className="text-emerald-400">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit/Routing #: <strong className="text-amber-300">{siteSettings?.bankRoutingNumber}</strong>
                 </p>
               </div>
               <button onClick={copyBankInfo} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shrink-0">
@@ -1613,14 +1598,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                             </button>
 
                             <button
-                              onClick={() => handleTreasurerUpdateStatus(member.id, member.name, 'Active Member (Dues Paid)')}
-                              className="w-full px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow transition-colors flex items-center justify-center gap-1"
-                              title={`Mark ${siteSettings?.annualDuesRate || '$200.00'} Dues Paid`}
-                            >
-                              <Check className="w-3 h-3" /> Mark {siteSettings?.annualDuesRate || '$200.00'} Paid
-                            </button>
-
-                            <button
                               onClick={() => handleSendEmailStatement(member.id)}
                               className="w-full px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-optimist-blue hover:text-white text-slate-700 dark:text-slate-300 font-bold text-[10px] transition-colors flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700"
                               title="Send Email Statement"
@@ -1727,9 +1704,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
               {/* Bank Transfer Instructions */}
               <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-1 text-xs font-mono">
-                <span className="text-[10px] font-bold text-amber-400 uppercase block font-sans">Payment Instructions: Scotiabank Bank Transfer</span>
-                <p>Bank: <strong>Scotiabank</strong> • Account Name: <strong>Progressive Optimist</strong></p>
-                <p>Account #: <strong className="text-emerald-400">000451801</strong> • Branch: <strong>Haggatt Hall</strong> • Transit #: <strong className="text-amber-300">66555</strong></p>
+                <span className="text-[10px] font-bold text-amber-400 uppercase block font-sans">Payment Instructions: {siteSettings?.bankName} Bank Transfer</span>
+                <p>Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong></p>
+                <p>Account #: <strong className="text-emerald-400">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit #: <strong className="text-amber-300">{siteSettings?.bankRoutingNumber}</strong></p>
               </div>
 
               {/* Remarks & Notes */}
