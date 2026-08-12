@@ -323,6 +323,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [photoToDelete, setPhotoToDelete] = useState(null);
   const [isDeletingPhoto, setIsDeletingPhoto] = useState(false);
 
+  const [docToDelete, setDocToDelete] = useState(null);
+  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+
   const canManageAlbums = useMemo(() => {
     if (!currentUser) return false;
     const role = (currentUser.role || '').toLowerCase();
@@ -331,6 +334,26 @@ export const MembershipPage = ({ onOpenPostModal }) => {
            ['super admin', 'admin', 'finance'].includes(access) ||
            currentUser.isAdmin === true;
   }, [currentUser]);
+
+  const canDeleteDocument = useMemo(() => {
+    if (!currentUser) return false;
+    const role = (currentUser.role || '').toLowerCase();
+    const access = (currentUser.access || '').toLowerCase();
+    return ['super admin', 'admin', 'finance', 'executive', 'officer', 'president', 'treasurer'].includes(role) ||
+           ['super admin', 'admin', 'finance'].includes(access) ||
+           currentUser.isAdmin === true;
+  }, [currentUser]);
+
+  const confirmDeleteDocument = () => {
+    if (!docToDelete) return;
+    setIsDeletingDoc(true);
+    setInternalDocs(prev => prev.filter(d => d.id !== docToDelete.id));
+    setIsDeletingDoc(false);
+    setDocToDelete(null);
+    if (selectedDocModal && selectedDocModal.id === docToDelete.id) {
+      setSelectedDocModal(null);
+    }
+  };
 
   const canDeletePhoto = (photo) => {
     if (!currentUser || !photo || photo.source === 'google_album') return false;
@@ -380,8 +403,204 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoUploadError, setPhotoUploadError] = useState('');
   
-  // Document upload state & viewer modal
+  // Document upload state & viewer modal (Loaded from Memphis Documents Library + Internal Minutes)
   const [internalDocs, setInternalDocs] = useState([
+    {
+      id: "wp-doc-1",
+      name: "Bank Transfer Instructions",
+      filename: "POCB Scotiabank Wire Instructions.pdf",
+      date: "August 2025",
+      size: "87.3 KB",
+      version: "1.1",
+      downloads: "308 downloads",
+      category: "Banking & Finance",
+      author: "Progressive Optimist Club Treasurer",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCB%20Scotiabank%20Wire%20Instructions.pdf",
+      summary: "Official Scotiabank wire transfer and online banking instructions for paying annual membership dues and project donations to the Progressive Optimist Club of Barbados."
+    },
+    {
+      id: "wp-doc-2",
+      name: "Progressive Optimist Club Membership Brochure",
+      filename: "POCoB Membership Brochure.pdf",
+      date: "Official Publication",
+      size: "1.8 MB",
+      version: "1.0",
+      downloads: "1,330 downloads",
+      category: "Membership & Orientation",
+      author: "Membership Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20Membership%20Brochure.pdf",
+      summary: "Official Club Membership Brochure outlining the mission, youth programs, meeting schedules, and membership benefits of the Progressive Optimist Club of Barbados."
+    },
+    {
+      id: "wp-doc-3",
+      name: "Progressive Optimist Club By-Laws for Distribution",
+      filename: "POCoB ByLaws - Distrib.pdf",
+      date: "Governance Document",
+      size: "397 KB",
+      version: "1.0",
+      downloads: "1,263 downloads",
+      category: "Governance & Bylaws",
+      author: "Executive Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20ByLaws%20-%20Distrib.pdf",
+      summary: "Official distribution copy of the Constitution & Bylaws for the Progressive Optimist Club of Barbados (Optimist International Club #78008)."
+    },
+    {
+      id: "wp-doc-4",
+      name: "Professional Development Program (PDP) FAQ",
+      filename: "PDP_FAQ.pdf",
+      date: "Program Guide",
+      size: "30.1 KB",
+      version: "1.0",
+      downloads: "1,187 downloads",
+      category: "Professional Development",
+      author: "PDP Program Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/PDP_FAQ.pdf",
+      summary: "Frequently Asked Questions (FAQ) guide for the Progressive Optimist Professional Development Program (PDP)."
+    },
+    {
+      id: "wp-doc-5",
+      name: "New Member Application Form",
+      filename: "POCoB Application.pdf",
+      date: "Membership Form",
+      size: "756.7 KB",
+      version: "1.0",
+      downloads: "1,220 downloads",
+      category: "Forms & Applications",
+      author: "Membership Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20Application.pdf",
+      summary: "Official PDF application form for prospective members applying to join the Progressive Optimist Club of Barbados."
+    },
+    {
+      id: "wp-doc-6",
+      name: "Professional Development Program (PDP) Brochure",
+      filename: "PDP_Brochure.pdf",
+      date: "Program Guide",
+      size: "1.0 MB",
+      version: "1.0",
+      downloads: "1,281 downloads",
+      category: "Professional Development",
+      author: "PDP Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/PDP_Brochure.pdf",
+      summary: "Official informational brochure for the Progressive Optimist Professional Development Program."
+    },
+    {
+      id: "wp-doc-7",
+      name: "Optimist Creed Quick Read",
+      filename: "Optimist Creed Quick Read.pdf",
+      date: "Inspirational Guide",
+      size: "14.4 KB",
+      version: "1.0",
+      downloads: "1,228 downloads",
+      category: "Club Culture & Creed",
+      author: "Optimist International",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Optimist%20Creed%20Quick%20Read.pdf",
+      summary: "A quick-read printable reference sheet for the 10 tenets of the Optimist Creed."
+    },
+    {
+      id: "wp-doc-8",
+      name: "Nominating Committee Guide",
+      filename: "Nominating Committee Guide.pdf",
+      date: "Governance Guide",
+      size: "18.6 KB",
+      version: "1.0",
+      downloads: "1,087 downloads",
+      category: "Governance & Elections",
+      author: "Nominating Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Nominating%20Committee%20Guide.pdf",
+      summary: "Guidelines and procedural steps for the Club Nominating Committee during annual executive election cycles."
+    },
+    {
+      id: "wp-doc-9",
+      name: "Annual Service Projects Chart",
+      filename: "Annual Projects.jpg",
+      date: "Visual Infographic",
+      size: "749.2 KB",
+      version: "1.0",
+      downloads: "897 downloads",
+      category: "Projects & Initiatives",
+      author: "Public Relations Lead",
+      fileType: "JPG",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Annual%20Projects.jpg",
+      summary: "High-resolution graphic layout showcasing the major annual service projects and youth initiatives of the club."
+    },
+    {
+      id: "wp-doc-10",
+      name: "Annual Service Projects (Instagram Format)",
+      filename: "Annual Projects-Instagram.jpg",
+      date: "Social Media Asset",
+      size: "384.2 KB",
+      version: "1.0",
+      downloads: "929 downloads",
+      category: "Public Relations & Media",
+      author: "Public Relations Lead",
+      fileType: "JPG",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Annual%20Projects-Instagram.jpg",
+      summary: "Square aspect-ratio image formatted for Instagram posts detailing annual club service initiatives."
+    },
+    {
+      id: "wp-doc-11",
+      name: "20-20 Vision Screener Record Form",
+      filename: "20-20 Screener Record.pdf",
+      date: "Project Form",
+      size: "206.0 KB",
+      version: "1.0",
+      downloads: "1,167 downloads",
+      category: "Community & Vision Projects",
+      author: "20-20 Vision Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Screener%20Record.pdf",
+      summary: "Official screening record sheet used by volunteers during the 20-20 Vision primary school vision testing project."
+    },
+    {
+      id: "wp-doc-12",
+      name: "20-20 Vision Screener Visual Charts",
+      filename: "20-20 Visual Charts.pdf",
+      date: "Project Asset",
+      size: "1.4 MB",
+      version: "1.0",
+      downloads: "1,030 downloads",
+      category: "Community & Vision Projects",
+      author: "20-20 Vision Committee",
+      fileType: "PDF",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Visual%20Charts.pdf",
+      summary: "Printable visual acuity charts for conducting student eye examinations in the 20-20 Vision initiative."
+    },
+    {
+      id: "wp-doc-13",
+      name: "20-20 Vision Progressive Principal Request Form",
+      filename: "20-20 Progressive Principal Request.docx",
+      date: "School Outreach Form",
+      size: "2.2 MB",
+      version: "1.0",
+      downloads: "1,139 downloads",
+      category: "Community & Vision Projects",
+      author: "20-20 Vision Committee",
+      fileType: "DOCX",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Progressive%20Principal%20Request.docx",
+      summary: "Official request letter and authorization form sent to primary school principals to arrange vision screening dates."
+    },
+    {
+      id: "wp-doc-14",
+      name: "20-20 Vision Parent Referral Form",
+      filename: "20-20 ParentReferal2016-17.docx",
+      date: "School Outreach Form",
+      size: "2.2 MB",
+      version: "1.0",
+      downloads: "1,188 downloads",
+      category: "Community & Vision Projects",
+      author: "20-20 Vision Committee",
+      fileType: "DOCX",
+      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20ParentReferal2016-17.docx",
+      summary: "Parental consent and medical referral form issued to parents of students flagged for optometrist evaluation."
+    },
     {
       id: "doc-1",
       name: "Monthly Meeting Minutes - July 2025",
@@ -606,8 +825,26 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [docName, setDocName] = useState('');
   const [docCategory, setDocCategory] = useState('Meeting Minutes');
 
+  const [docSearchTerm, setDocSearchTerm] = useState('');
+
+  const filteredDocs = useMemo(() => {
+    const term = docSearchTerm.toLowerCase().trim();
+    if (!term) return internalDocs;
+    return internalDocs.filter(d => 
+      (d.name && d.name.toLowerCase().includes(term)) ||
+      (d.category && d.category.toLowerCase().includes(term)) ||
+      (d.author && d.author.toLowerCase().includes(term)) ||
+      (d.filename && d.filename.toLowerCase().includes(term)) ||
+      (d.fileType && d.fileType.toLowerCase().includes(term))
+    );
+  }, [internalDocs, docSearchTerm]);
+
   const downloadDocumentFile = (doc) => {
     if (!doc) return;
+    if (doc.fileUrl) {
+      window.open(doc.fileUrl, '_blank');
+      return;
+    }
     const cleanFilename = `${doc.name.replace(/[^a-z0-9]/gi, '_')}.txt`;
     const fileHeader = `${doc.name.toUpperCase()}\n${'='.repeat(doc.name.length)}\n\nCategory: ${doc.category || 'Official Document'}\nDate: ${doc.date}\nAuthor: ${doc.author || 'Club Executive Committee'}\n\nSUMMARY:\n${doc.summary || 'Official internal document.'}\n\n${'='.repeat(60)}\nDOCUMENT CONTENT:\n${'='.repeat(60)}\n\n${doc.content || 'Document content.'}\n`;
     
@@ -1616,53 +1853,113 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           </div>
         )}
 
-        {/* Tab 3: Internal Documents */}
+        {/* Tab 3: Internal Documents & Minutes */}
         {dashboardTab === 'resources' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
-                Member Resources & Meeting Minutes
-              </h2>
-              {['super admin', 'admin', 'finance'].includes(currentUser?.access) && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-500" />
+                  <span>Member Resources & Meeting Minutes</span>
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-optimist-blue/10 text-optimist-blue dark:bg-amber-400/20 dark:text-amber-400">
+                    {filteredDocs.length} Documents
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Official club bylaws, governance forms, program brochures, and meeting minutes imported from the WordPress Document Library.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {['super admin', 'admin', 'finance'].includes(currentUser?.access) && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDocUploadModal(true);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer whitespace-nowrap"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Document</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Document Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={docSearchTerm}
+                onChange={(e) => setDocSearchTerm(e.target.value)}
+                placeholder="Search document title, category, file type (PDF, DOCX, JPG), or author..."
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-optimist-blue focus:outline-none"
+              />
+              {docSearchTerm && (
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDocUploadModal(true);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer"
+                  onClick={() => setDocSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
                 >
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Document / Minutes</span>
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
+            {/* Documents List Grid */}
             <div className="space-y-3">
-              {internalDocs.map((doc) => {
+              {filteredDocs.map((doc) => {
+                const isPdf = (doc.fileType || doc.filename || '').toUpperCase().includes('PDF');
+                const isDocx = (doc.fileType || doc.filename || '').toUpperCase().includes('DOC');
+                const isImg = (doc.fileType || doc.filename || '').toUpperCase().includes('JPG') || (doc.fileType || doc.filename || '').toUpperCase().includes('PNG');
+
                 return (
-                  <div key={doc.id} className="rounded-2xl glass-card border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-all">
-                    <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div key={doc.id} className="rounded-2xl glass-card border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                    <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
                       <div className="flex items-start space-x-3">
-                        <div className="p-2.5 rounded-xl bg-amber-400/10 text-amber-500 border border-amber-400/20 shrink-0">
-                          <FileText className="w-5 h-5 text-optimist-blue" />
+                        <div className={`p-3 rounded-2xl border shrink-0 ${
+                          isPdf ? 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:bg-rose-950/40 dark:text-rose-400' :
+                          isDocx ? 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-950/40 dark:text-blue-400' :
+                          isImg ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-950/40 dark:text-emerald-400' :
+                          'bg-amber-400/10 text-amber-600 border-amber-400/20'
+                        }`}>
+                          <FileText className="w-5 h-5" />
                         </div>
-                        <div>
-                          <strong className="block font-heading font-bold text-sm text-slate-900 dark:text-white">
-                            {doc.name}
-                          </strong>
-                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <strong className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                              {doc.name}
+                            </strong>
+                            {doc.fileType && (
+                              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
+                                isPdf ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300' :
+                                isDocx ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300' :
+                                'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                              }`}>
+                                {doc.fileType}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                            {doc.summary || doc.filename}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 pt-0.5">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300">
                               {doc.category || 'Official Record'}
                             </span>
                             <span>• {doc.date}</span>
                             <span>• {doc.size}</span>
+                            {doc.downloads && <span className="font-semibold text-amber-500">• {doc.downloads}</span>}
+                            {doc.version && <span>• v{doc.version}</span>}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2 shrink-0">
+                      <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1670,26 +1967,60 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                             e.stopPropagation();
                             setSelectedDocModal(doc);
                           }}
-                          className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold flex items-center gap-1 transition-all shadow cursor-pointer"
-                          title="View & Preview Document Content in Reader Window"
+                          className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer text-xs"
+                          title="View & Preview Document Details"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>View</span>
+                          <span>View Details</span>
                         </button>
+
                         <button
                           type="button"
                           onClick={() => downloadDocumentFile(doc)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold hover:bg-optimist-blue hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Download File to Computer"
+                          className="px-3.5 py-2 rounded-xl bg-optimist-blue hover:bg-blue-700 text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                          title="Download or Open File"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span>Download</span>
+                          <span>{doc.fileUrl ? 'Open File' : 'Download'}</span>
                         </button>
+
+                        {canDeleteDocument && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDocToDelete(doc);
+                            }}
+                            className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Delete Document (Admins, Super Admin, Finance)"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
                 );
               })}
+
+              {filteredDocs.length === 0 && (
+                <div className="p-12 text-center rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-3">
+                  <FileText className="w-10 h-10 text-slate-400 mx-auto" />
+                  <h3 className="font-heading font-bold text-slate-900 dark:text-white">
+                    No Documents Found
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    No document matches "{docSearchTerm}". Try searching for another keyword or clear your search filter.
+                  </p>
+                  <button
+                    onClick={() => setDocSearchTerm('')}
+                    className="px-4 py-2 rounded-xl bg-optimist-blue text-white text-xs font-bold shadow"
+                  >
+                    Clear Document Search
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2702,6 +3033,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 </button>
 
                 <div className="flex items-center space-x-2">
+                  {canDeleteDocument && (
+                    <button
+                      onClick={() => setDocToDelete(selectedDocModal)}
+                      className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-600 hover:text-white text-rose-500 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedDocModal(null)}
                     className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-200 transition-colors cursor-pointer"
@@ -2716,6 +3056,49 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     <span>Download Attachment</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DOCUMENT DELETE CONFIRMATION MODAL */}
+        {docToDelete && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center space-x-3 text-rose-500">
+                <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">Delete Document</h3>
+                  <p className="text-xs text-slate-500">Internal Documents & Minutes</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-900 dark:text-rose-200 space-y-1">
+                <p className="font-bold">Are you sure you want to delete this document?</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">"{docToDelete.name}"</p>
+                {docToDelete.category && <p className="text-[11px] text-slate-500">Category: {docToDelete.category}</p>}
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDocToDelete(null)}
+                  disabled={isDeletingDoc}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteDocument}
+                  disabled={isDeletingDoc}
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5"
+                >
+                  {isDeletingDoc && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Yes, Delete Document</span>
+                </button>
               </div>
             </div>
           </div>
