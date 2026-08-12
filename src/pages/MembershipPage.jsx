@@ -263,7 +263,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       if (!selectedAlbumUrl) return;
       setIsLoadingAlbum(true);
       try {
-        const res = await fetch(`/api/gallery-list?albumUrl=${encodeURIComponent(selectedAlbumUrl)}`);
+        const res = await fetch(`/api/gallery?albumUrl=${encodeURIComponent(selectedAlbumUrl)}`);
         const data = await res.json();
         if (isMounted && data.success && Array.isArray(data.albumPhotos)) {
           setActiveAlbumPhotos(data.albumPhotos);

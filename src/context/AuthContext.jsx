@@ -645,13 +645,13 @@ export const AuthProvider = ({ children }) => {
     loadData();
   }, [currentUser?.memberId]);
 
-  // Load the shared photo gallery (Google Photos, via api/gallery-list.js).
+  // Load the shared photo gallery (Google Photos, via api/gallery.js).
   // Kept independent of loadNeonData above so a gallery failure can never
   // block roster/project loading, or vice versa.
   useEffect(() => {
     async function loadGallery() {
       try {
-        const res = await fetch('/api/gallery-list');
+        const res = await fetch('/api/gallery');
         const data = await res.json();
         if (res.ok && data.success) {
           setMemberGallery(data.photos);
@@ -1278,7 +1278,7 @@ Progressive Optimist Club of Barbados
     if (!currentUser) return { success: false, message: 'Must be logged in to post photos.' };
 
     try {
-      const res = await fetch('/api/gallery-upload', {
+      const res = await fetch('/api/gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1304,7 +1304,7 @@ Progressive Optimist Club of Barbados
   const deleteGalleryPhoto = async (photoId) => {
     if (!currentUser) return { success: false, message: 'Must be logged in to delete photos.' };
     try {
-      const res = await fetch('/api/gallery-delete', {
+      const res = await fetch('/api/gallery?action=delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
