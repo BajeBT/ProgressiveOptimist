@@ -527,6 +527,11 @@ export const AuthProvider = ({ children }) => {
   // whichever browser an admin last edited it from).
   const [contactSubjects, setContactSubjects] = useState([]);
 
+  // Barbados club directory entries, admin-editable, Neon-backed for the same
+  // reason as contactSubjects - the /barbados-clubs page must show the same
+  // list to every visitor.
+  const [barbadosClubs, setBarbadosClubs] = useState([]);
+
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -676,6 +681,22 @@ export const AuthProvider = ({ children }) => {
       }
     }
     loadContactSubjects();
+  }, []);
+
+  // Load the Barbados club directory. Independent of loadNeonData for the
+  // same reason as the gallery/contact-subjects fetches above.
+  useEffect(() => {
+    async function loadBarbadosClubs() {
+      try {
+        const res = await api('barbados-clubs');
+        if (res.ok && Array.isArray(res.clubs)) {
+          setBarbadosClubs(res.clubs);
+        }
+      } catch (err) {
+        console.warn("Barbados clubs fetch fallback to empty list:", err);
+      }
+    }
+    loadBarbadosClubs();
   }, []);
 
   // Site Variables (Annual Dues Rate, meeting info, etc.) - shared across every
@@ -1270,6 +1291,57 @@ Progressive Optimist Club of Barbados
     })();
   };
 
+  const addBarbadosClub = async (clubData) => {
+    if (!clubData?.name) {
+      return { success: false, message: 'A club name is required.' };
+    }
+    try {
+      const res = await api('barbados-clubs', { method: 'POST', body: { action: 'add', club: clubData } });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Failed to save the club.' };
+      }
+      setBarbadosClubs(prev => [...prev, res.club]);
+      return { success: true, club: res.club };
+    } catch (err) {
+      console.error("Barbados club insert error:", err);
+      return { success: false, message: 'Network error while saving the club.' };
+    }
+  };
+
+  const updateBarbadosClub = async (id, clubData) => {
+    if (!clubData?.name) {
+      return { success: false, message: 'A club name is required.' };
+    }
+    try {
+      const res = await api('barbados-clubs', { method: 'POST', body: { action: 'update', id, club: clubData } });
+      if (!res.ok || !res.success) {
+        return { success: false, message: res.message || 'Failed to update the club.' };
+      }
+      setBarbadosClubs(prev => prev.map(c => c.id === id ? res.club : c));
+      return { success: true, club: res.club };
+    } catch (err) {
+      console.error("Barbados club update error:", err);
+      return { success: false, message: 'Network error while updating the club.' };
+    }
+  };
+
+  const deleteBarbadosClub = async (id) => {
+    const previous = barbadosClubs;
+    setBarbadosClubs(prev => prev.filter(c => c.id !== id));
+    try {
+      const res = await api('barbados-clubs', { method: 'POST', body: { action: 'delete', id } });
+      if (!res.ok || !res.success) {
+        setBarbadosClubs(previous);
+        return { success: false, message: res.message || 'Failed to delete the club.' };
+      }
+      return { success: true };
+    } catch (err) {
+      console.error("Barbados club delete error:", err);
+      setBarbadosClubs(previous);
+      return { success: false, message: 'Network error while deleting the club.' };
+    }
+  };
+
   // Add photo to the shared gallery. Uploads through api/gallery-upload.js,
   // which pushes the image into the club's Google Photos account and only
   // stores metadata (title/caption/uploader/Google media item id) in Neon.
@@ -1353,6 +1425,10 @@ Progressive Optimist Club of Barbados
         addContactSubject,
         removeContactSubject,
         reorderContactSubject,
+        barbadosClubs,
+        addBarbadosClub,
+        updateBarbadosClub,
+        deleteBarbadosClub,
         isDarkMode,
         toggleDarkMode
       }}

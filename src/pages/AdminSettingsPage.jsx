@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MEMBER_ROLES } from '../../lib/roles';
+import { BarbadosClubModal } from '../components/BarbadosClubModal';
 import {
   ShieldCheck,
   Settings,
@@ -60,11 +61,17 @@ export const AdminSettingsPage = () => {
     contactSubjects,
     addContactSubject,
     removeContactSubject,
-    reorderContactSubject
+    reorderContactSubject,
+    barbadosClubs,
+    deleteBarbadosClub
   } = useAuth();
 
   const userAccess = currentUser?.access || 'member';
-  const [activeTab, setActiveTab] = useState(userAccess === 'moderator' ? 'moderation' : 'variables'); // 'variables' | 'permissions' | 'treasurer' | 'moderation'
+  const [activeTab, setActiveTab] = useState(userAccess === 'moderator' ? 'moderation' : 'variables'); // 'variables' | 'permissions' | 'treasurer' | 'moderation' | 'clubs'
+
+  // Barbados Clubs Directory Manager State
+  const [clubModalOpen, setClubModalOpen] = useState(false);
+  const [editingClub, setEditingClub] = useState(null);
   
   // Treasurer Console State
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
@@ -605,6 +612,18 @@ export const AdminSettingsPage = () => {
             >
               <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               <span>Treasurer Dues Console</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('clubs')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'clubs'
+                  ? 'bg-optimist-blue text-white shadow'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Barbados Clubs ({barbadosClubs.length})</span>
             </button>
           </>
         )}
@@ -1614,6 +1633,79 @@ export const AdminSettingsPage = () => {
 
         </div>
       )}
+
+      {/* TAB 4: BARBADOS CLUBS DIRECTORY */}
+      {activeTab === 'clubs' && canManageSettings && (
+        <div className="space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-optimist-blue" />
+                Barbados Clubs Directory
+              </h2>
+              <button
+                onClick={() => { setEditingClub(null); setClubModalOpen(true); }}
+                className="px-4 py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition-colors flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Club
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 -mt-1">
+              Managed here, shown live on the public <strong>/barbados-clubs</strong> page.
+            </p>
+
+            <div className="space-y-3">
+              {barbadosClubs.map(club => (
+                <div key={club.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-sm text-slate-900 dark:text-white truncate">{club.name}</strong>
+                      {club.isHost && (
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full gold-gradient text-slate-950 shrink-0">
+                          Host
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 truncate">{club.location || 'No location set'}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => { setEditingClub(club); setClubModalOpen(true); }}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete "${club.name}" from the Barbados Clubs directory? This cannot be undone.`)) {
+                          deleteBarbadosClub(club.id);
+                        }
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl border border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {barbadosClubs.length === 0 && (
+                <p className="text-xs text-slate-400 italic text-center py-8">No clubs added yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <BarbadosClubModal
+        isOpen={clubModalOpen}
+        onClose={() => setClubModalOpen(false)}
+        club={editingClub}
+      />
 
       {/* RESET PASSWORD: choose random vs. manually-set password. Rendered
           above the Edit Record modal (z-[60] vs its z-50) since this opens
