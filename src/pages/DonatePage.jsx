@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Archive, Check, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
+import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.
@@ -144,45 +144,6 @@ export const DonatePage = () => {
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Transit / Routing #</span>
             <strong className="text-sm font-mono font-semibold text-amber-700">{siteSettings?.bankRoutingNumber}</strong>
           </div>
-        </div>
-      </div>
-
-      {/* COMPLETED & ARCHIVED: Laptop & Tablet Drive */}
-      <div className="p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 border border-slate-300 space-y-4 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-500/40 flex items-center gap-1">
-                <Check className="w-3 h-3" /> Campaign Completed & Archived
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-300 flex items-center gap-1">
-                <Archive className="w-3 h-3" /> Past Campaign
-              </span>
-            </div>
-            <h3 className="font-heading text-2xl font-semibold text-slate-900 mt-1">
-              Student Laptop & Tablet Drive (Archived)
-            </h3>
-            <p className="text-xs text-slate-600">
-              Successfully fulfilled for Westbury Primary, Ignatius Byer Primary, and Milton Lynch Primary School students!
-            </p>
-          </div>
-
-          <div className="sm:text-right shrink-0 bg-white p-3.5 rounded-2xl border border-slate-300">
-            <span className="font-heading text-3xl font-semibold text-emerald-600 block">150 / 150</span>
-            <span className="text-xs font-bold text-slate-600">100% Target Received 🎉</span>
-          </div>
-        </div>
-
-        {/* 100% Progress Bar */}
-        <div className="w-full h-4 bg-slate-300 rounded-full overflow-hidden p-0.5 border border-slate-400/50">
-          <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000 shadow-md" style={{ width: '100%' }}></div>
-        </div>
-
-        <div className="flex justify-between text-xs text-slate-600 font-semibold pt-1">
-          <span className="flex items-center gap-1 text-emerald-700 font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Goal Reached: All 150 Digital Devices Delivered
-          </span>
-          <span>Target: 150 Devices (Fully Met)</span>
         </div>
       </div>
 

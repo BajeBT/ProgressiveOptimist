@@ -6,7 +6,7 @@ import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award, BookOpen 
 export const Footer = () => {
   const { siteSettings } = useAuth();
   return (
-    <footer className="mt-[50px] bg-slate-900 text-white border-t border-slate-800 pt-16 pb-12 transition-colors duration-300">
+    <footer className="mt-[100px] bg-slate-900 text-white border-t border-slate-800 pt-16 pb-12 transition-colors duration-300">
       
       {/* 1. TOP CREED & IMPACT BANNER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 border-b border-slate-800">
