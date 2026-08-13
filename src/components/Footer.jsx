@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award, BookOpen } from 'lucide-react';
+import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award } from 'lucide-react';
 
 export const Footer = () => {
   const { siteSettings } = useAuth();
@@ -67,12 +67,6 @@ export const Footer = () => {
             <li>
               <Link to="/about" className="hover:text-amber-300 transition-colors">
                 Who We Are & Mission
-              </Link>
-            </li>
-            <li>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors text-amber-300 font-bold flex items-center gap-1">
-                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                <span>Club Roster Directory (21 Members)</span>
               </Link>
             </li>
             <li>

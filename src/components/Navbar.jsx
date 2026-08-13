@@ -20,8 +20,6 @@ import {
   Calendar,
   Layers,
   Sparkles,
-  BookOpen,
-  Lock,
   TestTube,
   ShieldAlert,
   Database,
@@ -72,12 +70,6 @@ export const Navbar = ({ onOpenPostModal }) => {
 
           {/* Right: Global Network Links */}
           <div className="flex items-center space-x-4 font-medium text-[11px] shrink-0">
-            <Link to="/directory" className="hover:text-amber-300 transition-colors flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5 text-amber-300" />
-              <span>Official Roster Directory</span>
-              <Lock className="w-3 h-3 text-amber-400 opacity-80" />
-            </Link>
-            <span className="text-blue-300/40">•</span>
             <a
               href="https://oicaribbean.org/"
               target="_blank"
@@ -138,7 +130,7 @@ export const Navbar = ({ onOpenPostModal }) => {
               <Link
                 to="/about"
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
-                  isActive('/about') || isActive('/directory')
+                  isActive('/about')
                     ? 'bg-optimist-blue text-white shadow-md'
                     : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
@@ -158,18 +150,6 @@ export const Navbar = ({ onOpenPostModal }) => {
                       <div>
                         <strong className="block text-xs text-slate-900 dark:text-white">Who We Are & Mission</strong>
                         <span className="text-[10px] text-slate-500">History & Optimist Creed</span>
-                      </div>
-                    </Link>
-                    <Link
-                      to="/directory"
-                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
-                    >
-                      <BookOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <strong className="block text-xs text-slate-900 dark:text-white flex items-center gap-1">
-                          Club Roster Directory <Lock className="w-3 h-3 text-amber-500" />
-                        </strong>
-                        <span className="text-[10px] text-slate-500">Members Only Access</span>
                       </div>
                     </Link>
                   </div>
@@ -210,18 +190,6 @@ export const Navbar = ({ onOpenPostModal }) => {
               {activeDropdown === 'network' && (
                 <div className="absolute top-full left-0 w-72 pt-2 z-50">
                   <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-1">
-                    <Link
-                      to="/directory"
-                      className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
-                    >
-                      <BookOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <strong className="block text-xs text-slate-900 dark:text-white flex items-center gap-1">
-                          Progressive Optimist Directory <Lock className="w-3.5 h-3.5 text-amber-500" />
-                        </strong>
-                        <span className="text-[10px] text-slate-500">Members Only Roster</span>
-                      </div>
-                    </Link>
                     <Link
                       to="/barbados-clubs"
                       className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 group"
@@ -395,14 +363,6 @@ export const Navbar = ({ onOpenPostModal }) => {
             className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             About Us
-          </Link>
-          <Link
-            to="/directory"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between"
-          >
-            <span>Club Roster Directory</span>
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
           </Link>
           <Link
             to="/projects"
