@@ -274,6 +274,7 @@ async function handleRestoreArchived(req, res) {
   const memberId = arch.member_id || ('78008-' + Math.floor(1000 + Math.random() * 9000));
   const currentDuesRate = await getAnnualDuesRate();
 
+  // 1. Insert/update in members table
   await sql`
     INSERT INTO members (id, name, email, phone, role, avatar, address, access, approval_status)
     VALUES (${memberId}, ${arch.name}, ${arch.email}, ${arch.phone || ''}, 'Pending', ${getDefaultAvatarForRole('Pending')}, ${arch.address || ''}, 'pending', 'pending_approval')
@@ -281,6 +282,7 @@ async function handleRestoreArchived(req, res) {
     SET access = 'pending', approval_status = 'pending_approval', role = 'Pending';
   `;
 
+  // 2. Insert/update in dues_ledger (Treasurer Dues Console)
   await sql`
     INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
     VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', ${currentDuesRate}, '$0.00', ${currentDuesRate}, 'Pending', 'Pending Approval', ${arch.notes || ''})
@@ -288,6 +290,15 @@ async function handleRestoreArchived(req, res) {
     SET dues_status = 'Pending Approval';
   `;
 
+  // 3. Confirm arrival in Treasurer Dues Console (dues_ledger table) before deleting from archive
+  const ledgerConfirm = await sql`
+    SELECT member_id FROM dues_ledger WHERE member_id = ${memberId} LIMIT 1;
+  `;
+  if (ledgerConfirm.length === 0) {
+    return res.status(500).json({ success: false, message: 'Failed to confirm arrival in Treasurer Dues Console.' });
+  }
+
+  // 4. Delete from archive only after arrival is confirmed
   await sql`DELETE FROM applicant_archive WHERE id = ${arch.id};`;
 
   return res.status(200).json({ success: true, message: `${arch.name} restored to Membership Intake awaiting approval.` });
