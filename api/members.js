@@ -43,6 +43,7 @@ async function handleList(req, res) {
       SELECT id, name, role, avatar
       FROM members
       WHERE access NOT IN ('pending', 'pending_verification')
+        AND member_status != 'inactive'
       ORDER BY name ASC;
     `;
     return res.status(200).json({ success: true, members: rows, partial: true });
@@ -51,7 +52,7 @@ async function handleList(req, res) {
   const rows = await sql`
     SELECT
       m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access,
-      m.is_treasurer, m.is_president, m.is_secretary,
+      m.is_treasurer, m.is_president, m.is_secretary, m.member_status,
       m.approval_status, m.approved_by, m.approved_at, m.admin_granted_at, m.added_by,
       d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due,
       d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
@@ -430,6 +431,34 @@ async function handleUpdateRecord(req, res) {
   return res.status(200).json({ success: true });
 }
 
+async function handleDeactivateMember(req, res) {
+  const memberId = req.body?.memberId;
+  if (!memberId) {
+    return res.status(400).json({ success: false, message: 'A member id is required.' });
+  }
+  const rows = await sql`
+    UPDATE members SET member_status = 'inactive' WHERE id = ${memberId} RETURNING name;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  return res.status(200).json({ success: true, message: `${rows[0].name} moved to Inactive Members.` });
+}
+
+async function handleReactivateMember(req, res) {
+  const memberId = req.body?.memberId;
+  if (!memberId) {
+    return res.status(400).json({ success: false, message: 'A member id is required.' });
+  }
+  const rows = await sql`
+    UPDATE members SET member_status = 'active' WHERE id = ${memberId} RETURNING name;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  return res.status(200).json({ success: true, message: `${rows[0].name} restored to the active member roster.` });
+}
+
 async function handleUpdatePermission(req, res) {
   const { memberId, key, value } = req.body || {};
   if (!memberId || !key) {
@@ -538,6 +567,16 @@ export default async function handler(req, res) {
         const session = requireAccess(req, res, ['super admin', 'finance']);
         if (!session) return;
         return await handleUpdatePermission(req, res);
+      }
+      case 'deactivate-member': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleDeactivateMember(req, res);
+      }
+      case 'reactivate-member': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleReactivateMember(req, res);
       }
       default:
         return res.status(400).json({ success: false, message: 'Unknown action.' });

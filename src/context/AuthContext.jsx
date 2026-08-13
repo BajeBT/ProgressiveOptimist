@@ -577,6 +577,7 @@ export const AuthProvider = ({ children }) => {
         address: r.address || '',
         avatar: resolvedAvatar,
         access: r.access || 'member',
+        memberStatus: r.member_status || 'active',
         approvalStatus: r.approval_status || 'approved',
         adminGrantedAt: r.admin_granted_at || null,
         addedBy: r.added_by || null,
@@ -1024,6 +1025,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const deactivateMemberRecord = async (memberId) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'deactivate-member', memberId } });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Deactivate member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const reactivateMemberRecord = async (memberId) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'reactivate-member', memberId } });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Reactivate member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
   // Super admin only. Generates (or, if newPassword is given, sets) a new
   // password for the member, returning it once in plaintext so it can be
   // handed to that member directly.
@@ -1448,6 +1471,8 @@ Progressive Optimist Club of Barbados
         restoreArchivedRecord,
         deleteArchivedRecord,
         deleteMemberRecord,
+        deactivateMemberRecord,
+        reactivateMemberRecord,
         resetMemberPassword,
         updateDuesStatus,
         memberRoster,
