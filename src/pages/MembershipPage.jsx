@@ -422,7 +422,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Banking & Finance",
       author: "Progressive Optimist Club Treasurer",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCB%20Scotiabank%20Wire%20Instructions.pdf",
+      fileUrl: "/documents/POCB Scotiabank Wire Instructions.pdf",
       summary: "Official Scotiabank wire transfer and online banking instructions for paying annual membership dues and project donations to the Progressive Optimist Club of Barbados."
     },
     {
@@ -436,7 +436,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Membership & Orientation",
       author: "Membership Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20Membership%20Brochure.pdf",
+      fileUrl: "/documents/POCoB Membership Brochure.pdf",
       summary: "Official Club Membership Brochure outlining the mission, youth programs, meeting schedules, and membership benefits of the Progressive Optimist Club of Barbados."
     },
     {
@@ -450,7 +450,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Governance & Bylaws",
       author: "Executive Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20ByLaws%20-%20Distrib.pdf",
+      fileUrl: "/documents/POCoB ByLaws - Distrib.pdf",
       summary: "Official distribution copy of the Constitution & Bylaws for the Progressive Optimist Club of Barbados (Optimist International Club #78008)."
     },
     {
@@ -464,7 +464,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Professional Development",
       author: "PDP Program Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/PDP_FAQ.pdf",
+      fileUrl: "/documents/PDP_FAQ.pdf",
       summary: "Frequently Asked Questions (FAQ) guide for the Progressive Optimist Professional Development Program (PDP)."
     },
     {
@@ -478,7 +478,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Forms & Applications",
       author: "Membership Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/POCoB%20Application.pdf",
+      fileUrl: "/documents/POCoB Application.pdf",
       summary: "Official PDF application form for prospective members applying to join the Progressive Optimist Club of Barbados."
     },
     {
@@ -492,7 +492,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Professional Development",
       author: "PDP Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/PDP_Brochure.pdf",
+      fileUrl: "/documents/PDP_Brochure.pdf",
       summary: "Official informational brochure for the Progressive Optimist Professional Development Program."
     },
     {
@@ -506,7 +506,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Club Culture & Creed",
       author: "Optimist International",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Optimist%20Creed%20Quick%20Read.pdf",
+      fileUrl: "/documents/Optimist Creed Quick Read.pdf",
       summary: "A quick-read printable reference sheet for the 10 tenets of the Optimist Creed."
     },
     {
@@ -520,7 +520,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Governance & Elections",
       author: "Nominating Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Nominating%20Committee%20Guide.pdf",
+      fileUrl: "/documents/Nominating Committee Guide.pdf",
       summary: "Guidelines and procedural steps for the Club Nominating Committee during annual executive election cycles."
     },
     {
@@ -534,7 +534,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Projects & Initiatives",
       author: "Public Relations Lead",
       fileType: "JPG",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Annual%20Projects.jpg",
+      fileUrl: "/documents/Annual Projects.jpg",
       summary: "High-resolution graphic layout showcasing the major annual service projects and youth initiatives of the club."
     },
     {
@@ -548,7 +548,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Public Relations & Media",
       author: "Public Relations Lead",
       fileType: "JPG",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/Annual%20Projects-Instagram.jpg",
+      fileUrl: "/documents/Annual Projects-Instagram.jpg",
       summary: "Square aspect-ratio image formatted for Instagram posts detailing annual club service initiatives."
     },
     {
@@ -562,7 +562,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Community & Vision Projects",
       author: "20-20 Vision Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Screener%20Record.pdf",
+      fileUrl: "/documents/20-20 Screener Record.pdf",
       summary: "Official screening record sheet used by volunteers during the 20-20 Vision primary school vision testing project."
     },
     {
@@ -576,7 +576,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Community & Vision Projects",
       author: "20-20 Vision Committee",
       fileType: "PDF",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Visual%20Charts.pdf",
+      fileUrl: "/documents/20-20 Visual Charts.pdf",
       summary: "Printable visual acuity charts for conducting student eye examinations in the 20-20 Vision initiative."
     },
     {
@@ -590,7 +590,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Community & Vision Projects",
       author: "20-20 Vision Committee",
       fileType: "DOCX",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20Progressive%20Principal%20Request.docx",
+      fileUrl: "/documents/20-20 Progressive Principal Request.docx",
       summary: "Official request letter and authorization form sent to primary school principals to arrange vision screening dates."
     },
     {
@@ -604,7 +604,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       category: "Community & Vision Projects",
       author: "20-20 Vision Committee",
       fileType: "DOCX",
-      fileUrl: "https://progressiveoptimist.org/wp/wp-content/uploads/mdocs/20-20%20ParentReferal2016-17.docx",
+      fileUrl: "/documents/20-20 ParentReferal2016-17.docx",
       summary: "Parental consent and medical referral form issued to parents of students flagged for optometrist evaluation."
     },
     {
