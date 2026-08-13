@@ -237,7 +237,7 @@ export const Navbar = ({ onOpenPostModal }) => {
                   : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Membership
+              Members
             </Link>
 
             {/* Nav 7: Contact */}
