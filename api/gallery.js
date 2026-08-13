@@ -1,4 +1,7 @@
 import { sql } from '../lib/db.js';
+import { getSession } from '../lib/session.js';
+
+const CAN_MODERATE_GALLERY = ['super admin', 'admin', 'finance'];
 
 async function getAccessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -73,28 +76,28 @@ export default async function handler(req, res) {
 
   // HANDLE DELETE (DELETE or POST with action === 'delete')
   if (method === 'DELETE' || action === 'delete') {
-    const { id, userMemberId, userName, userRole, userAccess } = req.body || req.query || {};
+    const session = getSession(req);
+    if (!session) {
+      return res.status(401).json({ success: false, message: 'You must be signed in to delete a photo.' });
+    }
+
+    const { id } = req.body || req.query || {};
     if (!id) return res.status(400).json({ success: false, message: 'Photo ID is required.' });
 
     try {
       const rows = await sql`
-        SELECT id, uploader, uploader_id FROM gallery WHERE id = ${id};
+        SELECT id, uploader_id FROM gallery WHERE id = ${id};
       `;
 
       if (rows.length > 0) {
         const photo = rows[0];
-        const roleStr = String(userRole || '').toLowerCase();
-        const accessStr = String(userAccess || '').toLowerCase();
-        const isAdminOrFinance = ['super admin', 'admin', 'finance', 'executive', 'officer', 'president', 'treasurer'].includes(roleStr) ||
-                                 ['super admin', 'admin', 'finance'].includes(accessStr);
-
-        const isUploader = (photo.uploader_id && userMemberId && photo.uploader_id === userMemberId) ||
-                           (photo.uploader && userName && photo.uploader.toLowerCase() === String(userName).toLowerCase());
+        const isAdminOrFinance = CAN_MODERATE_GALLERY.includes(session.access);
+        const isUploader = photo.uploader_id && photo.uploader_id === session.memberId;
 
         if (!isAdminOrFinance && !isUploader) {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Permission denied. Only admins, super admins, finance roles, and the original uploader can delete this photo.' 
+          return res.status(403).json({
+            success: false,
+            message: 'Permission denied. Only admins, super admins, finance roles, and the original uploader can delete this photo.'
           });
         }
       }
@@ -109,15 +112,27 @@ export default async function handler(req, res) {
 
   // HANDLE POST (UPLOAD)
   if (method === 'POST') {
+    const session = getSession(req);
+    if (!session) {
+      return res.status(401).json({ success: false, message: 'You must be signed in to upload a photo.' });
+    }
+
     const missingEnv = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN']
       .filter(k => !process.env[k] || process.env[k].startsWith('REPLACE_ME'));
     if (missingEnv.length > 0) {
       return res.status(500).json({ success: false, message: 'Google Photos is not configured yet.' });
     }
 
-    const { title, caption, imageBase64, uploaderName, uploaderId } = req.body || {};
-    if (!title || !imageBase64 || !uploaderName) {
-      return res.status(400).json({ success: false, message: 'Title, image, and uploader name are required.' });
+    const { title, caption, imageBase64 } = req.body || {};
+    if (!title || !imageBase64) {
+      return res.status(400).json({ success: false, message: 'Title and image are required.' });
+    }
+
+    const uploaderId = session.memberId;
+    const memberRows = await sql`SELECT name FROM members WHERE id = ${uploaderId} LIMIT 1;`;
+    const uploaderName = memberRows[0]?.name;
+    if (!uploaderName) {
+      return res.status(403).json({ success: false, message: 'Your member record could not be found.' });
     }
 
     const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(imageBase64);

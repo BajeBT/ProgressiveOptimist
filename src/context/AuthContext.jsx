@@ -1278,19 +1278,15 @@ Progressive Optimist Club of Barbados
     if (!currentUser) return { success: false, message: 'Must be logged in to post photos.' };
 
     try {
-      const res = await fetch('/api/gallery', {
+      const data = await api('gallery', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           title: photoData.title,
           caption: photoData.caption,
-          imageBase64: photoData.image,
-          uploaderName: currentUser.name,
-          uploaderId: currentUser.memberId
-        })
+          imageBase64: photoData.image
+        }
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      if (!data.ok || !data.success) {
         return { success: false, message: data.message || 'Failed to upload photo.' };
       }
       setMemberGallery(prev => [data.photo, ...prev]);
@@ -1304,19 +1300,11 @@ Progressive Optimist Club of Barbados
   const deleteGalleryPhoto = async (photoId) => {
     if (!currentUser) return { success: false, message: 'Must be logged in to delete photos.' };
     try {
-      const res = await fetch('/api/gallery?action=delete', {
+      const data = await api('gallery?action=delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id: photoId,
-          userMemberId: currentUser.memberId,
-          userName: currentUser.name,
-          userRole: currentUser.role,
-          userAccess: currentUser.access
-        })
+        body: { id: photoId }
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      if (!data.ok || !data.success) {
         return { success: false, message: data.message || 'Failed to delete photo.' };
       }
       setMemberGallery(prev => prev.filter(p => p.id !== photoId));
