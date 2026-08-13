@@ -10,15 +10,15 @@ export const Footer = () => {
       
       {/* 1. TOP CREED & IMPACT BANNER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 border-b border-slate-800">
-        <div className="p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-300">
+        <div className="p-8 rounded-3xl bg-[#c1c4c7] dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-300 dark:border-slate-700">
           <div className="space-y-2 text-center md:text-left">
-            <span className="text-xs uppercase font-bold text-amber-700 tracking-widest">
+            <span className="text-xs uppercase font-bold text-amber-700 dark:text-amber-400 tracking-widest">
               The Optimist Motto
             </span>
-            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900">
+            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               "Bringing Out The Best In Children"
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-xl">
               By providing hope and positive vision, Optimists bring out the best in youth, our communities, and ourselves.
             </p>
           </div>

@@ -96,16 +96,16 @@ export const DonatePage = () => {
       </div>
 
       {/* OFFICIAL SCOTIABANK BANK TRANSFER INFORMATION BOX */}
-      <div className="p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 border border-amber-400/40 shadow-2xl space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-400/50 pb-4">
+      <div className="p-8 rounded-3xl bg-[#c1c4c7] dark:bg-slate-900 text-slate-900 dark:text-white border border-amber-400/40 shadow-2xl space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-400/50 dark:border-slate-800 pb-4">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+            <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
               <Building2 className="w-3.5 h-3.5" /> Official Bank Transfer & Deposit Details
             </span>
-            <h2 className="font-heading text-2xl font-semibold text-slate-900">
+            <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white">
               Pay Dues or Donate via Bank Transfer / Deposit
             </h2>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               Direct bank transfers can be sent to our official {siteSettings?.bankName} Barbados account details below:
             </p>
           </div>
@@ -120,29 +120,29 @@ export const DonatePage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
-          <div className="p-4 rounded-2xl bg-white border border-slate-300">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Bank Name</span>
-            <strong className="text-sm font-heading font-semibold text-slate-900">{siteSettings?.bankName}</strong>
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Bank Name</span>
+            <strong className="text-sm font-heading font-semibold text-slate-900 dark:text-white">{siteSettings?.bankName}</strong>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-slate-300">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Account Name</span>
-            <strong className="text-sm font-heading font-semibold text-amber-700">{siteSettings?.bankAccountName}</strong>
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Account Name</span>
+            <strong className="text-sm font-heading font-semibold text-amber-700 dark:text-amber-400">{siteSettings?.bankAccountName}</strong>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-slate-300">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Account Number</span>
-            <strong className="text-sm font-mono font-semibold text-emerald-600">{siteSettings?.bankAccountNumber}</strong>
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Account Number</span>
+            <strong className="text-sm font-mono font-semibold text-emerald-600 dark:text-emerald-400">{siteSettings?.bankAccountNumber}</strong>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-slate-300">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Branch Name</span>
-            <strong className="text-sm font-heading font-semibold text-slate-900">{siteSettings?.bankBranch}</strong>
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Branch Name</span>
+            <strong className="text-sm font-heading font-semibold text-slate-900 dark:text-white">{siteSettings?.bankBranch}</strong>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-slate-300">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block">Transit / Routing #</span>
-            <strong className="text-sm font-mono font-semibold text-amber-700">{siteSettings?.bankRoutingNumber}</strong>
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Transit / Routing #</span>
+            <strong className="text-sm font-mono font-semibold text-amber-700 dark:text-amber-400">{siteSettings?.bankRoutingNumber}</strong>
           </div>
         </div>
       </div>

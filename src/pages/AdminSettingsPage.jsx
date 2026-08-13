@@ -1077,42 +1077,42 @@ export const AdminSettingsPage = () => {
         <div className="space-y-6">
           
           {/* Header Banner */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#c1c4c7] text-slate-900 border border-slate-300 shadow-xl space-y-3">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#c1c4c7] dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-800 shadow-xl space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-400/40 flex items-center gap-1.5 w-fit">
+                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-400/40 flex items-center gap-1.5 w-fit">
                   <ShieldCheck className="w-3.5 h-3.5" /> Club Treasurer Administrative Console
                 </span>
-                <h2 className="font-heading text-2xl font-semibold text-slate-900">
+                <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-white">
                   Member Dues Management Ledger
                 </h2>
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                   Optimist Fiscal Year runs <strong>October 1st to September 30th</strong>. As Club Treasurer (<strong>Sharon Mohammed</strong>) and Club Executives, you can record payments, view official statements, add notes, and email dues balance statements.
                 </p>
               </div>
 
-              <div className="bg-white p-3 rounded-2xl border border-slate-300 text-right shrink-0">
-                <span className="text-xs text-slate-500 block">Total Active Settled Dues</span>
-                <strong className="font-heading text-2xl font-semibold text-emerald-600">
+              <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-300 dark:border-slate-700 text-right shrink-0">
+                <span className="text-xs text-slate-500 dark:text-slate-400 block">Total Active Settled Dues</span>
+                <strong className="font-heading text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
                   {memberRoster.filter(m => !isOfficialAccount(m) && m.duesStatus && m.duesStatus.includes('Active')).length} / {realMemberCount}
                 </strong>
               </div>
             </div>
 
             {treasurerMsg && (
-              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-400/40 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 border border-emerald-400/40 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{treasurerMsg}</span>
               </div>
             )}
           </div>
 
           {/* Scotiabank Bank Transfer Info Box */}
-          <div className="p-4 rounded-2xl bg-[#c1c4c7] text-slate-900 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-[#c1c4c7] dark:bg-slate-900 text-slate-900 dark:text-white border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="text-xs space-y-0.5">
-              <strong className="text-amber-700 font-bold block">Official {siteSettings?.bankName} Dues Deposit Account:</strong>
-              <p className="text-slate-600 font-mono">
-                Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong> • Account #: <strong className="text-emerald-600">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit/Routing #: <strong className="text-amber-700">{siteSettings?.bankRoutingNumber}</strong>
+              <strong className="text-amber-700 dark:text-amber-400 font-bold block">Official {siteSettings?.bankName} Dues Deposit Account:</strong>
+              <p className="text-slate-600 dark:text-slate-300 font-mono">
+                Bank: <strong>{siteSettings?.bankName}</strong> • Account Name: <strong>{siteSettings?.bankAccountName}</strong> • Account #: <strong className="text-emerald-600 dark:text-emerald-400">{siteSettings?.bankAccountNumber}</strong> • Branch: <strong>{siteSettings?.bankBranch}</strong> • Transit/Routing #: <strong className="text-amber-700 dark:text-amber-400">{siteSettings?.bankRoutingNumber}</strong>
               </p>
             </div>
             <button onClick={copyBankInfo} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shrink-0">
