@@ -10,11 +10,11 @@ const DEFAULTS = {
   annualDuesRate: '$200.00',
   themeTitle: 'C.A.R.E – Championing Authentic & Reinvigorating Engagement',
   homepageAnnouncement: '',
-  bankName: 'Scotiabank',
-  bankAccountName: 'Progressive Optimist',
-  bankAccountNumber: '000451801',
-  bankBranch: 'Haggatt Hall',
-  bankRoutingNumber: '66555'
+  bankName: 'Not yet configured',
+  bankAccountName: 'Not yet configured',
+  bankAccountNumber: 'Not yet configured',
+  bankBranch: 'Not yet configured',
+  bankRoutingNumber: 'Not yet configured'
 };
 
 function toClientShape(row) {

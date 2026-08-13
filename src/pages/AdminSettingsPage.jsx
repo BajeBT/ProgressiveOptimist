@@ -163,11 +163,11 @@ export const AdminSettingsPage = () => {
   const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$200.00");
   const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
   const [homepageAnnouncement, setHomepageAnnouncement] = useState(siteSettings?.homepageAnnouncement || "");
-  const [bankName, setBankName] = useState(siteSettings?.bankName || "Scotiabank");
-  const [bankAccountName, setBankAccountName] = useState(siteSettings?.bankAccountName || "Progressive Optimist");
-  const [bankAccountNumber, setBankAccountNumber] = useState(siteSettings?.bankAccountNumber || "000451801");
-  const [bankBranch, setBankBranch] = useState(siteSettings?.bankBranch || "Haggatt Hall");
-  const [bankRoutingNumber, setBankRoutingNumber] = useState(siteSettings?.bankRoutingNumber || "66555");
+  const [bankName, setBankName] = useState(siteSettings?.bankName || "Not yet configured");
+  const [bankAccountName, setBankAccountName] = useState(siteSettings?.bankAccountName || "Not yet configured");
+  const [bankAccountNumber, setBankAccountNumber] = useState(siteSettings?.bankAccountNumber || "Not yet configured");
+  const [bankBranch, setBankBranch] = useState(siteSettings?.bankBranch || "Not yet configured");
+  const [bankRoutingNumber, setBankRoutingNumber] = useState(siteSettings?.bankRoutingNumber || "Not yet configured");
 
   useEffect(() => {
     if (siteSettings) {
