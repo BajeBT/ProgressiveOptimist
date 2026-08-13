@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
-import { sql } from '../lib/db.js';
+import { sql, getContactEmail } from '../lib/db.js';
+import { sendEmail } from '../lib/email.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -92,20 +93,38 @@ export default async function handler(req, res) {
         if (result.length === 0) {
           console.warn('Dues webhook: no dues_ledger row for member_id', meta.memberId);
         }
+
+        const contactEmail = await getContactEmail();
+        await sendEmail({
+          to: contactEmail,
+          subject: 'New Dues Payment Received (Stripe)',
+          body: `A dues payment was received via the Stripe portal.\n\nMember: ${meta.memberName || 'Unknown'} (${meta.memberId})\nFiscal Year: ${fiscalYear}\nAmount Paid (this transaction): $${bbdPaid.toFixed(2)} BBD\nTotal Paid to Date: $${totalPaid.toFixed(2)} BBD\nBalance Due: ${balanceDueStr}\nStatus: ${duesStatus}\nDate: ${today}\nStripe Session: ${session.id}`
+        });
       } else {
+        const donorEmail = session.customer_details?.email || session.customer_email || null;
+        const bbdAmount = Number(meta.bbdAmount) || 0;
+        const usdAmount = Number(meta.usdAmount) || (session.amount_total / 100);
+
         await sql`
           INSERT INTO donations (stripe_session_id, donor_name, donor_email, bbd_amount, usd_amount, status, paid_at)
           VALUES (
             ${session.id},
             ${meta.donorName || null},
-            ${session.customer_details?.email || session.customer_email || null},
-            ${Number(meta.bbdAmount) || 0},
-            ${Number(meta.usdAmount) || (session.amount_total / 100)},
+            ${donorEmail},
+            ${bbdAmount},
+            ${usdAmount},
             'paid',
             CURRENT_TIMESTAMP
           )
           ON CONFLICT (stripe_session_id) DO NOTHING;
         `;
+
+        const contactEmail = await getContactEmail();
+        await sendEmail({
+          to: contactEmail,
+          subject: 'New Donation Received (Stripe)',
+          body: `A donation was received via the Stripe portal.\n\nDonor: ${meta.donorName || 'Anonymous'}\nDonor Email: ${donorEmail || 'Not provided'}\nAmount: $${bbdAmount.toFixed(2)} BBD ($${usdAmount.toFixed(2)} USD)\nDate: ${new Date().toISOString().split('T')[0]}\nStripe Session: ${session.id}`
+        });
       }
     } catch (err) {
       console.error('Failed to record payment:', err);
