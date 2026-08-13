@@ -443,7 +443,6 @@ export const AuthProvider = ({ children }) => {
   // Sandbox & Email Rerouting Configuration
   const isSandboxMode = false;
   const testEmailTarget = "dev@bajanthings.biz";
-  const testWhatsAppTarget = "12468366185";
   const [dbConnected, setDbConnected] = useState(false);
 
   // Site Variables & Primary Initiatives state
@@ -1320,7 +1319,6 @@ Progressive Optimist Club of Barbados
       value={{
         isSandboxMode,
         testEmailTarget,
-        testWhatsAppTarget,
         dbConnected,
         primaryInitiatives,
         updatePrimaryInitiatives,
