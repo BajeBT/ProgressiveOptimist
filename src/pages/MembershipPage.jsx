@@ -35,6 +35,20 @@ import {
   Trash2
 } from 'lucide-react';
 
+const BARBADOS_PARISHES = [
+  'Christ Church',
+  'St. Andrew',
+  'St. George',
+  'St. James',
+  'St. John',
+  'St. Joseph',
+  'St. Lucy',
+  'St. Michael',
+  'St. Peter',
+  'St. Philip',
+  'St. Thomas'
+];
+
 export const MembershipPage = ({ onOpenPostModal }) => {
   const {
     currentUser,
@@ -3465,14 +3479,28 @@ export const MembershipPage = ({ onOpenPostModal }) => {
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Parish *</label>
-                    <input
-                      type="text"
-                      value={appForm.parish}
-                      onChange={e => setAppForm({ ...appForm, parish: e.target.value })}
-                      placeholder="e.g. St. Michael"
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
-                      required
-                    />
+                    {(!appForm.country || appForm.country === 'Barbados') ? (
+                      <select
+                        value={appForm.parish}
+                        onChange={e => setAppForm({ ...appForm, parish: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none text-slate-800 dark:text-slate-200"
+                        required
+                      >
+                        <option value="">-- Select Parish --</option>
+                        {BARBADOS_PARISHES.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={appForm.parish}
+                        onChange={e => setAppForm({ ...appForm, parish: e.target.value })}
+                        placeholder="e.g. Parish / Region"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:ring-2 focus:ring-optimist-blue outline-none"
+                        required
+                      />
+                    )}
                   </div>
 
                   <div>

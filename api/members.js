@@ -7,7 +7,8 @@ import {
   isOfficialEmail,
   ELEVATED_ACCESS,
   canApproveMembers,
-  getAnnualDuesRate
+  getAnnualDuesRate,
+  ensureApplicantTables
 } from '../lib/db.js';
 import { getSession, requireAccess } from '../lib/session.js';
 import { generateRandomPassword } from '../lib/password.js';
@@ -51,7 +52,7 @@ async function handleList(req, res) {
     SELECT
       m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access,
       m.is_treasurer, m.is_president, m.is_secretary,
-      m.approval_status, m.admin_granted_at, m.added_by,
+      m.approval_status, m.approved_by, m.approved_at, m.admin_granted_at, m.added_by,
       d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due,
       d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
     FROM members m
@@ -180,10 +181,14 @@ async function handleApprove(req, res, session) {
     return res.status(400).json({ success: false, message: 'A member id is required.' });
   }
 
+  const approverName = actor?.name || session.email || 'Admin';
+
   const rows = await sql`
     UPDATE members
     SET approval_status = 'approved',
-        access = CASE WHEN access = 'pending' THEN 'member' ELSE access END,
+        approved_by = ${approverName},
+        approved_at = CURRENT_TIMESTAMP,
+        access = CASE WHEN access IN ('pending_verification', 'pending') THEN 'pending' ELSE access END,
         role = CASE WHEN role = 'Pending' THEN 'Active Member' ELSE role END,
         avatar = CASE WHEN role = 'Pending' THEN ${getDefaultAvatarForRole('Active Member')} ELSE avatar END
     WHERE id = ${memberId}
@@ -193,7 +198,54 @@ async function handleApprove(req, res, session) {
     return res.status(404).json({ success: false, message: 'Member not found.' });
   }
 
+  // Update dues_ledger status to reflect approval in Treasurer Dues Console
+  await sql`
+    UPDATE dues_ledger
+    SET dues_status = 'Pending Dues Payment'
+    WHERE member_id = ${memberId};
+  `;
+
   return res.status(200).json({ success: true, message: `${rows[0].name} approved.` });
+}
+
+async function handleArchive(req, res, session) {
+  const memberId = req.body?.memberId;
+  if (!memberId) {
+    return res.status(400).json({ success: false, message: 'A member id is required.' });
+  }
+  const actor = await actorRecord(session);
+  const archiverName = actor?.name || session.email || 'Admin';
+
+  const memberRows = await sql`SELECT * FROM members WHERE id = ${memberId} LIMIT 1;`;
+  if (memberRows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Applicant not found.' });
+  }
+  const m = memberRows[0];
+  const ledgerRows = await sql`SELECT notes FROM dues_ledger WHERE member_id = ${memberId} LIMIT 1;`;
+  const notes = ledgerRows[0]?.notes || '';
+
+  await sql`
+    INSERT INTO applicant_archive (member_id, name, email, phone, address, notes, archived_by, archived_at)
+    VALUES (${m.id}, ${m.name}, ${m.email}, ${m.phone || ''}, ${m.address || ''}, ${notes}, ${archiverName}, CURRENT_TIMESTAMP);
+  `;
+
+  await sql`DELETE FROM dues_ledger WHERE member_id = ${memberId};`;
+  await sql`DELETE FROM members WHERE id = ${memberId};`;
+
+  return res.status(200).json({ success: true, message: `${m.name} archived successfully.` });
+}
+
+async function handleDelete(req, res) {
+  const memberId = req.body?.memberId;
+  if (!memberId) {
+    return res.status(400).json({ success: false, message: 'A member id is required.' });
+  }
+
+  await sql`DELETE FROM dues_ledger WHERE member_id = ${memberId};`;
+  const rows = await sql`DELETE FROM members WHERE id = ${memberId} RETURNING name;`;
+
+  const name = rows[0]?.name || 'Applicant';
+  return res.status(200).json({ success: true, message: `${name} deleted permanently.` });
 }
 
 // Generates a fresh password for a member and returns it once, in plaintext,
@@ -320,6 +372,7 @@ async function handleUpdatePermission(req, res) {
 
 export default async function handler(req, res) {
   if (!requireDatabase(res)) return;
+  await ensureApplicantTables();
 
   try {
     if (req.method === 'GET') {
@@ -351,6 +404,16 @@ export default async function handler(req, res) {
         const session = requireAccess(req, res, CAN_ADD);
         if (!session) return;
         return await handleApprove(req, res, session);
+      }
+      case 'archive': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleArchive(req, res, session);
+      }
+      case 'delete': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleDelete(req, res);
       }
       case 'update-record': {
         const session = requireAccess(req, res, CAN_ADD);

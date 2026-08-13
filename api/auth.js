@@ -6,7 +6,8 @@ import {
   normalizeEmail,
   isValidEmail,
   resolveEffectiveAccess,
-  getAnnualDuesRate
+  getAnnualDuesRate,
+  getContactEmail
 } from '../lib/db.js';
 import { sendEmail } from '../lib/email.js';
 import { createSession, getSession } from '../lib/session.js';
@@ -292,6 +293,18 @@ async function handleRegister(req, res) {
 
   const origin = req.headers.origin || `https://${req.headers.host}`;
   await issuePasswordSetupToken({ id: memberId, name, email }, origin);
+
+  // Send notification email to official contact email
+  try {
+    const contactEmail = await getContactEmail();
+    await sendEmail({
+      to: contactEmail,
+      subject: `New Membership Application Received: ${name}`,
+      body: `A new ProgressiveOCB Membership Application has been submitted.\n\nApplicant Details:\n- Name: ${name}\n- Email: ${email}\n- Phone: ${form.phone || 'N/A'}\n- Address: ${addressString}\n- Notes: ${notesString}\n\nPlease log in to the admin portal to review and manage this application.`
+    });
+  } catch (emailErr) {
+    console.error('Failed to send notification email for new application:', emailErr);
+  }
 
   return res.status(200).json({
     success: true,

@@ -957,6 +957,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const archiveMemberRecord = async (memberId) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'archive', memberId } });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Archive member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const deleteMemberRecord = async (memberId) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'delete', memberId } });
+      if (res.ok) await loadRoster();
+      return res;
+    } catch (err) {
+      console.error("Delete member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
   // Super admin only. Generates (or, if newPassword is given, sets) a new
   // password for the member, returning it once in plaintext so it can be
   // handed to that member directly.
@@ -1375,6 +1397,8 @@ Progressive Optimist Club of Barbados
         changeMyPassword,
         addMembers,
         approveMemberRecord,
+        archiveMemberRecord,
+        deleteMemberRecord,
         resetMemberPassword,
         updateDuesStatus,
         memberRoster,

@@ -8,6 +8,7 @@ import {
   Users,
   Edit3,
   Trash2,
+  Archive,
   Plus,
   Save,
   CheckCircle2,
@@ -42,6 +43,8 @@ export const AdminSettingsPage = () => {
     updateMemberRecord,
     addMembers,
     approveMemberRecord,
+    archiveMemberRecord,
+    deleteMemberRecord,
     resetMemberPassword,
     updateMemberPayments,
     updateMemberNotesByTreasurer,
@@ -340,11 +343,37 @@ export const AdminSettingsPage = () => {
   };
 
   const handleApproveMember = async (memberId, memberName) => {
+    const confirmed = window.confirm(`Are you sure you want to approve ${memberName} as a member of the Progressive Optimist Club?`);
+    if (!confirmed) return;
     const res = await approveMemberRecord(memberId);
     if (res.success) {
-      setStatusMsg(`${memberName} approved and activated.`);
+      setStatusMsg(`${memberName} approved successfully.`);
     } else {
       setStatusMsg(res.message || `Could not approve ${memberName}.`);
+    }
+    setTimeout(() => setStatusMsg(''), 5000);
+  };
+
+  const handleArchiveMember = async (memberId, memberName) => {
+    const confirmed = window.confirm(`Are you sure you want to archive applicant ${memberName}? This will move their details to the applicant archive database.`);
+    if (!confirmed) return;
+    const res = await archiveMemberRecord(memberId);
+    if (res.success) {
+      setStatusMsg(`${memberName} archived successfully.`);
+    } else {
+      setStatusMsg(res.message || `Could not archive ${memberName}.`);
+    }
+    setTimeout(() => setStatusMsg(''), 5000);
+  };
+
+  const handleDeleteMember = async (memberId, memberName) => {
+    const confirmed = window.confirm(`Are you sure you want to PERMANENTLY delete applicant ${memberName}? This action cannot be undone.`);
+    if (!confirmed) return;
+    const res = await deleteMemberRecord(memberId);
+    if (res.success) {
+      setStatusMsg(`${memberName} deleted permanently.`);
+    } else {
+      setStatusMsg(res.message || `Could not delete ${memberName}.`);
     }
     setTimeout(() => setStatusMsg(''), 5000);
   };
@@ -964,7 +993,12 @@ export const AdminSettingsPage = () => {
                           <strong className="block text-slate-900 dark:text-white text-sm">
                             {isOfficialAccount(m) ? m.role : m.name}
                           </strong>
-                          <span className="text-slate-400 font-mono text-[10px]">{m.id} • {m.email}</span>
+                          <span className="text-slate-400 font-mono text-[10px] block">{m.id} • {m.email}</span>
+                          {m.approved_by && (
+                            <span className="text-emerald-600 dark:text-emerald-400 text-[10px] block mt-0.5 font-semibold">
+                              Approved by {m.approved_by} {m.approved_at ? `on ${new Date(m.approved_at).toLocaleDateString()}` : ''}
+                            </span>
+                          )}
                         </td>
 
                         <td className="p-4 text-left">
@@ -999,18 +1033,13 @@ export const AdminSettingsPage = () => {
                             <Check className="w-3 h-3 text-blue-500" />
                             Member Access
                           </span>
-                        </td>
-
-                        {/* Access Select */}
+                        </td>                        {/* Access Select */}
                         <td className="p-4 text-left">
                           {m.access === 'pending' ? (
                             <button
                               onClick={() => {
                                 if (['super admin', 'finance'].includes(userAccess)) {
-                                  updateMemberPermissions(m.id, 'access', 'member');
-                                  updateMemberPermissions(m.id, 'role', 'Active Member');
-                                  setStatusMsg(`Approved ${m.name} as active club member!`);
-                                  setTimeout(() => setStatusMsg(''), 4000);
+                                  handleApproveMember(m.id, m.name);
                                 }
                               }}
                               disabled={!['super admin', 'finance'].includes(userAccess)}
@@ -1029,7 +1058,7 @@ export const AdminSettingsPage = () => {
                                onChange={e => updateMemberPermissions(m.id, 'access', e.target.value)}
                                disabled={m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)}
                                className={`px-2.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] outline-none font-semibold text-slate-800 dark:text-slate-200 ${
-                                 (m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                                  (m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                                }`}
                              >
                                {(userAccess === 'super admin' || m.access === 'super admin') && (
@@ -1039,6 +1068,7 @@ export const AdminSettingsPage = () => {
                                <option value="admin">admin</option>
                                <option value="moderator">moderator</option>
                                <option value="member">member</option>
+                               <option value="pending">pending</option>
                              </select>
                           )}
                         </td>
@@ -1222,24 +1252,50 @@ export const AdminSettingsPage = () => {
                       )}
                     </div>
 
-                    <button
-                      onClick={() => handleApproveMember(m.id, m.name)}
-                      disabled={!canApproveMembers || m.awaitingVerification}
-                      className={`px-3.5 py-1.5 rounded-xl text-[10px] font-bold uppercase shadow transition-all shrink-0 ${
-                        canApproveMembers && !m.awaitingVerification
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                          : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
-                      }`}
-                      title={
-                        m.awaitingVerification
-                          ? 'This applicant must verify their email and set a password first'
-                          : canApproveMembers
-                            ? 'Approve and activate this member record'
-                            : 'Reserved for the President, Treasurer, or Secretary'
-                      }
-                    >
-                      <Check className="w-3 h-3 inline mr-1" /> Approve
-                    </button>
+                    <div className="flex flex-wrap gap-1.5 shrink-0">
+                      <button
+                        onClick={() => handleApproveMember(m.id, m.name)}
+                        disabled={!canApproveMembers || m.awaitingVerification}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase shadow transition-all ${
+                          canApproveMembers && !m.awaitingVerification
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                        }`}
+                        title={
+                          m.awaitingVerification
+                            ? 'This applicant must verify their email and set a password first'
+                            : canApproveMembers
+                              ? 'Approve and activate this member record'
+                              : 'Reserved for the President, Treasurer, or Secretary'
+                        }
+                      >
+                        <Check className="w-3 h-3 inline mr-1" /> Approve
+                      </button>
+                      <button
+                        onClick={() => handleArchiveMember(m.id, m.name)}
+                        disabled={!canApproveMembers}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase shadow transition-all ${
+                          canApproveMembers
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                        }`}
+                        title={canApproveMembers ? "Archive this applicant" : "Reserved for President, Treasurer, or Secretary"}
+                      >
+                        <Archive className="w-3 h-3 inline mr-1" /> Archive
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMember(m.id, m.name)}
+                        disabled={!canApproveMembers}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase shadow transition-all ${
+                          canApproveMembers
+                            ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
+                        }`}
+                        title={canApproveMembers ? "Permanently delete this applicant" : "Reserved for President, Treasurer, or Secretary"}
+                      >
+                        <Trash2 className="w-3 h-3 inline mr-1" /> Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
