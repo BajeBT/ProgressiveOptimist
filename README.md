@@ -3,7 +3,7 @@
 A single-page React application that serves as the public website, member portal, and
 administrative console for the Progressive Optimist Club of Barbados. It combines a public
 marketing/outreach site with an authenticated members' area (dues, projects, gallery,
-directory, documents) and a role-gated admin console for officers.
+document library) and a role-gated admin console for officers.
 
 Live repository: `https://github.com/BajeBT/ProgressiveOptimist` · Hosted on Vercel.
 
@@ -17,7 +17,7 @@ Live repository: `https://github.com/BajeBT/ProgressiveOptimist` · Hosted on Ve
 | **Donations** | Anyone | Stripe Checkout donation flow in BBD, charged in USD at the pegged rate. |
 | **Membership application** | Prospective members | Public application form → email verification → officer approval. |
 | **Member portal** | Signed-in members | Project posting, photo gallery, member directory, document library, dues status and online dues payment. |
-| **Admin console** | Officers / elevated tiers | Site variables, member permissions, treasurer dues console, project moderation. |
+| **Admin console** | Officers / elevated tiers | Site variables, member permissions, treasurer dues console, project moderation, Barbados clubs directory management. |
 
 ### Core operations
 
@@ -33,8 +33,12 @@ Live repository: `https://github.com/BajeBT/ProgressiveOptimist` · Hosted on Ve
    live immediately; everyone else's wait in a moderation queue.
 4. **Gallery** — photos upload to Google Photos via the Photos Library API, with metadata
    stored locally; separately, public Google Photos *shared albums* are scraped for display.
-5. **Communications** — the contact form and all transactional email go out through AWS SES,
-   with a non-production redirect safeguard.
+5. **Communications** — the contact form, password links, and all transactional email go out
+   through AWS SES, with a non-production redirect safeguard. The Stripe webhook additionally
+   emails the club's configured contact address whenever a dues payment or donation settles.
+6. **Barbados club directory** — admins add/edit/delete entries from the admin console; the
+   public `/barbados-clubs` page reads the same database table, so there is no static content to
+   redeploy for a listing change.
 
 ---
 
@@ -67,6 +71,7 @@ Optimist/
 │   ├── gallery.js              # Google Photos upload/list/delete + shared albums
 │   ├── site-settings.js        # club-wide configurable variables
 │   ├── contact-subjects.js     # editable contact-form subject list
+│   ├── barbados-clubs.js       # public list / admin add-update-delete of club directory
 │   ├── send-contact-message.js # contact form → SES
 │   ├── create-checkout-session.js       # Stripe donation checkout
 │   ├── create-dues-checkout-session.js  # Stripe dues checkout (itemised, + card fee)
@@ -82,8 +87,8 @@ Optimist/
 │
 ├── src/
 │   ├── App.jsx                 # Router, error boundary, global post modal
-│   ├── context/AuthContext.jsx # Central state store + all API calls (~1.4k lines)
-│   ├── components/             # Navbar, Footer, project cards/modals, creed, hierarchy
+│   ├── context/AuthContext.jsx # Central state store + all API calls (~1.5k lines)
+│   ├── components/             # Navbar, Footer, project/club modals, creed, hierarchy
 │   ├── pages/                  # One component per route
 │   └── data/                   # Static seed content (clubs, creed, hierarchy, projects, roster)
 │
@@ -107,7 +112,11 @@ Optimist/
 - **Local dev shims the serverless runtime.** `vite.config.js` registers a middleware plugin
   that intercepts `/api/*`, `ssrLoadModule`s the matching handler, and supplies a
   `req`/`res` shim close enough to Vercel's. Without it the dev server would return handler
-  source code instead of running it.
+  source code instead of running it. The middleware also honours a route's own
+  `config.api.bodyParser = false` export (used by `stripe-webhook.js`) by skipping body
+  pre-parsing for it — reading the body first would drain the stream before the handler's own
+  raw-body reader ever attaches, which is exactly what broke local webhook testing before this
+  was fixed.
 
 ---
 
@@ -118,9 +127,8 @@ Optimist/
 | `/` | HomePage — hero, theme, announcement banner, featured projects | Public |
 | `/about` | AboutPage — club history, creed, officers | Public |
 | `/projects` | ProjectsPage — project feed and detail modals | Public |
-| `/barbados-clubs` | BarbadosClubsPage — sister clubs | Public |
+| `/barbados-clubs` | BarbadosClubsPage — sister clubs, admin-editable via the database | Public |
 | `/hierarchy` | HierarchyPage — Optimist International structure diagram | Public |
-| `/directory` | MembershipDirectoryPage — roster (detail level depends on session) | Public / enriched |
 | `/donate` | DonatePage — Stripe donation + bank transfer details | Public |
 | `/contact` | ContactPage — SES-backed contact form | Public |
 | `/membership` | MembershipPage — login/apply, then the member dashboard | Public → member |
@@ -133,7 +141,7 @@ verification / password setup), `?duesPaid=true`, `?duesCanceled=true`.
 `projects` · `gallery` · `directory` · `resources` (documents) · `dues`
 
 ### Admin console tabs (`/admin`)
-`variables` · `permissions` · `treasurer` · `moderation`
+`variables` · `permissions` · `treasurer` · `clubs` (Barbados club directory) · `moderation`
 
 ---
 
@@ -181,7 +189,9 @@ domain keep their tier indefinitely.
 | Site settings, contact subjects | `super admin`, `finance`, `admin` |
 | Approve/delete projects | `super admin`, `finance`, `admin`, `moderator` |
 | Create a project | Any valid session (auto-approved only for moderators) |
-| Delete a gallery photo | Admin/finance tiers, or the original uploader |
+| Upload a gallery photo | Any valid session |
+| Delete a gallery photo | `super admin`, `finance`, `admin`, or the original uploader (by session `memberId`) |
+| Add / edit / delete a Barbados club listing | `super admin`, `finance`, `admin` |
 
 ### Password flows
 - **Set / verify** — a 32-byte random token is generated, **bcrypt-hashed into the database**
@@ -233,6 +243,12 @@ domain keep their tier indefinitely.
 ### `contact_subjects`
 `id` · `label` · `sort_order`
 
+### `barbados_clubs`
+`id` · `name` · `motto` · `charter_year` · `is_host` · `location` · `meeting_schedule` · `email` ·
+`phone` · `website` · `description` · `initiatives` (`TEXT[]`) · `sort_order` · `created_at` ·
+`updated_at`. Admin-editable via the console; the public `/barbados-clubs` page reads this table
+directly rather than a hardcoded array.
+
 ### Canonical roles (`lib/roles.js`)
 Pending · Active Member · Director · Committee Chair · OI Representative · Past President ·
 Vice President · President · Treasurer · Secretary · Public Relations Officer (PRO).
@@ -271,8 +287,10 @@ anonymous callers, full (contact details + joined dues ledger) for any valid ses
 ### `GET|POST|DELETE /api/gallery`
 `GET` merges the Google Photos library (matched to local metadata) with photos from a
 configured shared album, returning `photos`, `websitePhotos`, and `albumPhotos`.
-`POST` uploads a base64 image to Google Photos and records metadata. `DELETE` removes the local
-record subject to the uploader/admin check.
+`POST` and `DELETE` both require a session (`getSession`) — identity and permission are derived
+from the verified token, never from client-supplied fields. `POST` uploads a base64 image to
+Google Photos, attributing it to the session's own member id/name. `DELETE` removes the local
+record if the caller is an admin/finance tier or the original uploader.
 
 ### `GET|POST /api/site-settings`
 `GET` is public — the Donate and Membership pages and the dues checkout route all need the
@@ -281,6 +299,11 @@ current dues rate without a session. `POST` upserts row 1.
 ### `GET|POST /api/contact-subjects`
 `GET` is public (the contact form needs the list before sign-in). `POST` actions: `add`,
 `remove`, `reorder`.
+
+### `GET|POST /api/barbados-clubs`
+`GET` is public — the `/barbados-clubs` directory page needs it without a session. `POST`
+actions `add`, `update`, `delete` are gated to `super admin`/`finance`/`admin`, same tier as
+site settings.
 
 ### `POST /api/send-contact-message`
 Sends via SES to whatever address is currently configured in `site_settings.contact_email`, with
@@ -332,6 +355,13 @@ the right query string. On a dues payment the webhook:
 
 A negative balance is **not** floored at zero — an overpayment is a real credit and stays
 visible as one (`-$25.00`) rather than being hidden.
+
+### Notifications
+After each successful webhook write, the club's configured contact address (`getContactEmail()`
+— same address the Contact form uses) is emailed a summary via `lib/email.js`: member/amount/
+balance for dues payments, donor/amount for donations. This reuses the existing SES helper, so
+it inherits the non-production redirect safeguard and never throws on failure — a notification
+problem can't block payment recording or the webhook's response back to Stripe.
 
 ### Manual payments
 The Treasurer may enter up to four date/amount/method rows per fiscal year. Saving them deletes
@@ -392,7 +422,9 @@ relevant feature to return a friendly message rather than crash.
 the admin console's *Variables* tab: meeting schedule and venue, contact email, annual dues rate,
 club theme title, homepage announcement banner, and the bank transfer details shown on the Donate
 page. Changing the dues rate propagates to new member records, the Membership page, and Stripe
-dues checkout from one place.
+dues checkout from one place. The bank-detail fields default to `"Not yet configured"` in source
+— the real values are seeded into the database once (`scripts/migrate_add_bank_details.js`) and
+from then on live only there, never as a source-level fallback.
 
 ---
 
@@ -437,12 +469,18 @@ Migrations and maintenance scripts in `scripts/` are idempotent (`CREATE TABLE I
 `ADD COLUMN IF NOT EXISTS`) and are run individually as needed — for example
 `migrate_add_dues_payments_table.js`, `migrate_add_member_governance.js`,
 `migrate_add_site_settings_table.js`, `migrate_add_gallery_table.js`,
-`migrate_add_donations_table.js`, `migrate_add_bank_details.js`, plus data fixers such as
-`backfill_dues_payments.js`, `fix_dues_rate_to_200.js`, and `seed_officer_accounts.js`.
+`migrate_add_donations_table.js`, `migrate_add_bank_details.js`,
+`migrate_add_barbados_clubs_table.js` (also seeds the four existing clubs on first run), plus
+data fixers such as `backfill_dues_payments.js`, `fix_dues_rate_to_200.js`, and
+`seed_officer_accounts.js`.
 
 ### Stripe webhooks locally
-Point the Stripe CLI at `/api/stripe-webhook` and set `STRIPE_WEBHOOK_SECRET` to the secret the
-CLI prints; the route rejects any request whose signature does not verify.
+`stripe listen --forward-to localhost:3000/api/stripe-webhook` and set `STRIPE_WEBHOOK_SECRET`
+to the secret the CLI prints; the route rejects any request whose signature does not verify.
+This now works correctly through `npm run dev` — the dev middleware skips body pre-parsing for
+routes (like this one) that export `config.api.bodyParser = false`, matching Vercel's behavior.
+A request with a bad or missing signature returns a fast `400`; previously (before that
+middleware fix) it hung indefinitely instead.
 
 ---
 
@@ -450,9 +488,11 @@ CLI prints; the route rejects any request whose signature does not verify.
 
 Deployed on **Vercel** from the `main` branch. `vercel.json` rewrites every path to
 `/index.html` so client-side routing works on direct navigation and refresh. Each file in `api/`
-becomes one serverless function — the Hobby plan's 12-function limit is a real constraint, and
-is the reason gallery operations were consolidated into a single handler. Configure all
-environment variables in the Vercel project settings.
+becomes one serverless function — the Hobby plan's 12-function limit is a real constraint, and is
+the reason gallery operations were consolidated into a single handler. As of
+`api/barbados-clubs.js`, the project is now at exactly 12 of 12 functions — any further route
+needs to be folded into an existing handler (action-dispatch style) rather than added as a new
+file. Configure all environment variables in the Vercel project settings.
 
 Per the repository's working rules: **never push or trigger a deployment without explicit
 approval.**
@@ -485,18 +525,28 @@ approval.**
 - Password-setup requests are enumeration-safe.
 - Anonymous roster reads exclude contact details, dues figures, and pending applicants.
 - Non-production email is redirected away from real members.
+- `api/gallery.js` upload/delete derive identity and permission from the verified session
+  (`getSession`), not from client-supplied fields — a request can no longer claim any role or
+  member id it likes to attribute or delete a photo. (Previously it trusted
+  `userRole`/`userAccess`/`userMemberId` sent in the request body.)
+- The club's real bank account/routing numbers are no longer hardcoded as source-level fallback
+  defaults (`api/site-settings.js`, `AuthContext.jsx`, `AdminSettingsPage.jsx` all show
+  `"Not yet configured"` until an admin sets real values via Site Variables). Note: the values
+  still exist in this repository's **git history** and in `scripts/migrate_add_bank_details.js`
+  (a one-off seeding script) — removing them from history entirely would require a rewrite and
+  force-push, which hasn't been done.
 
 **Worth reviewing**
-- `api/site-settings.js` carries real-looking bank account and routing numbers as hardcoded
-  fallback defaults in a public repository. They should be moved to environment variables or
-  seeded data only.
-- `api/gallery.js` performs its own permission check from **client-supplied** `userRole` /
-  `userAccess` / `userMemberId` fields rather than from the verified session, unlike every other
-  route. It should use `getSession`/`requireAccess` like the rest.
 - Shared-album ingestion depends on scraping Google's HTML and will break silently if that
   markup changes.
 - Member IDs (`78008-` plus a random four-digit number) are generated without a uniqueness
   check; collisions are unlikely but not impossible.
+- Session tokens are self-contained and signed with `SESSION_SECRET` alone — anyone with that
+  secret (server-side only, but worth being aware of) can mint a valid session for any member id
+  and access tier without a password, since there's no server-side session store to revoke
+  against. This is inherent to the stateless-JWT-style design, not a bug, but it means
+  `SESSION_SECRET` compromise is equivalent to full account takeover for every member until it's
+  rotated.
 
 ---
 
