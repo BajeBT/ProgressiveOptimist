@@ -294,12 +294,12 @@ async function handleRestoreArchived(req, res) {
     SET access = 'pending', approval_status = 'pending_approval', role = 'Pending';
   `;
 
-  // 2. Insert/update in dues_ledger (Treasurer Dues Console)
+  // 2. Insert into dues_ledger (Treasurer Dues Console) - archiving already
+  // deletes any prior ledger row for this member_id, so no conflict is
+  // expected here; dues_ledger.member_id has no unique constraint to target.
   await sql`
     INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
-    VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', ${currentDuesRate}, '$0.00', ${currentDuesRate}, 'Pending', 'Pending Approval', ${arch.notes || ''})
-    ON CONFLICT (member_id) DO UPDATE
-    SET dues_status = 'Pending Approval';
+    VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', ${currentDuesRate}, '$0.00', ${currentDuesRate}, 'Pending', 'Pending Approval', ${arch.notes || ''});
   `;
 
   // 3. Confirm arrival in Treasurer Dues Console (dues_ledger table) before deleting from archive
