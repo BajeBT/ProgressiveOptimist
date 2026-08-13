@@ -1091,20 +1091,25 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       memberRoster.forEach(m => {
         if (m.email && m.email.toLowerCase().endsWith('@progressiveoptimist.org')) return;
         const key = m.id || (m.email ? m.email.toLowerCase().trim() : null);
-        if (key) {
-          const existing = map.get(key) || {};
-          map.set(key, {
-            ...existing,
-            id: m.id || existing.id,
-            name: m.name || existing.name,
-            email: m.email || existing.email,
-            phone: m.phone || existing.phone || '',
-            address: m.address || existing.address,
-            role: m.role || existing.role || 'Active Member',
-            status: m.duesStatus ? (m.duesStatus.includes('Active') ? 'Active Member' : m.duesStatus) : (existing.status || 'Active Member'),
-            avatar: m.avatar || existing.avatar
-          });
+        if (!key) return;
+        // A deactivated member drops out of the directory entirely, even if
+        // they were also present in the static activeRoster21 seed above.
+        if (m.memberStatus === 'inactive') {
+          map.delete(key);
+          return;
         }
+        const existing = map.get(key) || {};
+        map.set(key, {
+          ...existing,
+          id: m.id || existing.id,
+          name: m.name || existing.name,
+          email: m.email || existing.email,
+          phone: m.phone || existing.phone || '',
+          address: m.address || existing.address,
+          role: m.role || existing.role || 'Active Member',
+          status: m.duesStatus ? (m.duesStatus.includes('Active') ? 'Active Member' : m.duesStatus) : (existing.status || 'Active Member'),
+          avatar: m.avatar || existing.avatar
+        });
       });
     }
 
