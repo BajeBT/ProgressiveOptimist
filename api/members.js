@@ -258,15 +258,27 @@ async function handleListArchived(req, res) {
 }
 
 async function handleRestoreArchived(req, res) {
-  const id = req.body?.id || req.body?.memberId;
-  if (!id) {
+  const rawId = req.body?.id || req.body?.memberId;
+  if (!rawId) {
     return res.status(400).json({ success: false, message: 'An archive record id is required.' });
   }
-  const rows = await sql`
-    SELECT id, member_id, name, email, phone, address, notes FROM applicant_archive
-    WHERE id = ${id} OR member_id = ${id}
-    LIMIT 1;
-  `;
+
+  const searchStr = String(rawId);
+  const numId = Number.parseInt(searchStr, 10);
+  const isNumeric = !Number.isNaN(numId) && String(numId) === searchStr;
+
+  const rows = isNumeric
+    ? await sql`
+        SELECT id, member_id, name, email, phone, address, notes FROM applicant_archive
+        WHERE id = ${numId} OR member_id = ${searchStr}
+        LIMIT 1;
+      `
+    : await sql`
+        SELECT id, member_id, name, email, phone, address, notes FROM applicant_archive
+        WHERE member_id = ${searchStr} OR LOWER(email) = LOWER(${searchStr})
+        LIMIT 1;
+      `;
+
   if (rows.length === 0) {
     return res.status(404).json({ success: false, message: 'Archived record not found.' });
   }
@@ -298,22 +310,34 @@ async function handleRestoreArchived(req, res) {
     return res.status(500).json({ success: false, message: 'Failed to confirm arrival in Treasurer Dues Console.' });
   }
 
-  // 4. Delete from archive only after arrival is confirmed
+  // 4. Delete from archive using integer primary key arch.id
   await sql`DELETE FROM applicant_archive WHERE id = ${arch.id};`;
 
   return res.status(200).json({ success: true, message: `${arch.name} restored to Membership Intake awaiting approval.` });
 }
 
 async function handleDeleteArchived(req, res) {
-  const id = req.body?.id || req.body?.memberId;
-  if (!id) {
+  const rawId = req.body?.id || req.body?.memberId;
+  if (!rawId) {
     return res.status(400).json({ success: false, message: 'An archive record id is required.' });
   }
-  const rows = await sql`
-    DELETE FROM applicant_archive
-    WHERE id = ${id} OR member_id = ${id}
-    RETURNING name;
-  `;
+
+  const searchStr = String(rawId);
+  const numId = Number.parseInt(searchStr, 10);
+  const isNumeric = !Number.isNaN(numId) && String(numId) === searchStr;
+
+  const rows = isNumeric
+    ? await sql`
+        DELETE FROM applicant_archive
+        WHERE id = ${numId} OR member_id = ${searchStr}
+        RETURNING name;
+      `
+    : await sql`
+        DELETE FROM applicant_archive
+        WHERE member_id = ${searchStr} OR LOWER(email) = LOWER(${searchStr})
+        RETURNING name;
+      `;
+
   const name = rows[0]?.name || 'Archived record';
   return res.status(200).json({ success: true, message: `${name} deleted permanently from archive.` });
 }
