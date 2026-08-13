@@ -81,13 +81,15 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'You must be signed in to delete a photo.' });
     }
 
-    const { id } = req.body || req.query || {};
+    const { id, google_media_item_id: clientMediaItemId } = req.body || req.query || {};
     if (!id) return res.status(400).json({ success: false, message: 'Photo ID is required.' });
 
     try {
       const rows = await sql`
         SELECT id, uploader_id, google_media_item_id FROM gallery WHERE id = ${id};
       `;
+
+      let mediaItemId = null;
 
       if (rows.length > 0) {
         const photo = rows[0];
@@ -101,15 +103,29 @@ export default async function handler(req, res) {
           });
         }
 
-        // Google Photos has no API to delete the underlying media item, so
-        // record its ID and filter it out of future listings (see GET below).
-        if (photo.google_media_item_id) {
-          await sql`
-            INSERT INTO deleted_media_ids (google_media_item_id)
-            VALUES (${photo.google_media_item_id})
-            ON CONFLICT (google_media_item_id) DO NOTHING;
-          `;
+        mediaItemId = photo.google_media_item_id;
+      } else if (clientMediaItemId) {
+        // No gallery row exists for this photo (e.g. it was added to Google
+        // Photos outside the website), so there's no recorded uploader to
+        // check against - only admins/finance can remove it from the listing.
+        const isAdminOrFinance = CAN_MODERATE_GALLERY.includes(session.access);
+        if (!isAdminOrFinance) {
+          return res.status(403).json({
+            success: false,
+            message: 'Permission denied. Only admins, super admins, and finance roles can delete this photo.'
+          });
         }
+        mediaItemId = clientMediaItemId;
+      }
+
+      // Google Photos has no API to delete the underlying media item, so
+      // record its ID and filter it out of future listings (see GET below).
+      if (mediaItemId) {
+        await sql`
+          INSERT INTO deleted_media_ids (google_media_item_id)
+          VALUES (${mediaItemId})
+          ON CONFLICT (google_media_item_id) DO NOTHING;
+        `;
       }
 
       await sql`DELETE FROM gallery WHERE id = ${id};`;

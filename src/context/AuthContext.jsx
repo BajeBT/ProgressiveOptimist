@@ -1427,12 +1427,16 @@ Progressive Optimist Club of Barbados
     }
   };
 
-  const deleteGalleryPhoto = async (photoId) => {
+  const deleteGalleryPhoto = async (photo) => {
     if (!currentUser) return { success: false, message: 'Must be logged in to delete photos.' };
+    const photoId = typeof photo === 'string' ? photo : photo?.id;
     try {
       const data = await api('gallery?action=delete', {
         method: 'POST',
-        body: { id: photoId }
+        body: {
+          id: photoId,
+          google_media_item_id: typeof photo === 'object' ? photo?.google_media_item_id : undefined
+        }
       });
       if (!data.ok || !data.success) {
         return { success: false, message: data.message || 'Failed to delete photo.' };

@@ -376,7 +376,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const confirmDeletePhoto = async () => {
     if (!photoToDelete) return;
     setIsDeletingPhoto(true);
-    const res = await deleteGalleryPhoto(photoToDelete.id);
+    const res = await deleteGalleryPhoto(photoToDelete);
     setIsDeletingPhoto(false);
     if (res.success) {
       setPhotoToDelete(null);
