@@ -171,7 +171,7 @@ export const NewProjectModal = ({ isOpen, onClose }) => {
             <Sparkles className="w-5 h-5" />
             <div>
               <h2 className="font-heading text-xl font-bold">
-                Post New Project / Activity
+                Post New Activity
               </h2>
               <span className="text-[11px] font-bold text-slate-800 block">
                 Official Member Submission Portal (Max 5 MB Photo Limit)

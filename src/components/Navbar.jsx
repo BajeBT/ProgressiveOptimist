@@ -340,7 +340,7 @@ export const Navbar = ({ onOpenPostModal }) => {
               Logged in as <strong className="text-slate-800 dark:text-slate-200">{currentUser.name}</strong> ({currentUser.role})
             </div>
 
-            {/* Right: Relocated buttons (+Post Project, Admin Settings, Member Profile link) */}
+            {/* Right: Relocated buttons (+Post Activity, Admin Settings, Member Profile link) */}
             <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
               
               <button
@@ -348,7 +348,7 @@ export const Navbar = ({ onOpenPostModal }) => {
                 className="flex items-center space-x-1.5 gold-gradient text-slate-950 px-3.5 py-1.5 rounded-xl font-bold text-xs shadow hover:brightness-110 transition-all shrink-0"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>+ Post Project</span>
+                <span>+ Post Activity</span>
               </button>
 
               { (currentUser.access === 'super admin' || currentUser.isTreasurer || currentUser.role?.includes('President') || currentUser.role?.includes('Treasurer') || currentUser.role?.includes('Director') || currentUser.role?.includes('Admin') || currentUser.email?.toLowerCase().includes('sharon') || currentUser.email?.toLowerCase().includes('treasurer')) && (
@@ -456,7 +456,7 @@ export const Navbar = ({ onOpenPostModal }) => {
               className="w-full mt-2 flex items-center justify-center space-x-2 royal-gradient text-white py-3 rounded-xl font-bold text-sm shadow"
             >
               <PlusCircle className="w-5 h-5" />
-              <span>Post New Project / Activity</span>
+              <span>Post New Activity</span>
             </button>
           )}
         </div>

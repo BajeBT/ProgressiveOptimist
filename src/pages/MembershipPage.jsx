@@ -1182,7 +1182,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
               className="gold-gradient text-slate-950 font-bold px-5 py-2.5 rounded-xl shadow hover:brightness-110 transition-all text-xs flex items-center gap-2"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Post Project</span>
+              <span>+ Post Activity</span>
             </button>
 
             <button

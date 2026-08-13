@@ -87,7 +87,7 @@ export const HomePage = ({ onOpenPostModal }) => {
                   className="bg-slate-800/90 hover:bg-slate-700 text-white font-semibold px-5 py-3.5 rounded-xl text-sm border border-slate-700 flex items-center gap-2"
                 >
                   <PlusCircle className="w-4 h-4 text-amber-400" />
-                  <span>Post Project</span>
+                  <span>Post Activity</span>
                 </button>
               )}
             </div>

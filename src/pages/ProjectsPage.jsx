@@ -56,7 +56,7 @@ export const ProjectsPage = ({ onOpenPostModal }) => {
             className="gold-gradient text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg hover:brightness-110 transition-all text-xs flex items-center gap-2 shrink-0"
           >
             <PlusCircle className="w-5 h-5" />
-            <span>+ Post New Project</span>
+            <span>+ Post Activity</span>
           </button>
         ) : (
           <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs text-slate-300 space-y-1">
