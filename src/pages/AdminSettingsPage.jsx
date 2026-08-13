@@ -9,6 +9,7 @@ import {
   Edit3,
   Trash2,
   Archive,
+  RotateCcw,
   Plus,
   Save,
   CheckCircle2,
@@ -44,6 +45,9 @@ export const AdminSettingsPage = () => {
     addMembers,
     approveMemberRecord,
     archiveMemberRecord,
+    archivedApplicants,
+    restoreArchivedRecord,
+    deleteArchivedRecord,
     deleteMemberRecord,
     resetMemberPassword,
     updateMemberPayments,
@@ -378,6 +382,31 @@ export const AdminSettingsPage = () => {
     setTimeout(() => setStatusMsg(''), 5000);
   };
 
+  const handleRestoreArchivedMember = async (id, name) => {
+    const confirmed = window.confirm(`Are you sure you want to review and restore applicant ${name} back to the Membership Intake queue awaiting approval?`);
+    if (!confirmed) return;
+    const res = await restoreArchivedRecord(id);
+    if (res.success) {
+      setStatusMsg(`${name} restored to Membership Intake awaiting approval.`);
+      setActiveTab('permissions');
+    } else {
+      setStatusMsg(res.message || `Could not restore ${name}.`);
+    }
+    setTimeout(() => setStatusMsg(''), 5000);
+  };
+
+  const handleDeleteArchivedApplicant = async (id, name) => {
+    const confirmed = window.confirm(`Are you sure you want to PERMANENTLY delete archived applicant ${name}? This action cannot be undone.`);
+    if (!confirmed) return;
+    const res = await deleteArchivedRecord(id);
+    if (res.success) {
+      setStatusMsg(`${name} permanently deleted from archive.`);
+    } else {
+      setStatusMsg(res.message || `Could not delete ${name}.`);
+    }
+    setTimeout(() => setStatusMsg(''), 5000);
+  };
+
   // Only the President, Treasurer, Secretary, or the super admin account may
   // clear a record added by someone else.
   const currentMemberRecord = memberRoster.find(m => m.id === currentUser?.memberId);
@@ -646,6 +675,18 @@ export const AdminSettingsPage = () => {
             >
               <Building2 className="w-4 h-4" />
               <span>Barbados Clubs ({barbadosClubs.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('archived')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'archived'
+                  ? 'bg-optimist-blue text-white shadow'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Archive className="w-4 h-4 text-amber-500" />
+              <span>Archived Applicants ({archivedApplicants.length})</span>
             </button>
           </>
         )}
@@ -1738,6 +1779,114 @@ export const AdminSettingsPage = () => {
         onClose={() => setClubModalOpen(false)}
         club={editingClub}
       />
+
+      {/* TAB 5: ARCHIVED APPLICANTS */}
+      {activeTab === 'archived' && canManageSettings && (
+        <div className="space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl glass-card border border-slate-200 dark:border-slate-800 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Archive className="w-5 h-5 text-amber-500" />
+                  Archived Membership Applicants ({archivedApplicants.length})
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  List of archived applicant records. Click <strong>Review</strong> to restore an applicant back to the active Membership Intake queue for approval, or <strong>Delete</strong> to permanently purge the record.
+                </p>
+              </div>
+
+              <div className="relative shrink-0 sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search archived..."
+                  value={memberSearch}
+                  onChange={e => setMemberSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-optimist-blue"
+                />
+              </div>
+            </div>
+
+            {archivedApplicants.length === 0 ? (
+              <div className="text-center py-12 space-y-2">
+                <Archive className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto" />
+                <h3 className="font-heading text-sm font-semibold text-slate-700 dark:text-slate-300">No Archived Applicants</h3>
+                <p className="text-xs text-slate-500">There are currently no archived membership applications.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:border-slate-200 font-bold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-4 w-12 text-center text-slate-400">#</th>
+                      <th className="p-4">Applicant Name & ID</th>
+                      <th className="p-4">Contact Info</th>
+                      <th className="p-4">Application Details / Notes</th>
+                      <th className="p-4">Archived Info</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {archivedApplicants
+                      .filter(a =>
+                        (a.name || '').toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        (a.email || '').toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        (a.member_id || '').toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .map((arch, index) => (
+                        <tr key={arch.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="p-4 text-center font-mono text-slate-400 font-bold text-xs border-r border-slate-200 dark:border-slate-800">
+                            {index + 1}
+                          </td>
+                          <td className="p-4">
+                            <strong className="block text-slate-900 dark:text-white text-sm">{arch.name}</strong>
+                            <span className="text-slate-400 font-mono text-[10px] block">{arch.member_id || arch.id}</span>
+                          </td>
+                          <td className="p-4 space-y-0.5">
+                            <span className="text-slate-800 dark:text-slate-200 text-xs block">{arch.email}</span>
+                            {arch.phone && <span className="text-slate-500 text-[10px] block">Phone: {arch.phone}</span>}
+                            {arch.address && <span className="text-slate-500 text-[10px] block truncate max-w-xs">Address: {arch.address}</span>}
+                          </td>
+                          <td className="p-4 max-w-xs">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 italic break-words line-clamp-3">
+                              "{arch.notes || 'No extra application details'}"
+                            </p>
+                          </td>
+                          <td className="p-4 space-y-0.5">
+                            <span className="text-amber-600 dark:text-amber-400 text-xs font-bold block">
+                              Archived by {arch.archived_by || 'Admin'}
+                            </span>
+                            <span className="text-slate-400 text-[10px] block">
+                              {arch.archived_at ? new Date(arch.archived_at).toLocaleString() : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => handleRestoreArchivedMember(arch.id, arch.name)}
+                                className="px-3.5 py-1.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow"
+                                title="Review and restore applicant to Membership Intake queue"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Review
+                              </button>
+                              <button
+                                onClick={() => handleDeleteArchivedApplicant(arch.id, arch.name)}
+                                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow"
+                                title="Permanently delete from archive"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* RESET PASSWORD: choose random vs. manually-set password. Rendered
           above the Edit Record modal (z-[60] vs its z-50) since this opens

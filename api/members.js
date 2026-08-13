@@ -248,6 +248,65 @@ async function handleDelete(req, res) {
   return res.status(200).json({ success: true, message: `${name} deleted permanently.` });
 }
 
+async function handleListArchived(req, res) {
+  const rows = await sql`
+    SELECT id, member_id, name, email, phone, address, notes, archived_by, archived_at
+    FROM applicant_archive
+    ORDER BY archived_at DESC;
+  `;
+  return res.status(200).json({ success: true, archived: rows });
+}
+
+async function handleRestoreArchived(req, res) {
+  const id = req.body?.id || req.body?.memberId;
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'An archive record id is required.' });
+  }
+  const rows = await sql`
+    SELECT id, member_id, name, email, phone, address, notes FROM applicant_archive
+    WHERE id = ${id} OR member_id = ${id}
+    LIMIT 1;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Archived record not found.' });
+  }
+  const arch = rows[0];
+  const memberId = arch.member_id || ('78008-' + Math.floor(1000 + Math.random() * 9000));
+  const currentDuesRate = await getAnnualDuesRate();
+
+  await sql`
+    INSERT INTO members (id, name, email, phone, role, avatar, address, access, approval_status)
+    VALUES (${memberId}, ${arch.name}, ${arch.email}, ${arch.phone || ''}, 'Pending', ${getDefaultAvatarForRole('Pending')}, ${arch.address || ''}, 'pending', 'pending_approval')
+    ON CONFLICT (id) DO UPDATE
+    SET access = 'pending', approval_status = 'pending_approval', role = 'Pending';
+  `;
+
+  await sql`
+    INSERT INTO dues_ledger (member_id, fiscal_year, dues_rate, amount_paid, balance_due, payment_method, dues_status, notes)
+    VALUES (${memberId}, '2025/2026 (Oct 1 - Sep 30)', ${currentDuesRate}, '$0.00', ${currentDuesRate}, 'Pending', 'Pending Approval', ${arch.notes || ''})
+    ON CONFLICT (member_id) DO UPDATE
+    SET dues_status = 'Pending Approval';
+  `;
+
+  await sql`DELETE FROM applicant_archive WHERE id = ${arch.id};`;
+
+  return res.status(200).json({ success: true, message: `${arch.name} restored to Membership Intake awaiting approval.` });
+}
+
+async function handleDeleteArchived(req, res) {
+  const id = req.body?.id || req.body?.memberId;
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'An archive record id is required.' });
+  }
+  const rows = await sql`
+    DELETE FROM applicant_archive
+    WHERE id = ${id} OR member_id = ${id}
+    RETURNING name;
+  `;
+  const name = rows[0]?.name || 'Archived record';
+  return res.status(200).json({ success: true, message: `${name} deleted permanently from archive.` });
+}
+
 // Generates a fresh password for a member and returns it once, in plaintext,
 // to the super admin who requested it. Only they see it - it's never stored or
 // logged anywhere except as the bcrypt hash written to the member's row.
@@ -409,6 +468,21 @@ export default async function handler(req, res) {
         const session = requireAccess(req, res, CAN_ADD);
         if (!session) return;
         return await handleArchive(req, res, session);
+      }
+      case 'list-archived': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleListArchived(req, res);
+      }
+      case 'restore-archived': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleRestoreArchived(req, res);
+      }
+      case 'delete-archived': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        return await handleDeleteArchived(req, res);
       }
       case 'delete': {
         const session = requireAccess(req, res, CAN_ADD);

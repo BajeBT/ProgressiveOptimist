@@ -532,6 +532,20 @@ export const AuthProvider = ({ children }) => {
   // list to every visitor.
   const [barbadosClubs, setBarbadosClubs] = useState([]);
 
+  // Archived Applicants list (Neon-backed)
+  const [archivedApplicants, setArchivedApplicants] = useState([]);
+
+  const loadArchivedApplicants = async () => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'list-archived' } });
+      if (res.ok && Array.isArray(res.archived)) {
+        setArchivedApplicants(res.archived);
+      }
+    } catch (err) {
+      console.warn("Archived applicants fetch error:", err);
+    }
+  };
+
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
@@ -616,6 +630,7 @@ export const AuthProvider = ({ children }) => {
     async function loadData() {
       try {
         await loadRoster();
+        await loadArchivedApplicants();
       } catch (err) {
         console.warn("Member roster fetch fallback to local cache:", err);
       }
@@ -960,10 +975,40 @@ export const AuthProvider = ({ children }) => {
   const archiveMemberRecord = async (memberId) => {
     try {
       const res = await api('members', { method: 'POST', body: { action: 'archive', memberId } });
-      if (res.ok) await loadRoster();
+      if (res.ok) {
+        await loadRoster();
+        await loadArchivedApplicants();
+      }
       return res;
     } catch (err) {
       console.error("Archive member request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const restoreArchivedRecord = async (id) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'restore-archived', id } });
+      if (res.ok) {
+        await loadRoster();
+        await loadArchivedApplicants();
+      }
+      return res;
+    } catch (err) {
+      console.error("Restore archived applicant request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const deleteArchivedRecord = async (id) => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'delete-archived', id } });
+      if (res.ok) {
+        await loadArchivedApplicants();
+      }
+      return res;
+    } catch (err) {
+      console.error("Delete archived applicant request failed:", err);
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
@@ -1398,6 +1443,10 @@ Progressive Optimist Club of Barbados
         addMembers,
         approveMemberRecord,
         archiveMemberRecord,
+        archivedApplicants,
+        loadArchivedApplicants,
+        restoreArchivedRecord,
+        deleteArchivedRecord,
         deleteMemberRecord,
         resetMemberPassword,
         updateDuesStatus,
