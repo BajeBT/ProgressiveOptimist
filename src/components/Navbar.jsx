@@ -102,7 +102,7 @@ export const Navbar = ({ onOpenPostModal }) => {
             <img
               src="/logo.png"
               alt="Progressive Optimist Club of Barbados"
-              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-[57.6px] w-auto object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </Link>
 
