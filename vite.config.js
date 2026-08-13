@@ -23,21 +23,29 @@ function apiRoutes() {
         try {
           const mod = await server.ssrLoadModule(`/api/${routeName}.js`)
 
-          const body = await new Promise((resolve) => {
-            if (req.method === 'GET' || req.method === 'HEAD') return resolve({})
-            const chunks = []
-            req.on('data', (c) => chunks.push(c))
-            req.on('end', () => {
-              const raw = Buffer.concat(chunks).toString()
-              try {
-                resolve(raw ? JSON.parse(raw) : {})
-              } catch {
-                resolve({})
-              }
-            })
-          })
+          // Routes that opt out of body parsing (e.g. the Stripe webhook, which
+          // needs the untouched raw body for signature verification) must get
+          // the request stream exactly as Vercel gives it - reading it here
+          // first would drain it before the handler's own reader ever attaches.
+          const bodyParsingDisabled = mod.config?.api?.bodyParser === false
 
-          req.body = body
+          if (!bodyParsingDisabled) {
+            const body = await new Promise((resolve) => {
+              if (req.method === 'GET' || req.method === 'HEAD') return resolve({})
+              const chunks = []
+              req.on('data', (c) => chunks.push(c))
+              req.on('end', () => {
+                const raw = Buffer.concat(chunks).toString()
+                try {
+                  resolve(raw ? JSON.parse(raw) : {})
+                } catch {
+                  resolve({})
+                }
+              })
+            })
+            req.body = body
+          }
+
           req.query = Object.fromEntries(url.searchParams)
 
           res.status = (code) => { res.statusCode = code; return res }
