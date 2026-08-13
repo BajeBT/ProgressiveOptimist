@@ -86,7 +86,7 @@ export default async function handler(req, res) {
 
     try {
       const rows = await sql`
-        SELECT id, uploader_id FROM gallery WHERE id = ${id};
+        SELECT id, uploader_id, google_media_item_id FROM gallery WHERE id = ${id};
       `;
 
       if (rows.length > 0) {
@@ -99,6 +99,16 @@ export default async function handler(req, res) {
             success: false,
             message: 'Permission denied. Only admins, super admins, finance roles, and the original uploader can delete this photo.'
           });
+        }
+
+        // Google Photos has no API to delete the underlying media item, so
+        // record its ID and filter it out of future listings (see GET below).
+        if (photo.google_media_item_id) {
+          await sql`
+            INSERT INTO deleted_media_ids (google_media_item_id)
+            VALUES (${photo.google_media_item_id})
+            ON CONFLICT (google_media_item_id) DO NOTHING;
+          `;
         }
       }
 
@@ -232,6 +242,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, photos: [] });
     }
 
+    let deletedIds = new Set();
+    try {
+      const deletedRows = await sql`SELECT google_media_item_id FROM deleted_media_ids;`;
+      deletedIds = new Set(deletedRows.map(r => r.google_media_item_id));
+    } catch (dbErr) {
+      console.warn('deleted_media_ids DB warning:', dbErr);
+    }
+
     try {
       const accessToken = await getAccessToken();
       const dbMetaById = {};
@@ -249,6 +267,7 @@ export default async function handler(req, res) {
         const listData = await listRes.json();
         if (listRes.ok && Array.isArray(listData.mediaItems)) {
           for (const item of listData.mediaItems) {
+            if (deletedIds.has(item.id)) continue;
             const dbMatch = dbMetaById[item.id];
             photosMap.set(item.id, {
               id: dbMatch?.id || `g-${item.id}`,
