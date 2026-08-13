@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Calendar, Clock, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Calendar, Clock, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_SUBJECTS = ['General Inquiry', 'Membership Application', 'Volunteering Opportunities', 'Laptop & Tablet Drive'];
@@ -51,10 +51,6 @@ export const ContactPage = () => {
     }
   };
 
-  const handleWhatsApp = () => {
-    window.open('https://wa.me/12468366185?text=Hello%20Progressive%20Optimist%20Club%20of%20Barbados!', '_blank');
-  };
-
   return (
     <div className="space-y-12 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
@@ -98,6 +94,11 @@ export const ContactPage = () => {
                 <Mail className="w-4 h-4 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
                 <span><strong>Postal:</strong> The CEO, LESC, Two Mile Hill, St. Michael, Barbados</span>
               </div>
+
+              <div className="flex items-start space-x-3">
+                <Mail className="w-4 h-4 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
+                <span><strong>Email:</strong> <a href={`mailto:${siteSettings?.contactEmail || 'info@progressiveoptimist.org'}`} className="hover:underline">{siteSettings?.contactEmail || 'info@progressiveoptimist.org'}</a></span>
+              </div>
             </div>
           </div>
 
@@ -120,27 +121,6 @@ export const ContactPage = () => {
               <p><strong>Branch:</strong> {siteSettings?.bankBranch}</p>
               <p><strong>Transit/Routing #:</strong> <span className="text-amber-300 font-bold">{siteSettings?.bankRoutingNumber}</span></p>
             </div>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-optimist-blue text-white space-y-4 shadow-xl">
-            <h3 className="font-heading text-xl font-bold text-white">
-              Direct Contact & Support
-            </h3>
-            
-            <div className="space-y-3 text-xs text-blue-100">
-              <div className="flex items-center space-x-3">
-                <Mail className="w-4 h-4 text-optimist-gold shrink-0" />
-                <span><strong>Email:</strong> <a href={`mailto:${siteSettings?.contactEmail || 'info@progressiveoptimist.org'}`} className="hover:underline">{siteSettings?.contactEmail || 'info@progressiveoptimist.org'}</a></span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleWhatsApp}
-              className="w-full py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs shadow flex items-center justify-center gap-2 hover:brightness-110 transition-all"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Chat via WhatsApp</span>
-            </button>
           </div>
 
         </div>
