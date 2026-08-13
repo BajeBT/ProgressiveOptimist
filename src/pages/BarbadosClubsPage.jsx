@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Phone, Mail, Calendar, ExternalLink, ShieldCheck, Award, Users, Search, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, ExternalLink, Search } from 'lucide-react';
 
 export const BarbadosClubsPage = () => {
   const { barbadosClubs } = useAuth();

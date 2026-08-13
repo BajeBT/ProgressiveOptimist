@@ -3,21 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Users,
-  Award,
-  BookOpen,
-  Calendar,
-  MapPin,
   FileText,
   Download,
-  CheckCircle2,
   HeartHandshake,
   Target,
   Compass,
   Crown,
-  Sparkles,
   Search,
-  Globe,
-  ShieldCheck,
   UserCheck
 } from 'lucide-react';
 

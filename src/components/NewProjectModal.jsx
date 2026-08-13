@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { projectCategories } from '../data/projectsData';
-import { X, Upload, Image as ImageIcon, Sparkles, AlertCircle, CheckCircle2, ShieldCheck, Info, FileImage, Lock } from 'lucide-react';
+import { X, Upload, Sparkles, AlertCircle, CheckCircle2, ShieldCheck, FileImage, Lock } from 'lucide-react';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB Limit
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];

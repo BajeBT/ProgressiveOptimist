@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Calendar, Clock, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle2, Calendar, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_SUBJECTS = ['General Inquiry', 'Membership Application', 'Volunteering Opportunities', 'Laptop & Tablet Drive'];

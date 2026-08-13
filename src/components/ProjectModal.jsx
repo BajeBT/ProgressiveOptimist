@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, User, Tag, Award, Share2, Heart, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { X, Calendar, User, Award, Share2, ExternalLink, Image as ImageIcon } from 'lucide-react';
 
 export const ProjectModal = ({ project, onClose }) => {
   if (!project) return null;

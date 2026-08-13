@@ -9,19 +9,12 @@ import { barbadosClubs } from '../data/clubsData';
 import {
   HeartHandshake,
   Sparkles,
-  Users,
-  Award,
-  BookOpen,
-  Laptop,
   ArrowRight,
-  Shield,
   Calendar,
   MapPin,
-  ExternalLink,
   ChevronRight,
   PlusCircle,
-  Sun,
-  CheckCircle2
+  Sun
 } from 'lucide-react';
 
 export const HomePage = ({ onOpenPostModal }) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { HierarchyDiagram } from '../components/HierarchyDiagram';
-import { Globe, Award, ExternalLink, ShieldCheck, Compass, Users } from 'lucide-react';
+import { Globe, Award, ExternalLink, Compass } from 'lucide-react';
 
 export const HierarchyPage = () => {
   return (

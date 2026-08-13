@@ -982,37 +982,6 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {}
   };
 
-  // Treasurer updates member dues status
-  const updateMemberDuesByTreasurer = async (memberId, newStatus, duesRate = "$200.00", paymentMethod = "Bank Transfer") => {
-    const today = new Date().toISOString().split('T')[0];
-    const isPaid = newStatus.includes('Active');
-    const paid = isPaid ? duesRate : "$0.00";
-    const balance = isPaid ? "$0.00" : duesRate;
-
-    setMemberRoster(prev => prev.map(m => (
-      m.id === memberId
-        ? { ...m, duesStatus: newStatus, lastPaymentDate: today, amountPaid: paid, balanceDue: balance, paymentMethod }
-        : m
-    )));
-
-    try {
-      return await api('dues', {
-        method: 'POST',
-        body: {
-          action: 'update-status',
-          memberId,
-          status: newStatus,
-          amountPaid: paid,
-          balanceDue: balance,
-          paymentMethod
-        }
-      });
-    } catch (err) {
-      console.warn("Dues update error:", err);
-      return { success: false, message: 'Network error while saving the dues record.' };
-    }
-  };
-
   // Treasurer replaces a member's up-to-4 manually-entered payments for one
   // fiscal year. Real Stripe payments are untouched server-side; the
   // dues_ledger amount_paid/balance_due/lastPaymentDate returned here reflect
@@ -1409,7 +1378,6 @@ Progressive Optimist Club of Barbados
         resetMemberPassword,
         updateDuesStatus,
         memberRoster,
-        updateMemberDuesByTreasurer,
         updateMemberPayments,
         updateMemberNotesByTreasurer,
         sendDuesStatementEmail,

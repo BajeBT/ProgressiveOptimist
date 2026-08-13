@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Laptop, Heart, Award, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Target, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
+import { Heart, CheckCircle2, CreditCard, Building2, Copy, AlertCircle, Loader2, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Barbados dollar has been pegged at BBD 2 = USD 1 since 1975.

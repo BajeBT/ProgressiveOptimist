@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { hierarchyLevels } from '../data/hierarchyData';
-import { ExternalLink, Layers, CheckCircle2, ChevronDown, ArrowDown } from 'lucide-react';
+import { ExternalLink, CheckCircle2, ChevronDown } from 'lucide-react';
 
 export const HierarchyDiagram = () => {
   const [selectedLevel, setSelectedLevel] = useState(hierarchyLevels[0]);

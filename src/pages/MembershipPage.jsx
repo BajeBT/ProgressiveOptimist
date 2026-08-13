@@ -3,11 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { activeRoster21 } from '../data/rosterData';
 import {
-  User,
   Lock,
   Mail,
   Phone,
-  Sparkles,
   PlusCircle,
   Image as ImageIcon,
   CheckCircle2,
@@ -16,17 +14,12 @@ import {
   CreditCard,
   LogOut,
   Upload,
-  Calendar,
-  Award,
   Download,
   ShieldCheck,
   Check,
   Search,
-  UserCheck,
-  DollarSign,
   Edit3,
   Send,
-  MessageSquare,
   FileSpreadsheet,
   Building2,
   Copy,
@@ -36,7 +29,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  MapPin,
   XCircle,
   ChevronLeft,
   ChevronRight,
@@ -821,7 +813,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   ]);
   const [docUploadModal, setDocUploadModal] = useState(false);
   const [selectedDocModal, setSelectedDocModal] = useState(null);
-  const [expandedDocId, setExpandedDocId] = useState(null);
   const [docName, setDocName] = useState('');
   const [docCategory, setDocCategory] = useState('Meeting Minutes');
 
