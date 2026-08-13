@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Globe, Heart, Mail, MapPin, ExternalLink, ShieldCheck, Award } from 'lucide-react';
+import { Heart, Mail, MapPin, ExternalLink, ShieldCheck, Facebook, Instagram } from 'lucide-react';
 
 export const Footer = () => {
   const { siteSettings } = useAuth();
@@ -158,7 +158,7 @@ export const Footer = () => {
               className="p-2 rounded-xl bg-slate-800 hover:bg-optimist-blue transition-colors text-white"
               title="Facebook Group"
             >
-              <Globe className="w-4 h-4" />
+              <Facebook className="w-4 h-4" />
             </a>
             <a
               href="https://www.instagram.com/progressiveoptimistclub/tagged/?hl=en"
@@ -167,7 +167,7 @@ export const Footer = () => {
               className="p-2 rounded-xl bg-slate-800 hover:bg-pink-600 transition-colors text-white"
               title="Instagram Tagged"
             >
-              <Award className="w-4 h-4" />
+              <Instagram className="w-4 h-4" />
             </a>
           </div>
         </div>
