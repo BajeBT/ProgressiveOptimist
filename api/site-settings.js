@@ -9,6 +9,7 @@ const DEFAULTS = {
   contactEmail: 'info@progressiveoptimist.org',
   annualDuesRate: '$200.00',
   themeTitle: 'C.A.R.E – Championing Authentic & Reinvigorating Engagement',
+  homepageAnnouncement: '',
   bankName: 'Scotiabank',
   bankAccountName: 'Progressive Optimist',
   bankAccountNumber: '000451801',
@@ -24,6 +25,7 @@ function toClientShape(row) {
     contactEmail: row.contact_email || DEFAULTS.contactEmail,
     annualDuesRate: row.annual_dues_rate || DEFAULTS.annualDuesRate,
     themeTitle: row.theme_title || DEFAULTS.themeTitle,
+    homepageAnnouncement: row.homepage_announcement !== undefined && row.homepage_announcement !== null ? row.homepage_announcement : DEFAULTS.homepageAnnouncement,
     bankName: row.bank_name || DEFAULTS.bankName,
     bankAccountName: row.bank_account_name || DEFAULTS.bankAccountName,
     bankAccountNumber: row.bank_account_number || DEFAULTS.bankAccountNumber,
@@ -36,6 +38,10 @@ export default async function handler(req, res) {
   if (!requireDatabase(res)) return;
 
   try {
+    try {
+      await sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS homepage_announcement TEXT DEFAULT '';`;
+    } catch (_) {}
+
     // Public: the Donate/Membership pages and the Stripe checkout route all
     // need the current dues rate without requiring a signed-in session.
     if (req.method === 'GET') {
@@ -53,13 +59,14 @@ export default async function handler(req, res) {
     const s = req.body?.settings || {};
     await sql`
       INSERT INTO site_settings (
-        id, meeting_schedule, meeting_venue, contact_email, annual_dues_rate, theme_title,
+        id, meeting_schedule, meeting_venue, contact_email, annual_dues_rate, theme_title, homepage_announcement,
         bank_name, bank_account_name, bank_account_number, bank_branch, bank_routing_number
       )
       VALUES (
         1, ${s.meetingSchedule || DEFAULTS.meetingSchedule}, ${s.meetingVenue || DEFAULTS.meetingVenue},
         ${s.contactEmail || DEFAULTS.contactEmail},
         ${s.annualDuesRate || DEFAULTS.annualDuesRate}, ${s.themeTitle || DEFAULTS.themeTitle},
+        ${s.homepageAnnouncement !== undefined ? s.homepageAnnouncement : DEFAULTS.homepageAnnouncement},
         ${s.bankName || DEFAULTS.bankName}, ${s.bankAccountName || DEFAULTS.bankAccountName},
         ${s.bankAccountNumber || DEFAULTS.bankAccountNumber}, ${s.bankBranch || DEFAULTS.bankBranch},
         ${s.bankRoutingNumber || DEFAULTS.bankRoutingNumber}
@@ -70,6 +77,7 @@ export default async function handler(req, res) {
         contact_email = EXCLUDED.contact_email,
         annual_dues_rate = EXCLUDED.annual_dues_rate,
         theme_title = EXCLUDED.theme_title,
+        homepage_announcement = EXCLUDED.homepage_announcement,
         bank_name = EXCLUDED.bank_name,
         bank_account_name = EXCLUDED.bank_account_name,
         bank_account_number = EXCLUDED.bank_account_number,

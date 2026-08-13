@@ -162,11 +162,28 @@ export const AdminSettingsPage = () => {
   const [contactEmail, setContactEmail] = useState(siteSettings?.contactEmail || "info@progressiveoptimist.org");
   const [annualDuesRate, setAnnualDuesRate] = useState(siteSettings?.annualDuesRate || "$200.00");
   const [themeTitle, setThemeTitle] = useState(siteSettings?.themeTitle || "C.A.R.E – Championing Authentic & Reinvigorating Engagement");
+  const [homepageAnnouncement, setHomepageAnnouncement] = useState(siteSettings?.homepageAnnouncement || "");
   const [bankName, setBankName] = useState(siteSettings?.bankName || "Scotiabank");
   const [bankAccountName, setBankAccountName] = useState(siteSettings?.bankAccountName || "Progressive Optimist");
   const [bankAccountNumber, setBankAccountNumber] = useState(siteSettings?.bankAccountNumber || "000451801");
   const [bankBranch, setBankBranch] = useState(siteSettings?.bankBranch || "Haggatt Hall");
   const [bankRoutingNumber, setBankRoutingNumber] = useState(siteSettings?.bankRoutingNumber || "66555");
+
+  useEffect(() => {
+    if (siteSettings) {
+      if (siteSettings.meetingSchedule) setMeetingSchedule(siteSettings.meetingSchedule);
+      if (siteSettings.meetingVenue) setMeetingVenue(siteSettings.meetingVenue);
+      if (siteSettings.contactEmail) setContactEmail(siteSettings.contactEmail);
+      if (siteSettings.annualDuesRate) setAnnualDuesRate(siteSettings.annualDuesRate);
+      if (siteSettings.themeTitle) setThemeTitle(siteSettings.themeTitle);
+      if (siteSettings.homepageAnnouncement !== undefined) setHomepageAnnouncement(siteSettings.homepageAnnouncement);
+      if (siteSettings.bankName) setBankName(siteSettings.bankName);
+      if (siteSettings.bankAccountName) setBankAccountName(siteSettings.bankAccountName);
+      if (siteSettings.bankAccountNumber) setBankAccountNumber(siteSettings.bankAccountNumber);
+      if (siteSettings.bankBranch) setBankBranch(siteSettings.bankBranch);
+      if (siteSettings.bankRoutingNumber) setBankRoutingNumber(siteSettings.bankRoutingNumber);
+    }
+  }, [siteSettings]);
   
   // Primary Initiatives State
   const [initiativesList, setInitiativesList] = useState(primaryInitiatives || [
@@ -463,6 +480,7 @@ export const AdminSettingsPage = () => {
       contactEmail,
       annualDuesRate,
       themeTitle,
+      homepageAnnouncement,
       bankName,
       bankAccountName,
       bankAccountNumber,
@@ -682,6 +700,22 @@ export const AdminSettingsPage = () => {
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                   required
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1.5">
+                  Homepage Active Announcement / Featured Message (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={homepageAnnouncement}
+                  onChange={e => setHomepageAnnouncement(e.target.value)}
+                  placeholder="e.g. Laptop Drive 2026 is currently active! Help us equip Bajan children with laptops. (Leave blank to hide message banner)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Displays a prominent highlight banner on the homepage hero impact section. Leave blank to hide the banner.
+                </p>
               </div>
 
               <div className="md:col-span-2 pt-2 border-t border-slate-200 dark:border-slate-800">

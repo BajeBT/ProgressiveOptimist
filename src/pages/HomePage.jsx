@@ -155,12 +155,14 @@ export const HomePage = ({ onOpenPostModal }) => {
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-optimist-blue/10 border border-optimist-blue/20 flex items-start space-x-3 text-xs text-slate-700 dark:text-slate-300">
-                <Sparkles className="w-5 h-5 text-optimist-blue dark:text-optimist-gold shrink-0 mt-0.5" />
-                <span>
-                  <strong>RISE 2025 Summer Experience</strong> is currently active! Help us equip Bajan children with key life skills and mentorship.
-                </span>
-              </div>
+              {Boolean(siteSettings?.homepageAnnouncement?.trim()) && (
+                <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-start space-x-3 text-amber-900 dark:text-amber-300 shadow-sm">
+                  <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <span className="font-serif italic font-semibold text-sm sm:text-sm tracking-normal text-amber-900 dark:text-amber-300 leading-relaxed">
+                    {siteSettings.homepageAnnouncement.trim()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
