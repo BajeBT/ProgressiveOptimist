@@ -603,7 +603,7 @@ export const AdminSettingsPage = () => {
   // manage them), but are excluded from member counts and sorted to the
   // bottom of every roster listing so they don't read as duplicate people.
   const isOfficialAccount = m => Boolean(m.email && m.email.toLowerCase().endsWith('@progressiveoptimist.org'));
-  const realMemberCount = memberRoster.filter(m => !isOfficialAccount(m)).length;
+  const realMemberCount = memberRoster.filter(m => !isOfficialAccount(m) && m.memberStatus !== 'inactive').length;
 
   // Filter roster for permissions table. Deactivated members live in their
   // own Inactive Members tab, not the active record listings.
