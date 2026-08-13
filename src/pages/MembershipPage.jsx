@@ -3166,13 +3166,13 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       {/* Header */}
       <div className="text-center space-y-3">
         <span className="text-xs font-bold uppercase tracking-widest text-optimist-gold px-3 py-1 rounded bg-amber-400/20">
-          Member Access & Registration
+          Member Login & Sign-Up
         </span>
         <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-white">
-          Progressive Optimist Member Portal
+          Progressive Member Portal
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          Log in to publish new project posts, manage annual dues (${officialDuesRateBBD} / year), and upload activity photos to the website, or apply for new membership with the Barbados club.
+          Log in to publish activity posts and upload photos or share a Google Album to the website, review member statements and pay dues online, or apply for new membership with the club.
         </p>
       </div>
 
