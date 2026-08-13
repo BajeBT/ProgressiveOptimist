@@ -1033,44 +1033,27 @@ export const AdminSettingsPage = () => {
                             <Check className="w-3 h-3 text-blue-500" />
                             Member Access
                           </span>
-                        </td>                        {/* Access Select */}
+                        </td>
+
+                        {/* Access Select */}
                         <td className="p-4 text-left">
-                          {m.access === 'pending' ? (
-                            <button
-                              onClick={() => {
-                                if (['super admin', 'finance'].includes(userAccess)) {
-                                  handleApproveMember(m.id, m.name);
-                                }
-                              }}
-                              disabled={!['super admin', 'finance'].includes(userAccess)}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow transition-all ${
-                                ['super admin', 'finance'].includes(userAccess)
-                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
-                              }`}
-                              title={['super admin', 'finance'].includes(userAccess) ? "Click to approve applicant and set to Active Member" : "Only Super Admin and Finance can approve membership applications."}
-                            >
-                              Approve Applicant
-                            </button>
-                          ) : (
-                            <select
-                               value={m.access || 'member'}
-                               onChange={e => updateMemberPermissions(m.id, 'access', e.target.value)}
-                               disabled={m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)}
-                               className={`px-2.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] outline-none font-semibold text-slate-800 dark:text-slate-200 ${
-                                  (m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-                               }`}
-                             >
-                               {(userAccess === 'super admin' || m.access === 'super admin') && (
-                                 <option value="super admin">super admin</option>
-                               )}
-                               <option value="finance">finance</option>
-                               <option value="admin">admin</option>
-                               <option value="moderator">moderator</option>
-                               <option value="member">member</option>
-                               <option value="pending">pending</option>
-                             </select>
-                          )}
+                          <select
+                            value={m.access || 'member'}
+                            onChange={e => updateMemberPermissions(m.id, 'access', e.target.value)}
+                            disabled={m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)}
+                            className={`px-2.5 py-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] outline-none font-semibold text-slate-800 dark:text-slate-200 ${
+                              (m.access === 'super admin' ? userAccess !== 'super admin' : !['super admin', 'finance'].includes(userAccess)) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                          >
+                            {(userAccess === 'super admin' || m.access === 'super admin') && (
+                              <option value="super admin">super admin</option>
+                            )}
+                            <option value="finance">finance</option>
+                            <option value="admin">admin</option>
+                            <option value="moderator">moderator</option>
+                            <option value="member">member</option>
+                            <option value="pending">pending</option>
+                          </select>
                         </td>
 
                         {/* Roster Profile Editor Action Button */}
