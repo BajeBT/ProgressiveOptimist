@@ -33,10 +33,16 @@ Live repository: `https://github.com/BajeBT/ProgressiveOptimist` · Hosted on Ve
    live immediately; everyone else's wait in a moderation queue.
 4. **Gallery** — photos upload to Google Photos via the Photos Library API, with metadata
    stored locally; separately, public Google Photos *shared albums* are scraped for display.
-5. **Communications** — the contact form, password links, and all transactional email go out
+   The album list is database-backed and managed from the portal, so every member sees the
+   same albums.
+5. **Members directory & self-service** — signed-in members see a directory of active members
+   (name, club position, email, mobile). Members maintain their own phone, address and profile
+   photo, and may hide their phone number from the directory; a change to the name on the roster
+   needs a club officer's approval, and no officer may approve their own.
+6. **Communications** — the contact form, password links, and all transactional email go out
    through AWS SES, with a non-production redirect safeguard. The Stripe webhook additionally
    emails the club's configured contact address whenever a dues payment or donation settles.
-6. **Barbados club directory** — admins add/edit/delete entries from the admin console; the
+7. **Barbados club directory** — admins add/edit/delete entries from the admin console; the
    public `/barbados-clubs` page reads the same database table, so there is no static content to
    redeploy for a listing change.
 
@@ -65,13 +71,15 @@ Live repository: `https://github.com/BajeBT/ProgressiveOptimist` · Hosted on Ve
 Optimist/
 ├── api/                        # Vercel serverless functions (one file = one function)
 │   ├── auth.js                 # login, register, set/change/request password
-│   ├── members.js              # roster list, add/bulk-add, approve, edit, permissions
+│   ├── members.js              # roster list, add/bulk-add, approve, edit, permissions,
+│   │                           # member self-service, name-change requests
 │   ├── dues.js                 # dues status/payments/notes, statement tracking
 │   ├── projects.js             # list, create, approve, delete
 │   ├── gallery.js              # Google Photos upload/list/delete + shared albums
 │   ├── site-settings.js        # club-wide configurable variables
 │   ├── contact-subjects.js     # editable contact-form subject list
 │   ├── barbados-clubs.js       # public list / admin add-update-delete of club directory
+│   ├── shared-albums.js        # gallery shared-album list (officer-managed)
 │   ├── send-contact-message.js # contact form → SES
 │   ├── create-checkout-session.js       # Stripe donation checkout
 │   ├── create-dues-checkout-session.js  # Stripe dues checkout (itemised, + card fee)
@@ -131,6 +139,7 @@ Optimist/
 | `/hierarchy` | HierarchyPage — Optimist International structure diagram | Public |
 | `/donate` | DonatePage — Stripe donation + bank transfer details | Public |
 | `/contact` | ContactPage — SES-backed contact form | Public |
+| `/privacy` | PrivacyPage — privacy policy (Barbados Data Protection Act, 2019) | Public |
 | `/membership` | MembershipPage — login/apply, then the member dashboard | Public → member |
 | `/admin` | AdminSettingsPage — admin console | Elevated tiers |
 
@@ -138,10 +147,14 @@ Optimist/
 verification / password setup), `?duesPaid=true`, `?duesCanceled=true`.
 
 ### Member dashboard tabs (`/membership`)
-`projects` · `gallery` · `directory` · `resources` (documents) · `dues`
+`projects` · `gallery` · `directory` · `resources` (documents) · `dues` · `treasurer`
+
+The portal header also opens **My Profile** (phone, address, photo, directory phone visibility,
+name-change request) and **Change Password**.
 
 ### Admin console tabs (`/admin`)
-`variables` · `permissions` · `treasurer` · `clubs` (Barbados club directory) · `moderation`
+`variables` · `permissions` · `treasurer` · `clubs` (Barbados club directory) · `archived` ·
+`inactive` · `names` (member name-change requests, officers only) · `moderation`
 
 ---
 
@@ -210,8 +223,13 @@ domain keep their tier indefinitely.
 ### `members`
 `id` (`78008-NNNN`) · `name` · `gender` · `email` (unique) · `phone` · `address` · `join_date` ·
 `sponsor` · `role` · `is_treasurer` · `is_president` · `is_secretary` · `avatar` · `access` ·
-`approval_status` · `added_by` · `admin_granted_at` · `password` (bcrypt) · `reset_token`
-(bcrypt) · `reset_token_expires` · `created_at`
+`approval_status` · `added_by` · `admin_granted_at` · `member_status` · `hide_phone` ·
+`password` (bcrypt) · `reset_token` (bcrypt) · `reset_token_expires` · `created_at`
+
+`hide_phone` is set by the member themselves and keeps their number out of the members
+directory. `avatar` holds either a role placeholder path or, when a member uploads their own
+photo, a `data:image/...` URI — officer edits preserve a custom photo rather than resetting it
+to the role default.
 
 ### `dues_ledger` — one aggregate row per member
 `member_id` (FK, cascade) · `fiscal_year` · `dues_rate` · `amount_paid` · `balance_due` ·
@@ -230,6 +248,21 @@ domain keep their tier indefinitely.
 ### `gallery`
 `id` · `title` · `caption` · `uploader` · `uploader_id` · `google_media_item_id` · `posted_at` ·
 `created_at`
+
+### `name_change_requests`
+`id` · `member_id` · `current_name` · `requested_name` · `status` (`pending`/`approved`/
+`declined`) · `requested_at` · `reviewed_by` · `reviewed_at` · `decision_note`. One open request
+per member. Approval writes the new name to `members.name`; the API refuses a review where the
+reviewer is the requester.
+
+### `shared_albums`
+`id` · `title` · `url` (unique) · `sort_order` · `created_by` · `created_at`. The Google Photos
+shared albums offered in the gallery. Seeded once from the three albums that were previously
+hardcoded in the client.
+
+### `system_alerts`
+`key` (primary key) · `last_sent_at`. Throttle record for automated alert email. Claimed with a
+conditional upsert so that concurrent serverless invocations cannot each send a copy.
 
 ### `donations`
 `stripe_session_id` (unique) · `donor_name` · `donor_email` · `bbd_amount` · `usd_amount` ·
@@ -273,8 +306,14 @@ All endpoints return `{ success: boolean, message?: string, … }`. Mutating end
 ### `GET /api/members` · `POST /api/members`
 `GET` returns the roster — reduced (id/name/role/avatar, excluding pending records) for
 anonymous callers, full (contact details + joined dues ledger) for any valid session.
-`POST` actions: `add`, `bulk-add`, `approve`, `update-record`, `reset-password`,
-`update-permission`.
+`POST` actions: `add`, `bulk-add`, `approve`, `archive`, `list-archived`, `restore-archived`,
+`delete-archived`, `delete`, `update-record`, `reset-password`, `update-permission`,
+`deactivate-member`, `reactivate-member`.
+
+Self-service actions, authorised by session alone and always applied to `session.memberId` —
+never to a member id taken from the request body: `update-my-profile` (phone and address only),
+`update-my-avatar`, `set-phone-visibility`, `request-name-change`. Officer-only review actions:
+`list-name-changes`, `review-name-change` (refuses a reviewer who is the requester).
 
 ### `GET /api/dues` · `POST /api/dues`
 `GET` returns a member's payment history. `POST` actions: `update-status`, `update-payments`
@@ -286,7 +325,11 @@ anonymous callers, full (contact details + joined dues ledger) for any valid ses
 
 ### `GET|POST|DELETE /api/gallery`
 `GET` merges the Google Photos library (matched to local metadata) with photos from a
-configured shared album, returning `photos`, `websitePhotos`, and `albumPhotos`.
+configured shared album, returning `photos`, `websitePhotos`, and `albumPhotos`. The access
+token is acquired in its own try block: if it fails, the Google-dependent lookups are skipped
+but the shared-album fetch still runs, and the route returns `200` with `googleUnavailable:
+true` plus a `googleMessage` rather than failing the whole request. The portal shows that
+message in the gallery tab.
 `POST` and `DELETE` both require a session (`getSession`) — identity and permission are derived
 from the verified token, never from client-supplied fields. `POST` uploads a base64 image to
 Google Photos, attributing it to the session's own member id/name. `DELETE` removes the local
@@ -304,6 +347,11 @@ current dues rate without a session. `POST` upserts row 1.
 `GET` is public — the `/barbados-clubs` directory page needs it without a session. `POST`
 actions `add`, `update`, `delete` are gated to `super admin`/`finance`/`admin`, same tier as
 site settings.
+
+### `GET|POST /api/shared-albums`
+`GET` lists the gallery's shared albums, seeding the table on first call. `POST` actions `add`,
+`update`, `delete` are gated to `super admin`/`finance`/`admin`, and `add` requires a
+`photos.app.goo.gl` / `photos.google.com` URL and rejects duplicates.
 
 ### `POST /api/send-contact-message`
 Sends via SES to whatever address is currently configured in `site_settings.contact_email`, with
@@ -392,6 +440,20 @@ sources are merged:
 - **Shared album photos** — a public shared-album URL is fetched and parsed for
   `lh3.googleusercontent.com` image URLs. This is a scrape of a public page, not an API call,
   and is inherently sensitive to Google markup changes; it fails soft (returns an empty list).
+  It needs no OAuth at all, so it keeps working when the token does not.
+
+**Scopes.** The refresh token must carry `photoslibrary.appendonly` and
+`photoslibrary.readonly.appcreateddata`. The older `photoslibrary.readonly` is still offered on
+the consent screen but the API rejects it with `403 PERMISSION_DENIED` — since Google's 2025
+restriction an app may only read media it uploaded itself. Photos already in the library that
+this app did not upload are unreachable through the API; those belong in a shared album.
+
+**Token expiry.** The OAuth app must be published (*In production*). While its publishing status
+is *Testing*, Google expires refresh tokens after seven days and the gallery breaks weekly.
+Verification is not required for this use, since only the club's own account ever consents.
+
+**When the token fails**, `api/gallery.js` emails `admin@`, `pro@` and `dev@bajanthings.biz`
+re-authorisation instructions, at most once every 24 hours, throttled through `system_alerts`.
 
 ### WordPress
 The members' document library and much of the historical project imagery are pulled from the
@@ -529,6 +591,16 @@ approval.**
   (`getSession`), not from client-supplied fields — a request can no longer claim any role or
   member id it likes to attribute or delete a photo. (Previously it trusted
   `userRole`/`userAccess`/`userMemberId` sent in the request body.)
+- Member self-service writes only ever target `session.memberId`, and `update-my-profile`
+  touches only `phone` and `address` — a crafted request body cannot reach `role`, `access`,
+  `approval_status` or dues. Profile photos are validated as PNG/JPEG/WEBP data URIs and capped
+  in size.
+- A name change on the roster requires a club officer, and the API refuses a review where the
+  reviewer is the requester, so an officer cannot rename themselves unilaterally.
+- Shared-album management is enforced server-side. It was previously a client-only check that
+  merely looked like a permission, because the list lived in each browser's `localStorage`.
+- Members' phone numbers are excluded from the directory when hidden, including from the
+  directory's search, so a hidden number cannot be found by typing it.
 - The club's real bank account/routing numbers are no longer hardcoded as source-level fallback
   defaults (`api/site-settings.js`, `AuthContext.jsx`, `AdminSettingsPage.jsx` all show
   `"Not yet configured"` until an admin sets real values via Site Variables). Note: the values
@@ -541,6 +613,15 @@ approval.**
   markup changes.
 - Member IDs (`78008-` plus a random four-digit number) are generated without a uniqueness
   check; collisions are unlikely but not impossible.
+- Directory phone numbers are classified as mobile by digit pattern — a Barbados local number is
+  treated as a landline when the first of its last seven digits is 4 or 5. Records holding
+  several numbers publish every mobile among them; the `Home:` / `Work:` / `Cell:` labels some
+  records carry are not consulted.
+- Profile photos are stored as data URIs in `members.avatar` rather than in object storage,
+  which keeps the deployment simple but puts roughly 20–40 KB in each member row.
+- `npm run lint` does not work: ESLint 9+ expects an `eslint.config.*` file and the repository
+  has none. `npx vite build` is the only automated check, and it does **not** compile `api/` —
+  a syntax error in a serverless route passes the build and only appears at runtime.
 - Session tokens are self-contained and signed with `SESSION_SECRET` alone — anyone with that
   secret (server-side only, but worth being aware of) can mint a valid session for any member id
   and access tier without a password, since there's no server-side session store to revoke
