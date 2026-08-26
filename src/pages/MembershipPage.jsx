@@ -90,6 +90,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     projects,
     memberGallery,
     galleryUnavailable,
+    sharedAlbums,
+    addSharedAlbum,
+    deleteSharedAlbum,
     addGalleryPhoto,
     deleteGalleryPhoto,
     siteSettings
@@ -255,30 +258,30 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   };
 
   // Predefined Google Photos Shared Albums
-  const PREDEFINED_ALBUMS = useMemo(() => [
-    { id: 'highlights', title: 'Highlights4Website', url: 'https://photos.app.goo.gl/sbLWaXTv6uEHsFtS8' },
-    { id: 'cibc-2026', title: '2026 CIBC', url: 'https://photos.app.goo.gl/wRpDe4Li5XqTW16V6' },
-    { id: 'rise-2025', title: 'RISE 2025 Closing Ceremony', url: 'https://photos.app.goo.gl/SJFzS37o9MxsHSri9' }
-  ], []);
-
-  const [albumsList, setAlbumsList] = useState(() => {
+  // The album list is shared, not per-browser. An older build cached it in
+  // localStorage, which would otherwise shadow what everyone else sees.
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('optimist_shared_albums');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      localStorage.removeItem('optimist_shared_albums');
     } catch (e) {
-      console.warn("Failed to parse optimist_shared_albums", e);
+      // A browser refusing storage access is no reason to fail the page.
     }
-    return [
-      { id: 'highlights', title: 'Highlights4Website', url: 'https://photos.app.goo.gl/sbLWaXTv6uEHsFtS8' },
-      { id: 'cibc-2026', title: '2026 CIBC', url: 'https://photos.app.goo.gl/wRpDe4Li5XqTW16V6' },
-      { id: 'rise-2025', title: 'RISE 2025 Closing Ceremony', url: 'https://photos.app.goo.gl/SJFzS37o9MxsHSri9' }
-    ];
-  });
+  }, []);
 
-  const [selectedAlbumUrl, setSelectedAlbumUrl] = useState(PREDEFINED_ALBUMS[0].url);
+  const albumsList = sharedAlbums;
+  const [selectedAlbumUrl, setSelectedAlbumUrl] = useState('');
+
+  // Default to the first album once the shared list arrives, and recover if the
+  // album currently being viewed is removed by another officer.
+  useEffect(() => {
+    if (albumsList.length === 0) {
+      if (selectedAlbumUrl) setSelectedAlbumUrl('');
+      return;
+    }
+    if (!albumsList.some(a => a.url === selectedAlbumUrl)) {
+      setSelectedAlbumUrl(albumsList[0].url);
+    }
+  }, [albumsList, selectedAlbumUrl]);
   const [activeAlbumPhotos, setActiveAlbumPhotos] = useState([]);
   const [isLoadingAlbum, setIsLoadingAlbum] = useState(false);
 
@@ -287,6 +290,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   const [newAlbumTitle, setNewAlbumTitle] = useState('');
   const [newAlbumUrl, setNewAlbumUrl] = useState('');
   const [addAlbumError, setAddAlbumError] = useState('');
+  const [isSavingAlbum, setIsSavingAlbum] = useState(false);
 
   // Fetch photos for the currently selected album
   useEffect(() => {
@@ -314,7 +318,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     return albumsList.find(a => a.url === selectedAlbumUrl) || albumsList[0] || { title: 'Highlights4Website' };
   }, [albumsList, selectedAlbumUrl]);
 
-  const handleAddAlbumSubmit = (e) => {
+  const handleAddAlbumSubmit = async (e) => {
     e.preventDefault();
     setAddAlbumError('');
     if (!newAlbumTitle.trim() || !newAlbumUrl.trim()) {
@@ -325,22 +329,26 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       setAddAlbumError('Please enter a valid Google Photos shared link (e.g. https://photos.app.goo.gl/...).');
       return;
     }
-    const newAlbum = {
-      id: 'custom-' + Date.now(),
-      title: newAlbumTitle.trim(),
-      url: newAlbumUrl.trim()
-    };
-    const updatedList = [...albumsList, newAlbum];
-    setAlbumsList(updatedList);
-    try {
-      localStorage.setItem('optimist_shared_albums', JSON.stringify(updatedList));
-    } catch (err) {
-      console.warn("Failed to save shared albums to localStorage", err);
+
+    setIsSavingAlbum(true);
+    const res = await addSharedAlbum(newAlbumTitle.trim(), newAlbumUrl.trim());
+    setIsSavingAlbum(false);
+
+    if (!res.success) {
+      setAddAlbumError(res.message || 'Could not add that album.');
+      return;
     }
-    setSelectedAlbumUrl(newAlbum.url);
+    if (res.album?.url) setSelectedAlbumUrl(res.album.url);
     setNewAlbumTitle('');
     setNewAlbumUrl('');
     setShowAddAlbumModal(false);
+  };
+
+  const handleRemoveAlbum = async (album) => {
+    const res = await deleteSharedAlbum(album.id);
+    if (!res.success) {
+      window.alert(res.message || 'Could not remove that album.');
+    }
   };
 
   // Gallery photo upload state
@@ -1815,9 +1823,11 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl text-xs font-bold bg-optimist-blue text-white hover:bg-optimist-blue/90 shadow-md"
+                    disabled={isSavingAlbum}
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-optimist-blue text-white hover:bg-optimist-blue/90 shadow-md disabled:opacity-60 flex items-center gap-1.5"
                   >
-                    Add & Load Album
+                    {isSavingAlbum && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {isSavingAlbum ? 'Saving...' : 'Add & Load Album'}
                   </button>
                 </div>
               </form>
@@ -2525,15 +2535,8 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                           {albumsList.length > 1 && (
                             <button
                               onClick={() => {
-                                if (confirm(`Remove "${album.title}" from the shared album dropdown?`)) {
-                                  const updated = albumsList.filter(a => a.url !== album.url);
-                                  setAlbumsList(updated);
-                                  try {
-                                    localStorage.setItem('optimist_shared_albums', JSON.stringify(updated));
-                                  } catch (e) {}
-                                  if (selectedAlbumUrl === album.url && updated.length > 0) {
-                                    setSelectedAlbumUrl(updated[0].url);
-                                  }
+                                if (confirm(`Remove "${album.title}" from the gallery for all members?`)) {
+                                  handleRemoveAlbum(album);
                                 }
                               }}
                               className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"

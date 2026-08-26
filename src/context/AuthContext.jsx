@@ -513,6 +513,7 @@ export const AuthProvider = ({ children }) => {
   // localStorage is only a same-device cache for instant paint on repeat visits -
   // the real fetch below always overwrites it with live data.
   const [galleryUnavailable, setGalleryUnavailable] = useState('');
+  const [sharedAlbums, setSharedAlbums] = useState([]);
   const [memberGallery, setMemberGallery] = useState(() => {
     try {
       const savedGallery = localStorage.getItem('optimist_gallery');
@@ -672,6 +673,8 @@ export const AuthProvider = ({ children }) => {
   // Kept independent of loadNeonData above so a gallery failure can never
   // block roster/project loading, or vice versa.
   useEffect(() => {
+    loadSharedAlbums();
+
     async function loadGallery() {
       try {
         const res = await fetch('/api/gallery');
@@ -1449,6 +1452,40 @@ Progressive Optimist Club of Barbados
     })();
   };
 
+  // Shared gallery albums. These used to be hardcoded in the gallery and then
+  // overridden per browser in localStorage, so no two members saw the same
+  // list; they now come from the database for everyone.
+  const loadSharedAlbums = async () => {
+    try {
+      const res = await api('shared-albums');
+      if (res.ok && Array.isArray(res.albums)) setSharedAlbums(res.albums);
+    } catch (err) {
+      console.warn("Shared albums fetch failed:", err);
+    }
+  };
+
+  const addSharedAlbum = async (title, url) => {
+    try {
+      const res = await api('shared-albums', { method: 'POST', body: { action: 'add', title, url } });
+      if (res.ok) await loadSharedAlbums();
+      return { success: Boolean(res.success), message: res.message, album: res.album };
+    } catch (err) {
+      console.error("Add shared album failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const deleteSharedAlbum = async (id) => {
+    try {
+      const res = await api('shared-albums', { method: 'POST', body: { action: 'delete', id } });
+      if (res.ok) await loadSharedAlbums();
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Delete shared album failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
   const addBarbadosClub = async (clubData) => {
     if (!clubData?.name) {
       return { success: false, message: 'A club name is required.' };
@@ -1595,6 +1632,9 @@ Progressive Optimist Club of Barbados
         deleteProject,
         memberGallery,
         galleryUnavailable,
+        sharedAlbums,
+        addSharedAlbum,
+        deleteSharedAlbum,
         addGalleryPhoto,
         deleteGalleryPhoto,
         contactSubjects,
