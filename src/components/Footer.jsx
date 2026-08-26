@@ -94,6 +94,11 @@ export const Footer = () => {
                 Member Portal & Login
               </Link>
             </li>
+            <li>
+              <Link to="/privacy" className="hover:text-amber-300 transition-colors">
+                Privacy Policy
+              </Link>
+            </li>
           </ul>
         </div>
 

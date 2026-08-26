@@ -13,6 +13,7 @@ import { HierarchyPage } from './pages/HierarchyPage';
 import { MembershipPage } from './pages/MembershipPage';
 import { DonatePage } from './pages/DonatePage';
 import { ContactPage } from './pages/ContactPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { AdminSettingsPage } from './pages/AdminSettingsPage';
 
 class ErrorBoundary extends Component {
@@ -76,6 +77,7 @@ export function App() {
                 <Route path="/membership" element={<MembershipPage onOpenPostModal={() => setIsPostModalOpen(true)} />} />
                 <Route path="/donate" element={<DonatePage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/admin" element={<AdminSettingsPage />} />
               </Routes>
             </main>
