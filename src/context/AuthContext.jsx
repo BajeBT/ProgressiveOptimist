@@ -574,6 +574,8 @@ export const AuthProvider = ({ children }) => {
         email: r.email || '',
         role: r.role,
         phone: r.phone || '',
+        hidePhone: Boolean(r.hide_phone),
+        pendingNameChange: r.pending_name_change || '',
         address: r.address || '',
         avatar: resolvedAvatar,
         access: r.access || 'member',
@@ -936,6 +938,101 @@ export const AuthProvider = ({ children }) => {
       return { success: Boolean(res.success), message: res.message };
     } catch (err) {
       console.error("Change password request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Self-service: the member correcting their own contact details. The server
+  // only ever writes phone and address from this.
+  const updateMyProfile = async (phone, address) => {
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: { action: 'update-my-profile', phone, address }
+      });
+      if (res.ok) await loadRoster();
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Profile update request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Self-service: the member's own profile photo, already downscaled to a data
+  // URI by the browser before it gets here.
+  const updateMyAvatar = async (avatar) => {
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: { action: 'update-my-avatar', avatar }
+      });
+      if (res.ok) {
+        await loadRoster();
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          const updated = { ...prev, avatar: res.avatar };
+          try { localStorage.setItem('optimist_user', JSON.stringify(updated)); } catch (e) {}
+          return updated;
+        });
+      }
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Avatar update request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // A name change is the one profile field an officer has to sign off on.
+  const requestNameChange = async (requestedName) => {
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: { action: 'request-name-change', requestedName }
+      });
+      if (res.ok) await loadRoster();
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Name change request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const loadNameChangeRequests = async () => {
+    try {
+      const res = await api('members', { method: 'POST', body: { action: 'list-name-changes' } });
+      return Array.isArray(res.requests) ? res.requests : [];
+    } catch (err) {
+      console.error("Name change list request failed:", err);
+      return [];
+    }
+  };
+
+  const reviewNameChange = async (requestId, decision, note) => {
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: { action: 'review-name-change', requestId, decision, note }
+      });
+      if (res.ok) await loadRoster();
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Name change review request failed:", err);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  // Self-service: the signed-in member hiding or showing their own phone
+  // number in the members directory.
+  const setMyPhoneVisibility = async (hidePhone) => {
+    try {
+      const res = await api('members', {
+        method: 'POST',
+        body: { action: 'set-phone-visibility', hidePhone }
+      });
+      if (res.ok) await loadRoster();
+      return { success: Boolean(res.success), message: res.message };
+    } catch (err) {
+      console.error("Phone visibility request failed:", err);
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
@@ -1467,6 +1564,12 @@ Progressive Optimist Club of Barbados
         setMemberPassword,
         requestPasswordSetup,
         changeMyPassword,
+        setMyPhoneVisibility,
+        updateMyProfile,
+        updateMyAvatar,
+        requestNameChange,
+        loadNameChangeRequests,
+        reviewNameChange,
         addMembers,
         approveMemberRecord,
         archiveMemberRecord,

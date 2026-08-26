@@ -49,6 +49,27 @@ const BARBADOS_PARISHES = [
   'St. Thomas'
 ];
 
+// A member's phone field can hold several numbers with labels, e.g.
+// "Home: (246) 228-5871 / Work: (246) 432-5050". The directory lists mobiles
+// only, cleaned up to a single format: a Barbados local number is a landline
+// when the first of its last seven digits is 4 or 5, and a bare 7-digit number
+// is assumed to be local, so 246 is added as the default area code.
+const mobilePhones = (raw) => {
+  if (!raw) return [];
+  return String(raw)
+    .split('/')
+    .map(part => {
+      let digits = part.replace(/[^0-9]/g, '');
+      if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
+      if (digits.length < 7) return null;
+      const local = digits.slice(-7);
+      if (local[0] === '4' || local[0] === '5') return null;
+      const area = digits.length >= 10 ? digits.slice(-10, -7) : '246';
+      return `(${area}) ${local.slice(0, 3)}-${local.slice(3)}`;
+    })
+    .filter(Boolean);
+};
+
 export const MembershipPage = ({ onOpenPostModal }) => {
   const {
     currentUser,
@@ -57,6 +78,10 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     registerMember,
     setMemberPassword,
     changeMyPassword,
+    setMyPhoneVisibility,
+    updateMyProfile,
+    updateMyAvatar,
+    requestNameChange,
     updateDuesStatus,
     memberRoster,
     updateMemberNotesByTreasurer,
@@ -893,6 +918,111 @@ export const MembershipPage = ({ onOpenPostModal }) => {
   }, [currentUser?.memberId, duesPaymentMsg]);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
+  // Directory privacy: the member hiding their own phone number from it.
+  const [isSavingPhoneVisibility, setIsSavingPhoneVisibility] = useState(false);
+  const [phoneVisibilityMsg, setPhoneVisibilityMsg] = useState('');
+
+  const handleTogglePhoneVisibility = async (hide) => {
+    setIsSavingPhoneVisibility(true);
+    const res = await setMyPhoneVisibility(hide);
+    setIsSavingPhoneVisibility(false);
+    setPhoneVisibilityMsg(res.message || '');
+    setTimeout(() => setPhoneVisibilityMsg(''), 4000);
+  };
+
+  // My Profile: contact details save straight away, a name change goes to the
+  // officers for approval.
+  const [profileModal, setProfileModal] = useState(false);
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [profileMsg, setProfileMsg] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [isRequestingName, setIsRequestingName] = useState(false);
+
+  const openProfileModal = (record) => {
+    setProfilePhone(record?.phone || '');
+    setProfileAddress(record?.address || '');
+    setProfileName(record?.name || '');
+    setProfileMsg('');
+    setProfileError('');
+    setProfileModal(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setProfileMsg('');
+    setProfileError('');
+    setIsSavingProfile(true);
+    const res = await updateMyProfile(profilePhone, profileAddress);
+    setIsSavingProfile(false);
+    if (res.success) setProfileMsg(res.message);
+    else setProfileError(res.message || 'Could not save your details.');
+  };
+
+  const handleRequestNameChange = async () => {
+    setProfileMsg('');
+    setProfileError('');
+    setIsRequestingName(true);
+    const res = await requestNameChange(profileName);
+    setIsRequestingName(false);
+    if (res.success) setProfileMsg(res.message);
+    else setProfileError(res.message || 'Could not send your name change request.');
+  };
+
+  // Downscale to a 256px square before upload - the column holds the image
+  // itself, so the browser does the shrinking rather than shipping a 4MB photo.
+  const handleAvatarFile = async (file) => {
+    if (!file) return;
+    setProfileMsg('');
+    setProfileError('');
+
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+      setProfileError('Please choose a PNG, JPEG or WEBP image.');
+      return;
+    }
+
+    setIsSavingAvatar(true);
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Centre-crop the long edge so portraits are not squashed.
+      const edge = Math.min(image.width, image.height);
+      ctx.drawImage(
+        image,
+        (image.width - edge) / 2, (image.height - edge) / 2, edge, edge,
+        0, 0, size, size
+      );
+
+      const res = await updateMyAvatar(canvas.toDataURL('image/jpeg', 0.85));
+      if (res.success) setProfileMsg(res.message);
+      else setProfileError(res.message || 'Could not save your photo.');
+    } catch (err) {
+      console.error('Avatar processing failed:', err);
+      setProfileError('That image could not be read. Please try another file.');
+    }
+    setIsSavingAvatar(false);
+  };
+
   // Treasurer Search Filter & Checkbox selection state
   const [rosterSearch, setRosterSearch] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
@@ -1073,6 +1203,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             name: m.fullName || `${m.firstName || ''} ${m.lastName || ''}`.trim(),
             email: m.email || '',
             phone: m.phone || '',
+            hidePhone: false,
             address: m.address || '',
             role: m.role || 'Active Member',
             status: m.status || 'Active Member',
@@ -1105,6 +1236,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
           name: m.name || existing.name,
           email: m.email || existing.email,
           phone: m.phone || existing.phone || '',
+          hidePhone: Boolean(m.hidePhone),
           address: m.address || existing.address,
           role: m.role || existing.role || 'Active Member',
           status: m.duesStatus ? (m.duesStatus.includes('Active') ? 'Active Member' : m.duesStatus) : (existing.status || 'Active Member'),
@@ -1113,18 +1245,22 @@ export const MembershipPage = ({ onOpenPostModal }) => {
       });
     }
 
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    );
   }, [memberRoster]);
 
   const filteredDirectory = combinedDirectory.filter(m => {
     const term = dirSearchTerm.toLowerCase().trim();
     if (!term) return true;
+    // Only the numbers actually on display are searchable - a hidden or
+    // landline number must not be findable through the search box either.
+    const shownPhones = m.hidePhone ? [] : mobilePhones(m.phone);
     return (
       (m.name && m.name.toLowerCase().includes(term)) ||
       (m.email && m.email.toLowerCase().includes(term)) ||
-      (m.phone && m.phone.toLowerCase().includes(term)) ||
-      (m.role && m.role.toLowerCase().includes(term)) ||
-      (m.id && m.id.toLowerCase().includes(term))
+      shownPhones.some(phone => phone.toLowerCase().includes(term)) ||
+      (m.role && m.role.toLowerCase().includes(term))
     );
   });
 
@@ -1201,6 +1337,15 @@ export const MembershipPage = ({ onOpenPostModal }) => {
             >
               <Upload className="w-4 h-4 text-amber-400" />
               <span>Upload Photo</span>
+            </button>
+
+            <button
+              onClick={() => openProfileModal(myRosterRecord)}
+              className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition-all text-xs flex items-center gap-2"
+              title="My Profile"
+            >
+              <Users className="w-4 h-4 text-amber-400" />
+              <span>My Profile</span>
             </button>
 
             <button
@@ -1745,7 +1890,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                     <th className="py-4 px-6">Name</th>
                     <th className="py-4 px-6">Club Position</th>
                     <th className="py-4 px-6">Email Address</th>
-                    <th className="py-4 px-6">Phone Number</th>
+                    <th className="py-4 px-6">Mobile Number</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
@@ -1770,7 +1915,6 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                           )}
                           <div className="min-w-0">
                             <span className="block font-bold text-slate-900 dark:text-white truncate">{member.name}</span>
-                            <span className="text-[10px] font-mono text-slate-400 block">{member.id}</span>
                           </div>
                         </div>
                       </td>
@@ -1808,30 +1952,32 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                         </div>
                       </td>
 
-                      {/* Phone */}
+                      {/* Phone - mobile numbers only */}
                       <td className="py-4 px-6 text-slate-700 dark:text-slate-300">
-                        <div className="flex items-center space-x-2">
-                          {member.phone ? (
-                            <>
-                              <a
-                                href={`tel:${member.phone.replace(/[^0-9+]/g, '')}`}
-                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline flex items-center gap-1.5"
-                              >
-                                <Phone className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                                <span>{member.phone}</span>
-                              </a>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(member.phone);
-                                  setCopiedText(`Phone for ${member.name}`);
-                                  setTimeout(() => setCopiedText(null), 2000);
-                                }}
-                                className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                                title="Copy Phone Number"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            </>
+                        <div className="space-y-1">
+                          {!member.hidePhone && mobilePhones(member.phone).length > 0 ? (
+                            mobilePhones(member.phone).map((mobile) => (
+                              <div key={mobile} className="flex items-center space-x-2">
+                                <a
+                                  href={`tel:${mobile.replace(/[^0-9+]/g, '')}`}
+                                  className="font-semibold text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline flex items-center gap-1.5"
+                                >
+                                  <Phone className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                  <span>{mobile}</span>
+                                </a>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(mobile);
+                                    setCopiedText(`Phone for ${member.name}`);
+                                    setTimeout(() => setCopiedText(null), 2000);
+                                  }}
+                                  className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                  title="Copy Phone Number"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))
                           ) : (
                             <span className="text-slate-400 italic">Not listed</span>
                           )}
@@ -2713,6 +2859,142 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         )}
 
         {/* CHANGE PASSWORD MODAL */}
+        {profileModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl my-8">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-optimist-blue" />
+                <h3 className="font-heading font-bold text-lg text-slate-900 dark:text-white">My Profile</h3>
+              </div>
+
+              {profileError && (
+                <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{profileError}</span>
+                </div>
+              )}
+              {profileMsg && (
+                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{profileMsg}</span>
+                </div>
+              )}
+
+              {/* Profile photo */}
+              <div className="flex items-center gap-4">
+                <img
+                  src={myRosterRecord?.avatar || currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-16 h-16 rounded-full object-cover border border-slate-300 dark:border-slate-700"
+                />
+                <div className="space-y-1">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer">
+                    {isSavingAvatar ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" /> : <Upload className="w-3.5 h-3.5 text-amber-400" />}
+                    <span>{isSavingAvatar ? 'Saving...' : 'Change Photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={isSavingAvatar}
+                      onChange={(e) => handleAvatarFile(e.target.files?.[0])}
+                    />
+                  </label>
+                  <p className="text-[10px] text-slate-500">PNG, JPEG or WEBP. Saved as a 256px square.</p>
+                </div>
+              </div>
+
+              {/* Contact details - saved immediately */}
+              <form onSubmit={handleSaveProfile} className="space-y-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={profilePhone}
+                    onChange={e => setProfilePhone(e.target.value)}
+                    placeholder="+1 (246) 123-4567"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  />
+                  <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer mt-2">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(myRosterRecord?.hidePhone)}
+                      disabled={isSavingPhoneVisibility}
+                      onChange={(e) => handleTogglePhoneVisibility(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-400 dark:border-slate-600 text-optimist-blue focus:ring-optimist-blue"
+                    />
+                    <span>Hide my phone number from the Members Directory</span>
+                    {isSavingPhoneVisibility && <Loader2 className="w-3.5 h-3.5 animate-spin text-optimist-blue" />}
+                  </label>
+                  {phoneVisibilityMsg && (
+                    <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">{phoneVisibilityMsg}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                  <textarea
+                    rows={2}
+                    value={profileAddress}
+                    onChange={e => setProfileAddress(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="w-full py-2.5 rounded-xl bg-optimist-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
+                >
+                  {isSavingProfile && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isSavingProfile ? 'Saving...' : 'Save Contact Details'}
+                </button>
+              </form>
+
+              {/* Name - needs an officer's approval */}
+              <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-4">
+                <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Full Name</label>
+                {myRosterRecord?.pendingNameChange ? (
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>
+                      A change to <strong>{myRosterRecord.pendingNameChange}</strong> is awaiting approval by a club officer.
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={e => setProfileName(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Your name on the roster can only be changed with a club officer's approval.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleRequestNameChange}
+                      disabled={isRequestingName || !profileName.trim() || profileName.trim() === myRosterRecord?.name}
+                      className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      {isRequestingName && <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />}
+                      {isRequestingName ? 'Sending...' : 'Request Name Change'}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setProfileModal(false)}
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
         {changePasswordModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
@@ -3653,6 +3935,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                 Set your secure password to complete your membership registration.
               </p>
             </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Please note: your name, email address and mobile phone number will be included in the general
+              Members Directory, which only active members are able to access.
+            </span>
           </div>
 
           {verifySuccess ? (

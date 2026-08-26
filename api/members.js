@@ -51,13 +51,16 @@ async function handleList(req, res) {
 
   const rows = await sql`
     SELECT
-      m.id, m.name, m.email, m.role, m.phone, m.address, m.avatar, m.access,
+      m.id, m.name, m.email, m.role, m.phone, m.hide_phone, m.address, m.avatar, m.access,
       m.is_treasurer, m.is_president, m.is_secretary, m.member_status,
       m.approval_status, m.approved_by, m.approved_at, m.admin_granted_at, m.added_by,
       d.fiscal_year, d.dues_rate, d.amount_paid, d.balance_due,
-      d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent
+      d.payment_method, d.dues_status, d.last_payment_date, d.notes, d.email_last_sent,
+      n.requested_name AS pending_name_change
     FROM members m
     LEFT JOIN dues_ledger d ON m.id = d.member_id
+    LEFT JOIN name_change_requests n
+      ON n.member_id = m.id AND n.status = 'pending'
     ORDER BY m.name ASC;
   `;
   return res.status(200).json({ success: true, members: rows, partial: false });
@@ -404,6 +407,8 @@ async function handleUpdateRecord(req, res) {
   }
 
   const role = fields.role || 'Active Member';
+  // A member who uploaded their own photo keeps it - only a record still on a
+  // role placeholder follows the role's default image.
   await sql`
     UPDATE members
     SET name = ${fields.name},
@@ -411,7 +416,10 @@ async function handleUpdateRecord(req, res) {
         phone = ${fields.phone || ''},
         address = ${fields.address || ''},
         role = ${role},
-        avatar = ${getDefaultAvatarForRole(role)},
+        avatar = CASE
+          WHEN avatar LIKE 'data:image/%' THEN avatar
+          ELSE ${getDefaultAvatarForRole(role)}
+        END,
         access = ${access},
         admin_granted_at = ${adminGrantedAt}
     WHERE id = ${memberId};
@@ -429,6 +437,164 @@ async function handleUpdateRecord(req, res) {
   `;
 
   return res.status(200).json({ success: true });
+}
+
+// Self-service: a member correcting their own contact details. Only phone and
+// address are written - name, email, role, access, dues and approval status are
+// deliberately not reachable from here, whatever the request body contains.
+async function handleUpdateMyProfile(req, res, session) {
+  const phone = String(req.body?.phone ?? '').trim();
+  const address = String(req.body?.address ?? '').trim();
+
+  const rows = await sql`
+    UPDATE members SET phone = ${phone}, address = ${address}
+    WHERE id = ${session.memberId} RETURNING id;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  return res.status(200).json({ success: true, message: 'Your contact details have been updated.' });
+}
+
+// Self-service: the member's own profile photo, stored as a data URI in the
+// avatar column the roster already reads. The browser downscales it first;
+// this is the backstop against an oversized or non-image payload.
+const MAX_AVATAR_CHARS = 400_000;
+
+async function handleUpdateMyAvatar(req, res, session) {
+  const avatar = String(req.body?.avatar || '');
+
+  if (!/^data:image\/(png|jpeg|webp);base64,/.test(avatar)) {
+    return res.status(400).json({ success: false, message: 'Photo must be a PNG, JPEG or WEBP image.' });
+  }
+  if (avatar.length > MAX_AVATAR_CHARS) {
+    return res.status(400).json({ success: false, message: 'That photo is too large. Please choose a smaller image.' });
+  }
+
+  const rows = await sql`
+    UPDATE members SET avatar = ${avatar} WHERE id = ${session.memberId} RETURNING id;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  return res.status(200).json({ success: true, avatar, message: 'Your profile photo has been updated.' });
+}
+
+// A member asks for their name to be changed; an exec decides. One open
+// request at a time, so the queue cannot be flooded.
+async function handleRequestNameChange(req, res, session) {
+  const requestedName = String(req.body?.requestedName || '').trim();
+  if (requestedName.length < 2) {
+    return res.status(400).json({ success: false, message: 'Please enter the full name you would like on record.' });
+  }
+
+  const member = await sql`SELECT name FROM members WHERE id = ${session.memberId} LIMIT 1;`;
+  if (member.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  if (member[0].name === requestedName) {
+    return res.status(400).json({ success: false, message: 'That is already the name on your record.' });
+  }
+
+  const open = await sql`
+    SELECT id FROM name_change_requests
+    WHERE member_id = ${session.memberId} AND status = 'pending' LIMIT 1;
+  `;
+  if (open.length > 0) {
+    return res.status(409).json({
+      success: false,
+      message: "You already have a name change awaiting an officer's review."
+    });
+  }
+
+  await sql`
+    INSERT INTO name_change_requests (member_id, current_name, requested_name)
+    VALUES (${session.memberId}, ${member[0].name}, ${requestedName});
+  `;
+  return res.status(200).json({
+    success: true,
+    message: 'Your name change has been sent to the club officers for approval.'
+  });
+}
+
+async function handleListNameChanges(req, res) {
+  const rows = await sql`
+    SELECT r.id, r.member_id, r.current_name, r.requested_name, r.status,
+           r.requested_at, r.reviewed_by, r.reviewed_at, r.decision_note,
+           m.email
+    FROM name_change_requests r
+    LEFT JOIN members m ON m.id = r.member_id
+    ORDER BY (r.status = 'pending') DESC, r.requested_at DESC;
+  `;
+  return res.status(200).json({ success: true, requests: rows });
+}
+
+// An exec approving or declining a name change. Nobody signs off their own -
+// an officer who wants their name changed needs another officer to agree.
+async function handleReviewNameChange(req, res, session) {
+  const { requestId, decision, note } = req.body || {};
+  if (!requestId || (decision !== 'approved' && decision !== 'declined')) {
+    return res.status(400).json({ success: false, message: 'A request id and a decision are required.' });
+  }
+
+  const rows = await sql`
+    SELECT id, member_id, requested_name, status FROM name_change_requests
+    WHERE id = ${requestId} LIMIT 1;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'That name change request no longer exists.' });
+  }
+  const request = rows[0];
+
+  if (request.status !== 'pending') {
+    return res.status(409).json({ success: false, message: 'That request has already been reviewed.' });
+  }
+  if (request.member_id === session.memberId) {
+    return res.status(403).json({
+      success: false,
+      message: 'You cannot approve your own name change. Another officer must review it.'
+    });
+  }
+
+  await sql`
+    UPDATE name_change_requests
+    SET status = ${decision},
+        reviewed_by = ${session.memberId},
+        reviewed_at = CURRENT_TIMESTAMP,
+        decision_note = ${String(note || '').trim() || null}
+    WHERE id = ${requestId};
+  `;
+
+  if (decision === 'approved') {
+    await sql`UPDATE members SET name = ${request.requested_name} WHERE id = ${request.member_id};`;
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: decision === 'approved'
+      ? `The roster now shows ${request.requested_name}.`
+      : 'The name change was declined.'
+  });
+}
+
+// Self-service: a signed-in member choosing whether their phone number shows
+// in the members directory. The id comes from the session, never the request
+// body, so nobody can change someone else's setting.
+async function handleSetPhoneVisibility(req, res, session) {
+  const hide = Boolean(req.body?.hidePhone);
+  const rows = await sql`
+    UPDATE members SET hide_phone = ${hide} WHERE id = ${session.memberId} RETURNING id;
+  `;
+  if (rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Member not found.' });
+  }
+  return res.status(200).json({
+    success: true,
+    hidePhone: hide,
+    message: hide
+      ? 'Your phone number is now hidden from the members directory.'
+      : 'Your phone number is now shown in the members directory.'
+  });
 }
 
 async function handleDeactivateMember(req, res) {
@@ -557,6 +723,52 @@ export default async function handler(req, res) {
         const session = requireAccess(req, res, CAN_ADD);
         if (!session) return;
         return await handleUpdateRecord(req, res);
+      }
+      case 'set-phone-visibility': {
+        const session = getSession(req);
+        if (!session) {
+          return res.status(401).json({ success: false, message: 'Please sign in first.' });
+        }
+        return await handleSetPhoneVisibility(req, res, session);
+      }
+      case 'update-my-profile': {
+        const session = getSession(req);
+        if (!session) {
+          return res.status(401).json({ success: false, message: 'Please sign in first.' });
+        }
+        return await handleUpdateMyProfile(req, res, session);
+      }
+      case 'update-my-avatar': {
+        const session = getSession(req);
+        if (!session) {
+          return res.status(401).json({ success: false, message: 'Please sign in first.' });
+        }
+        return await handleUpdateMyAvatar(req, res, session);
+      }
+      case 'request-name-change': {
+        const session = getSession(req);
+        if (!session) {
+          return res.status(401).json({ success: false, message: 'Please sign in first.' });
+        }
+        return await handleRequestNameChange(req, res, session);
+      }
+      case 'list-name-changes': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        const actor = await actorRecord(session);
+        if (!canApproveMembers(actor)) {
+          return res.status(403).json({ success: false, message: 'Only club officers can review name changes.' });
+        }
+        return await handleListNameChanges(req, res);
+      }
+      case 'review-name-change': {
+        const session = requireAccess(req, res, CAN_ADD);
+        if (!session) return;
+        const actor = await actorRecord(session);
+        if (!canApproveMembers(actor)) {
+          return res.status(403).json({ success: false, message: 'Only club officers can review name changes.' });
+        }
+        return await handleReviewNameChange(req, res, session);
       }
       case 'reset-password': {
         const session = requireAccess(req, res, ['super admin']);

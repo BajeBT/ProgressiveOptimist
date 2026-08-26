@@ -57,6 +57,8 @@ export const AdminSettingsPage = () => {
     updateMemberPayments,
     updateMemberNotesByTreasurer,
     sendDuesStatementEmail,
+    loadNameChangeRequests,
+    reviewNameChange,
     isSandboxMode,
     testEmailTarget,
     projects,
@@ -444,6 +446,29 @@ export const AdminSettingsPage = () => {
     currentMemberRecord?.hasSecretaryAccess ||
     currentUser?.email === 'admin@progressiveoptimist.org'
   );
+  // Name change requests: members can ask for their roster name to be changed,
+  // and an officer other than the requester signs it off.
+  const [nameChangeRequests, setNameChangeRequests] = useState([]);
+  const [nameChangeMsg, setNameChangeMsg] = useState('');
+  const [reviewingRequestId, setReviewingRequestId] = useState(null);
+
+  const refreshNameChanges = async () => {
+    setNameChangeRequests(await loadNameChangeRequests());
+  };
+
+  useEffect(() => {
+    if (activeTab === 'names' && canApproveMembers) refreshNameChanges();
+  }, [activeTab, canApproveMembers]);
+
+  const handleReviewNameChange = async (requestId, decision) => {
+    setReviewingRequestId(requestId);
+    const res = await reviewNameChange(requestId, decision);
+    setReviewingRequestId(null);
+    setNameChangeMsg(res.message || '');
+    await refreshNameChanges();
+    setTimeout(() => setNameChangeMsg(''), 5000);
+  };
+
   // Reset Password: super admin only. Choosing a method opens resetPasswordTarget;
   // the result is shown once via resetPasswordResult so it can be copied and
   // handed to the member - never persisted or logged anywhere client-side.
@@ -738,6 +763,20 @@ export const AdminSettingsPage = () => {
               <UserX className="w-4 h-4 text-rose-500" />
               <span>Inactive Members ({memberRoster.filter(m => m.memberStatus === 'inactive').length})</span>
             </button>
+
+            {canApproveMembers && (
+              <button
+                onClick={() => setActiveTab('names')}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeTab === 'names'
+                    ? 'bg-optimist-blue text-white shadow'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <UserCheck className="w-4 h-4 text-emerald-500" />
+                <span>Name Changes ({nameChangeRequests.filter(r => r.status === 'pending').length})</span>
+              </button>
+            )}
           </>
         )}
 
@@ -1683,6 +1722,86 @@ export const AdminSettingsPage = () => {
       )}
 
       {/* TAB 3: PROJECT MODERATION QUEUE */}
+      {activeTab === 'names' && canApproveMembers && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-emerald-500" />
+            <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Member Name Changes</h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Members can update their own contact details, but a change to the name on the roster needs an
+            officer's approval. You cannot approve your own request - another officer must review it.
+          </p>
+
+          {nameChangeMsg && (
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold">
+              {nameChangeMsg}
+            </div>
+          )}
+
+          {nameChangeRequests.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+              No name change requests have been submitted.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {nameChangeRequests.map(request => {
+                const isOwnRequest = request.member_id === currentUser?.memberId;
+                return (
+                  <div
+                    key={request.id}
+                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {request.current_name} <span className="text-slate-400">to</span> {request.requested_name}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {request.email || request.member_id}
+                        {request.requested_at && ` - requested ${new Date(request.requested_at).toLocaleDateString()}`}
+                      </p>
+                    </div>
+
+                    {request.status === 'pending' ? (
+                      isOwnRequest ? (
+                        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                          Another officer must approve this
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleReviewNameChange(request.id, 'approved')}
+                            disabled={reviewingRequestId === request.id}
+                            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-60"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleReviewNameChange(request.id, 'declined')}
+                            disabled={reviewingRequestId === request.id}
+                            className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      )
+                    ) : (
+                      <span className={`text-[11px] font-bold uppercase px-2.5 py-1 rounded ${
+                        request.status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                      }`}>
+                        {request.status}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'moderation' && canModerateProjects && (
         <div className="space-y-6">
           
