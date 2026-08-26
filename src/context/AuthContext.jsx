@@ -1457,7 +1457,7 @@ Progressive Optimist Club of Barbados
   // list; they now come from the database for everyone.
   const loadSharedAlbums = async () => {
     try {
-      const res = await api('shared-albums');
+      const res = await api('gallery?resource=albums');
       if (res.ok && Array.isArray(res.albums)) setSharedAlbums(res.albums);
     } catch (err) {
       console.warn("Shared albums fetch failed:", err);
@@ -1466,7 +1466,7 @@ Progressive Optimist Club of Barbados
 
   const addSharedAlbum = async (title, url) => {
     try {
-      const res = await api('shared-albums', { method: 'POST', body: { action: 'add', title, url } });
+      const res = await api('gallery', { method: 'POST', body: { action: 'add-album', title, url } });
       if (res.ok) await loadSharedAlbums();
       return { success: Boolean(res.success), message: res.message, album: res.album };
     } catch (err) {
@@ -1477,7 +1477,7 @@ Progressive Optimist Club of Barbados
 
   const deleteSharedAlbum = async (id) => {
     try {
-      const res = await api('shared-albums', { method: 'POST', body: { action: 'delete', id } });
+      const res = await api('gallery', { method: 'POST', body: { action: 'delete-album', id } });
       if (res.ok) await loadSharedAlbums();
       return { success: Boolean(res.success), message: res.message };
     } catch (err) {

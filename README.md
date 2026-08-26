@@ -75,11 +75,10 @@ Optimist/
 │   │                           # member self-service, name-change requests
 │   ├── dues.js                 # dues status/payments/notes, statement tracking
 │   ├── projects.js             # list, create, approve, delete
-│   ├── gallery.js              # Google Photos upload/list/delete + shared albums
+│   ├── gallery.js              # Google Photos upload/list/delete + shared album list
 │   ├── site-settings.js        # club-wide configurable variables
 │   ├── contact-subjects.js     # editable contact-form subject list
 │   ├── barbados-clubs.js       # public list / admin add-update-delete of club directory
-│   ├── shared-albums.js        # gallery shared-album list (officer-managed)
 │   ├── send-contact-message.js # contact form → SES
 │   ├── create-checkout-session.js       # Stripe donation checkout
 │   ├── create-dues-checkout-session.js  # Stripe dues checkout (itemised, + card fee)
@@ -112,6 +111,10 @@ Optimist/
 - **`lib/` sits outside `api/`.** Vercel's Hobby plan caps serverless function count; anything
   placed under `api/` becomes its own function. Shared code lives in `lib/`, and related
   endpoints are consolidated (e.g. all gallery operations live in a single `api/gallery.js`).
+  **The cap is twelve, and `api/` currently holds exactly twelve files.** A thirteenth does not
+  fail the build - `vite build` passes locally and on Vercel - it fails the deployment itself,
+  after `Deploying outputs...`. Adding an endpoint therefore means folding it into a related
+  route as an action, not adding a file.
 - **Action-dispatch endpoints.** Most routes are `POST` with an `action` field in the body
   (`login`, `add`, `approve`, `update-payments`, …) rather than many REST paths — again to keep
   the function count low.
@@ -335,6 +338,12 @@ from the verified token, never from client-supplied fields. `POST` uploads a bas
 Google Photos, attributing it to the session's own member id/name. `DELETE` removes the local
 record if the caller is an admin/finance tier or the original uploader.
 
+The gallery's shared-album list is served by this same route: `GET ?resource=albums` lists the
+albums (seeding the table on first call), and `POST` with `add-album`, `update-album` or
+`delete-album` performs the writes, gated to `super admin`/`finance`/`admin`. `add-album`
+requires a `photos.app.goo.gl` / `photos.google.com` URL and rejects duplicates. An upload
+`POST` carries no `action` field, which is what distinguishes the two.
+
 ### `GET|POST /api/site-settings`
 `GET` is public — the Donate and Membership pages and the dues checkout route all need the
 current dues rate without a session. `POST` upserts row 1.
@@ -347,11 +356,6 @@ current dues rate without a session. `POST` upserts row 1.
 `GET` is public — the `/barbados-clubs` directory page needs it without a session. `POST`
 actions `add`, `update`, `delete` are gated to `super admin`/`finance`/`admin`, same tier as
 site settings.
-
-### `GET|POST /api/shared-albums`
-`GET` lists the gallery's shared albums, seeding the table on first call. `POST` actions `add`,
-`update`, `delete` are gated to `super admin`/`finance`/`admin`, and `add` requires a
-`photos.app.goo.gl` / `photos.google.com` URL and rejects duplicates.
 
 ### `POST /api/send-contact-message`
 Sends via SES to whatever address is currently configured in `site_settings.contact_email`, with
