@@ -512,6 +512,7 @@ export const AuthProvider = ({ children }) => {
   // Member photo uploads gallery (backed by Google Photos; see api/gallery-*.js).
   // localStorage is only a same-device cache for instant paint on repeat visits -
   // the real fetch below always overwrites it with live data.
+  const [galleryUnavailable, setGalleryUnavailable] = useState('');
   const [memberGallery, setMemberGallery] = useState(() => {
     try {
       const savedGallery = localStorage.getItem('optimist_gallery');
@@ -677,6 +678,7 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         if (res.ok && data.success) {
           setMemberGallery(data.photos);
+          setGalleryUnavailable(data.googleUnavailable ? data.googleMessage || 'Photos are temporarily unavailable.' : '');
         }
       } catch (err) {
         console.warn("Gallery fetch fallback to local cache:", err);
@@ -1592,6 +1594,7 @@ Progressive Optimist Club of Barbados
         approveProject,
         deleteProject,
         memberGallery,
+        galleryUnavailable,
         addGalleryPhoto,
         deleteGalleryPhoto,
         contactSubjects,

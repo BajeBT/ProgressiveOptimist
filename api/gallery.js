@@ -1,7 +1,82 @@
-import { sql } from '../lib/db.js';
+import { sql, ensureSystemAlerts } from '../lib/db.js';
 import { getSession } from '../lib/session.js';
+import { sendEmail } from '../lib/email.js';
 
 const CAN_MODERATE_GALLERY = ['super admin', 'admin', 'finance'];
+
+// The Google Photos credential is a refresh token that Google revokes on its
+// own schedule, and nothing in the app can renew it - a person has to
+// re-authorise. These are the addresses told when that happens.
+const TOKEN_ALERT_RECIPIENTS = [
+  'admin@progressiveoptimist.org',
+  'pro@progressiveoptimist.org',
+  'dev@bajanthings.biz'
+];
+
+const GOOGLE_PHOTOS_ACCOUNT = 'ProgressiveOC@gmail.com';
+
+// Claimed through the database rather than in memory: every request runs in its
+// own serverless instance, so an in-process flag would not stop the officers
+// being emailed on every page load. The UPDATE only matches when the last
+// alert is over a day old, so exactly one caller wins the claim.
+async function claimTokenAlert() {
+  try {
+    await ensureSystemAlerts();
+    const rows = await sql`
+      INSERT INTO system_alerts (key, last_sent_at)
+      VALUES ('google_photos_token', CURRENT_TIMESTAMP)
+      ON CONFLICT (key) DO UPDATE SET last_sent_at = CURRENT_TIMESTAMP
+      WHERE system_alerts.last_sent_at < CURRENT_TIMESTAMP - INTERVAL '24 hours'
+      RETURNING key;
+    `;
+    return rows.length > 0;
+  } catch (err) {
+    // Better to stay quiet than to mail on every request because the throttle
+    // itself is broken.
+    console.warn('system_alerts claim warning:', err);
+    return false;
+  }
+}
+
+async function notifyGoogleTokenExpired(reason) {
+  if (!(await claimTokenAlert())) return;
+
+  const subject = 'Action needed: Google Photos connection for the club website needs re-authorising';
+  const body = [
+    "The website's Google Photos connection has stopped working, so no photos are loading in the",
+    'Shared Members Photos tab of the member portal. Members currently see a notice saying photos',
+    'are temporarily unavailable.',
+    '',
+    `Reported by Google: ${reason}`,
+    '',
+    'This usually happens when the credential goes unused for six months, the Google account',
+    'password is changed, or access is revoked in that account\'s security settings. No photos have',
+    'been lost - they are still in Google Photos, the website just cannot read them at the moment.',
+    '',
+    `To fix it, someone with access to ${GOOGLE_PHOTOS_ACCOUNT} needs to:`,
+    '',
+    `  1. Sign in to the ${GOOGLE_PHOTOS_ACCOUNT} Google account.`,
+    '  2. Open the Google Cloud console for the project that owns the website OAuth client and',
+    '     confirm the Photos Library API is still enabled.',
+    '  3. Re-run the OAuth consent flow for that client to issue a new refresh token, granting the',
+    '     Photos Library scope.',
+    '  4. Update GOOGLE_REFRESH_TOKEN in the Vercel project environment variables with the new',
+    '     value, then redeploy the site.',
+    '',
+    'The rest of the member portal is unaffected - only the photo gallery.',
+    '',
+    'This is an automated message from the club website. It is sent at most once every 24 hours',
+    'while the connection stays broken, and stops on its own once the token is renewed.'
+  ].join('\n');
+
+  for (const to of TOKEN_ALERT_RECIPIENTS) {
+    try {
+      await sendEmail({ to, subject, body });
+    } catch (err) {
+      console.error('Google token alert email failed for', to, err);
+    }
+  }
+}
 
 async function getAccessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -254,10 +329,6 @@ export default async function handler(req, res) {
     const missingEnv = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN']
       .filter(k => !process.env[k] || process.env[k].startsWith('REPLACE_ME'));
 
-    if (missingEnv.length > 0) {
-      return res.status(200).json({ success: true, photos: [] });
-    }
-
     let deletedIds = new Set();
     try {
       const deletedRows = await sql`SELECT google_media_item_id FROM deleted_media_ids;`;
@@ -266,8 +337,29 @@ export default async function handler(req, res) {
       console.warn('deleted_media_ids DB warning:', dbErr);
     }
 
+    // A revoked or missing Google token must not take down the photos that do
+    // not depend on it - a shared album is public HTML, so it still loads.
+    let accessToken = null;
+    let googleUnavailable = null;
+
+    if (missingEnv.length > 0) {
+      googleUnavailable = 'Google Photos is not configured.';
+    } else {
+      try {
+        accessToken = await getAccessToken();
+      } catch (tokenErr) {
+        console.error('gallery-list token error:', tokenErr);
+        googleUnavailable = 'The club Google Photos connection needs to be re-authorised.';
+        // Never let a failed alert break the gallery response.
+        try {
+          await notifyGoogleTokenExpired(tokenErr.message || 'Unknown error');
+        } catch (alertErr) {
+          console.error('Google token alert failed:', alertErr);
+        }
+      }
+    }
+
     try {
-      const accessToken = await getAccessToken();
       const dbMetaById = {};
       for (const r of dbRows) {
         if (r.google_media_item_id) {
@@ -277,11 +369,11 @@ export default async function handler(req, res) {
 
       const photosMap = new Map();
       try {
-        const listRes = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100', {
+        const listRes = accessToken && await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
-        const listData = await listRes.json();
-        if (listRes.ok && Array.isArray(listData.mediaItems)) {
+        const listData = listRes ? await listRes.json() : {};
+        if (listRes && listRes.ok && Array.isArray(listData.mediaItems)) {
           for (const item of listData.mediaItems) {
             if (deletedIds.has(item.id)) continue;
             const dbMatch = dbMetaById[item.id];
@@ -301,7 +393,9 @@ export default async function handler(req, res) {
         console.warn('Error fetching Google Photos library list:', listErr);
       }
 
-      const missingDbRows = dbRows.filter(r => r.google_media_item_id && !photosMap.has(r.google_media_item_id));
+      const missingDbRows = accessToken
+        ? dbRows.filter(r => r.google_media_item_id && !photosMap.has(r.google_media_item_id))
+        : [];
 
       if (missingDbRows.length > 0) {
         for (const batch of chunk(missingDbRows, 50)) {
@@ -352,7 +446,8 @@ export default async function handler(req, res) {
         success: true,
         photos: allPhotos,
         websitePhotos,
-        albumPhotos
+        albumPhotos,
+        ...(googleUnavailable ? { googleUnavailable: true, googleMessage: googleUnavailable } : {})
       });
     } catch (err) {
       console.error('gallery-list error:', err);

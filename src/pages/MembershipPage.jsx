@@ -89,6 +89,7 @@ export const MembershipPage = ({ onOpenPostModal }) => {
     logout,
     projects,
     memberGallery,
+    galleryUnavailable,
     addGalleryPhoto,
     deleteGalleryPhoto,
     siteSettings
@@ -1472,6 +1473,14 @@ export const MembershipPage = ({ onOpenPostModal }) => {
         {/* Tab 2: Member Photo Gallery */}
         {dashboardTab === 'gallery' && (
           <div className="space-y-10">
+            {galleryUnavailable && (
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Photos are temporarily unavailable. {galleryUnavailable}
+                </span>
+              </div>
+            )}
             {/* Section 1: Website Uploaded Photos */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -2969,7 +2978,9 @@ export const MembershipPage = ({ onOpenPostModal }) => {
                       className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none focus:ring-2 focus:ring-optimist-blue"
                     />
                     <p className="text-[10px] text-slate-500">
-                      Your name on the roster can only be changed with a club officer's approval.
+                      {profileName.trim() === myRosterRecord?.name
+                        ? "Edit the name above to request a change - your name on the roster can only be changed with a club officer's approval."
+                        : "Your name on the roster can only be changed with a club officer's approval."}
                     </p>
                     <button
                       type="button"
