@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Mail, MapPin, Send, CheckCircle2, Calendar, Building2, Copy, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_SUBJECTS = ['General Inquiry', 'Membership Application', 'Volunteering Opportunities', 'Laptop & Tablet Drive'];
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 export const ContactPage = () => {
   const { contactSubjects, siteSettings } = useAuth();
@@ -18,6 +19,36 @@ export const ContactPage = () => {
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const formLoadedAt = useRef(Date.now());
+  const turnstileRef = useRef(null);
+  const widgetId = useRef(null);
+
+  // Loads the Turnstile widget only when a site key is configured.
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    const render = () => {
+      if (!turnstileRef.current || widgetId.current !== null) return;
+      widgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: setTurnstileToken,
+        'expired-callback': () => setTurnstileToken('')
+      });
+    };
+    if (window.turnstile) return render();
+    const existing = document.querySelector('script[data-turnstile]');
+    if (existing) {
+      existing.addEventListener('load', render);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.dataset.turnstile = 'true';
+    script.addEventListener('load', render);
+    document.head.appendChild(script);
+  }, []);
 
   const copyBankInfo = () => {
     const text = `To pay your Dues or Donate via Bank Deposit/Transfer:\nBank: ${siteSettings?.bankName}\nAccount Name: ${siteSettings?.bankAccountName}\nAccount #: ${siteSettings?.bankAccountNumber}\nBranch: ${siteSettings?.bankBranch}\nTransit/Routing #: ${siteSettings?.bankRoutingNumber}`;
@@ -29,17 +60,32 @@ export const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError('');
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setSubmitError('Please complete the verification check below.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/send-contact-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          ...form,
+          website: honeypot,
+          elapsedMs: Date.now() - formLoadedAt.current,
+          turnstileToken
+        })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         setSubmitError(data.message || 'Failed to send message. Please try again.');
         setIsSubmitting(false);
+        if (widgetId.current !== null) {
+          window.turnstile.reset(widgetId.current);
+          setTurnstileToken('');
+        }
         return;
       }
       setSubmitted(true);
@@ -203,6 +249,22 @@ export const ContactPage = () => {
                     required
                   />
                 </div>
+
+                {/* Honeypot: hidden from people, tempting to bots. */}
+                <div aria-hidden="true" className="absolute left-[-9999px] w-px h-px overflow-hidden">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={e => setHoneypot(e.target.value)}
+                  />
+                </div>
+
+                {TURNSTILE_SITE_KEY && <div ref={turnstileRef} className="flex justify-center" />}
 
                 <button
                   type="submit"
