@@ -19,23 +19,16 @@ export const AboutPage = () => {
   // Executive Officers with custom role placeholder images
   const currentOfficers = [
     {
-      name: "Richelle Lucas",
-      title: "Club President & Immediate Past President",
+      name: "Cameron Sobers",
+      title: "Club President",
       role: "Executive Leadership & Strategic Direction",
       email: "president@progressiveoptimist.org",
       image: "/avatars/president_placeholder.jpg"
     },
     {
-      name: "Charmaine London",
-      title: "Club Secretary",
-      role: "Member Records & Official Communications",
-      email: "secretary@progressiveoptimist.org",
-      image: "/avatars/secretary_placeholder.jpg"
-    },
-    {
       name: "Sharon Mohammed",
-      title: "Club Treasurer",
-      role: "Financial Stewardship & Dues Management",
+      title: "Club Secretary & Treasurer",
+      role: "Member Records, Official Communications & Financial Stewardship",
       email: "treasurer@progressiveoptimist.org",
       image: "/avatars/treasurer_placeholder.jpg"
     },
@@ -49,13 +42,12 @@ export const AboutPage = () => {
   ];
 
   const executiveRoles = [
-    { title: "President", holder: "Richelle Lucas", badge: "Executive Head" },
-    { title: "President Elect", holder: "Cameron P. Sobers", badge: "Leadership" },
+    { title: "President", holder: "Cameron P. Sobers", badge: "Executive Head" },
+    { title: "President Elect", holder: "", badge: "Leadership" },
     { title: "Vice President - Internal", holder: "Executive Committee", badge: "Internal Ops" },
     { title: "Vice President - External", holder: "Executive Committee", badge: "Outreach & Public" },
     { title: "Immediate Past President", holder: "Richelle Lucas", badge: "Advisory" },
-    { title: "Secretary", holder: "Charmaine London", badge: "Administration" },
-    { title: "Treasurer", holder: "Sharon Mohammed", badge: "Finance" },
+    { title: "Secretary & Treasurer", holder: "Sharon Mohammed", badge: "Administration & Finance" },
     { title: "OI Representative", holder: "Edwin Workman", badge: "International (non-voting)" }
   ];
 
@@ -63,12 +55,13 @@ export const AboutPage = () => {
     { name: "Omolara DeRiggs-Morris", role: "Board Director & Past President (2023)", image: "/avatars/director_placeholder.jpg" },
     { name: "Dawn-Marie Watson", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
     { name: "Deborah Bayne", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
-    { name: "Cameron Sobers", role: "President-Elect & Past President (2014)", image: "/avatars/director_placeholder.jpg" }
+    { name: "Cameron Sobers", role: "President & Past President (2014)", image: "/avatars/director_placeholder.jpg" }
   ];
 
-  // Complete Past Presidents List from 2010 to 2025
+  // Complete Past Presidents List from 2010 to 2026
   const pastPresidents = [
-    { year: "2025", name: "Richelle Lucas", badge: "Current President" },
+    { year: "2026", name: "Richelle Lucas" },
+    { year: "2025", name: "Richelle Lucas" },
     { year: "2024", name: "Richelle Lucas" },
     { year: "2023", name: "Omolara DeRiggs Morris" },
     { year: "2022", name: "Edwin Workman" },
@@ -261,7 +254,7 @@ export const AboutPage = () => {
                 <Crown className="w-4 h-4 text-amber-400" /> Executive Honor Roll
               </span>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white">
-                Past Presidents of Barbados (2010 – 2025)
+                Past Presidents of Barbados (2010 – 2026)
               </h2>
               <p className="text-xs text-slate-400">
                 Honoring the past leaders who built and guided the Progressive Optimist Club of Barbados.
