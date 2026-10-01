@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { defaultAboutLeadership } from '../data/aboutLeadershipData';
 import {
   Users,
   FileText,
@@ -16,74 +17,22 @@ import {
 export const AboutPage = () => {
   const { siteSettings } = useAuth();
 
-  // Executive Officers with custom role placeholder images
-  const currentOfficers = [
-    {
-      name: "Cameron Sobers",
-      title: "Club President",
-      role: "Executive Leadership & Strategic Direction",
-      email: "president@progressiveoptimist.org",
-      image: "/avatars/president_placeholder.jpg"
-    },
-    {
-      name: "Sharon Mohammed",
-      title: "Club Secretary & Treasurer",
-      role: "Member Records, Official Communications & Financial Stewardship",
-      email: "treasurer@progressiveoptimist.org",
-      image: "/avatars/treasurer_placeholder.jpg"
-    },
-    {
-      name: "Edwin Workman",
-      title: "OI Representative",
-      role: "Optimist International & Caribbean District Liaison (non-voting)",
-      email: "oirep@progressiveoptimist.org",
-      image: "/avatars/oirep_placeholder.jpg"
-    }
-  ];
-
-  const executiveRoles = [
-    { title: "President", holder: "Cameron P. Sobers", badge: "Executive Head" },
-    { title: "President Elect", holder: "", badge: "Leadership" },
-    { title: "Vice President - Internal", holder: "Executive Committee", badge: "Internal Ops" },
-    { title: "Vice President - External", holder: "Executive Committee", badge: "Outreach & Public" },
-    { title: "Immediate Past President", holder: "Richelle Lucas", badge: "Advisory" },
-    { title: "Secretary & Treasurer", holder: "Sharon Mohammed", badge: "Administration & Finance" },
-    { title: "OI Representative", holder: "Edwin Workman", badge: "International (non-voting)" }
-  ];
-
-  const currentDirectors = [
-    { name: "Omolara DeRiggs-Morris", role: "Board Director & Past President (2023)", image: "/avatars/director_placeholder.jpg" },
-    { name: "Dawn-Marie Watson", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
-    { name: "Deborah Bayne", role: "Board Director", image: "/avatars/director_placeholder.jpg" },
-    { name: "Cameron Sobers", role: "President & Past President (2014)", image: "/avatars/director_placeholder.jpg" }
-  ];
-
-  // Complete Past Presidents List from 2010 to 2026
-  const pastPresidents = [
-    { year: "2026", name: "Richelle Lucas" },
-    { year: "2025", name: "Richelle Lucas" },
-    { year: "2024", name: "Richelle Lucas" },
-    { year: "2023", name: "Omolara DeRiggs Morris" },
-    { year: "2022", name: "Edwin Workman" },
-    { year: "2021", name: "Shaina McAllister" },
-    { year: "2020", name: "Eleanor Rice" },
-    { year: "2019", name: "Shirley Hoyte" },
-    { year: "2018", name: "Maureen Dottin" },
-    { year: "2017", name: "Charmaine London" },
-    { year: "2016", name: "Margot Aquan", badge: "Distinguished" },
-    { year: "2015", name: "Janelle Ottley" },
-    { year: "2014", name: "Cameron Sobers", badge: "Distinguished" },
-    { year: "2013", name: "Edwin Workman", badge: "Distinguished" },
-    { year: "2012", name: "Simeon Ellis" },
-    { year: "2011", name: "Carmel Haynes" },
-    { year: "2010", name: "JoyAnn Carter", badge: "Charter Year" }
-  ];
+  // Admin-editable via the "About Page" tab; falls back to built-in defaults.
+  const leadership = { ...defaultAboutLeadership, ...(siteSettings?.aboutLeadership || {}) };
+  const currentOfficers = leadership.officers;
+  const executiveRoles = leadership.executiveRoles;
+  const currentDirectors = leadership.directors;
+  const pastPresidents = [...leadership.pastPresidents].sort((a, b) => String(b.year).localeCompare(String(a.year)));
+  const honorRollYears = pastPresidents.map(p => String(p.year));
+  const honorRollRange = honorRollYears.length
+    ? `${honorRollYears[honorRollYears.length - 1]} – ${honorRollYears[0]}`
+    : '';
 
   const [presidentFilter, setPresidentFilter] = useState('');
 
   const filteredPresidents = pastPresidents.filter(p =>
     p.name.toLowerCase().includes(presidentFilter.toLowerCase()) ||
-    p.year.includes(presidentFilter)
+    String(p.year).includes(presidentFilter)
   );
 
   const downloads = [
@@ -254,7 +203,7 @@ export const AboutPage = () => {
                 <Crown className="w-4 h-4 text-amber-400" /> Executive Honor Roll
               </span>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white">
-                Past Presidents of Barbados (2010 – 2026)
+                Past Presidents of Barbados ({honorRollRange})
               </h2>
               <p className="text-xs text-slate-400">
                 Honoring the past leaders who built and guided the Progressive Optimist Club of Barbados.

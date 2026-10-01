@@ -17,6 +17,12 @@ const DEFAULTS = {
   bankRoutingNumber: 'Not yet configured'
 };
 
+// Stored as JSON text; null means the About page uses its built-in defaults.
+function parseAboutLeadership(raw) {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (_) { return null; }
+}
+
 function toClientShape(row) {
   if (!row) return DEFAULTS;
   return {
@@ -30,7 +36,8 @@ function toClientShape(row) {
     bankAccountName: row.bank_account_name || DEFAULTS.bankAccountName,
     bankAccountNumber: row.bank_account_number || DEFAULTS.bankAccountNumber,
     bankBranch: row.bank_branch || DEFAULTS.bankBranch,
-    bankRoutingNumber: row.bank_routing_number || DEFAULTS.bankRoutingNumber
+    bankRoutingNumber: row.bank_routing_number || DEFAULTS.bankRoutingNumber,
+    aboutLeadership: parseAboutLeadership(row.about_leadership)
   };
 }
 
@@ -40,6 +47,9 @@ export default async function handler(req, res) {
   try {
     try {
       await sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS homepage_announcement TEXT DEFAULT '';`;
+    } catch (_) {}
+    try {
+      await sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_leadership TEXT;`;
     } catch (_) {}
 
     // Public: the Donate/Membership pages and the Stripe checkout route all
@@ -57,10 +67,13 @@ export default async function handler(req, res) {
     if (!session) return;
 
     const s = req.body?.settings || {};
+    const aboutLeadership = s.aboutLeadership && typeof s.aboutLeadership === 'object'
+      ? JSON.stringify(s.aboutLeadership)
+      : null;
     await sql`
       INSERT INTO site_settings (
         id, meeting_schedule, meeting_venue, contact_email, annual_dues_rate, theme_title, homepage_announcement,
-        bank_name, bank_account_name, bank_account_number, bank_branch, bank_routing_number
+        bank_name, bank_account_name, bank_account_number, bank_branch, bank_routing_number, about_leadership
       )
       VALUES (
         1, ${s.meetingSchedule || DEFAULTS.meetingSchedule}, ${s.meetingVenue || DEFAULTS.meetingVenue},
@@ -69,7 +82,7 @@ export default async function handler(req, res) {
         ${s.homepageAnnouncement !== undefined ? s.homepageAnnouncement : DEFAULTS.homepageAnnouncement},
         ${s.bankName || DEFAULTS.bankName}, ${s.bankAccountName || DEFAULTS.bankAccountName},
         ${s.bankAccountNumber || DEFAULTS.bankAccountNumber}, ${s.bankBranch || DEFAULTS.bankBranch},
-        ${s.bankRoutingNumber || DEFAULTS.bankRoutingNumber}
+        ${s.bankRoutingNumber || DEFAULTS.bankRoutingNumber}, ${aboutLeadership}
       )
       ON CONFLICT (id) DO UPDATE SET
         meeting_schedule = EXCLUDED.meeting_schedule,
@@ -83,6 +96,7 @@ export default async function handler(req, res) {
         bank_account_number = EXCLUDED.bank_account_number,
         bank_branch = EXCLUDED.bank_branch,
         bank_routing_number = EXCLUDED.bank_routing_number,
+        about_leadership = EXCLUDED.about_leadership,
         updated_at = CURRENT_TIMESTAMP;
     `;
 

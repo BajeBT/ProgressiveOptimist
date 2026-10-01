@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MEMBER_ROLES } from '../../lib/roles';
 import { BarbadosClubModal } from '../components/BarbadosClubModal';
+import { AboutLeadershipEditor } from '../components/AboutLeadershipEditor';
 import {
   ShieldCheck,
   Settings,
@@ -705,6 +706,18 @@ export const AdminSettingsPage = () => {
             </button>
 
             <button
+              onClick={() => setActiveTab('about')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'about'
+                  ? 'bg-optimist-blue text-white shadow'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>About Page</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('permissions')}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'permissions'
@@ -1065,6 +1078,9 @@ export const AdminSettingsPage = () => {
       )}
 
       {/* TAB 2: MEMBER ACCESS LEVELS & PERMISSIONS MATRIX */}
+      {/* TAB: ABOUT PAGE LEADERSHIP */}
+      {activeTab === 'about' && canManageSettings && <AboutLeadershipEditor />}
+
       {activeTab === 'permissions' && (
         <div className="space-y-6">
           
